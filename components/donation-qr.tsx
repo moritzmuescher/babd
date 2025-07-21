@@ -21,11 +21,11 @@ export function DonationQR() {
 
   return (
     <div className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10">
-      <Card className="bg-black/50 border-orange-500/25 backdrop-blur-sm p-4 text-center">
+      <Card className="bg-black/50 border-orange-500/25 backdrop-blur-sm p-2 md:p-4 text-center">
         <img
           src="/images/ln_qr.jpeg"
           alt="Wallet of Satoshi Lightning Network QR Code"
-          className="w-48 h-48 rounded-lg mb-3 cursor-pointer hover:opacity-80 transition-opacity"
+          className="w-48 h-48 rounded-lg mb-3 cursor-pointer hover:opacity-80 transition-opacity hidden md:block"
           onClick={handleCopy}
         />
         <Button
