@@ -2,7 +2,7 @@
 
 https://babd.space
 
-A modern, interactive Bitcoin blockchain explorer with a unique 3D visualization experience, built using Next.js and Three.js. Explore real-time Bitcoin network data, delve into block details, and visualize the "timechain" in a dynamic, immersive environment.
+A modern, interactive Bitcoin blockchain explorer with a unique 3D visualization experience, built using Next.js and Three.js. Explore real-time Bitcoin network data, display block details, and visualize the "timechain" in a dynamic, immersive environment.
 
 ## ✨ Features
 
@@ -36,7 +36,3 @@ A modern, interactive Bitcoin blockchain explorer with a unique 3D visualization
 *   **View Block Details**: Click on any block card to open a modal with detailed information about that block.
 *   **Search**: Use the search bar at the bottom to look up specific Bitcoin transaction IDs or addresses.
 *   **Interact with 3D Scene**: Drag to rotate the camera around the central planet.
-
-## 🤝 Contributing
-
-Contributions are welcome! If you have suggestions for improvements or new features, please open an issue or submit a pull request.
