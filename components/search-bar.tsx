@@ -34,7 +34,11 @@ export function SearchBar({ onSearch }: SearchBarProps) {
             className="flex-1 bg-black/50 border-orange-500/50 text-white placeholder-gray-400 focus:border-orange-400"
             autoComplete="off"
             data-1p-ignore
-          />
+          >
+            {/* Responsive placeholder text */}
+            <span className="hidden md:inline">Enter TxID or Bitcoin Address</span>
+            <span className="inline md:hidden">TxID or Bitcoin Address</span>
+          </Input>
           <Button
             type="submit"
             className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-black font-semibold"
