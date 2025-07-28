@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Loader2 } from "lucide-react" // Re-import Loader2 for the button
+import { Loader2 } from "lucide-react"
 import { BlockDetailsModal } from "@/components/block-details-modal"
 import { ProjectedBlockDetailsModal } from "@/components/projected-block-details-modal"
 
@@ -41,7 +41,7 @@ export function BlockExplorer() {
   const [isProjectedBlockDetailsModalOpen, setIsProjectedBlockDetailsModalOpen] = useState(false)
   const [oldestFetchedBlockHeight, setOldestFetchedBlockHeight] = useState<number | null>(null)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
-  const [showLoadMorePast, setShowLoadMorePast] = useState(false) // Reintroduced state for button visibility
+  const [showLoadMorePast, setShowLoadMorePast] = useState(false)
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const isInitialCenteringDone = useRef(false)
@@ -49,7 +49,7 @@ export function BlockExplorer() {
   const handleScroll = useCallback(() => {
     const container = scrollRef.current
     if (!container) {
-      setShowLoadMorePast(false) // Ensure it's hidden if no container
+      setShowLoadMorePast(false)
       return
     }
 
@@ -59,6 +59,7 @@ export function BlockExplorer() {
     const isContentScrollable = scrollWidth > clientWidth
     const isAtRightmostEnd = scrollLeft <= scrollThreshold // For RTL, 0 is rightmost
 
+    // Only show "Load More" if scrollable, at the end, and there are older blocks to fetch
     if (isContentScrollable && isAtRightmostEnd && oldestFetchedBlockHeight !== null && oldestFetchedBlockHeight > 1) {
       setShowLoadMorePast(true)
     } else {
@@ -67,7 +68,7 @@ export function BlockExplorer() {
   }, [oldestFetchedBlockHeight]) // Dependency on oldestFetchedBlockHeight
 
   const loadMorePastBlocks = useCallback(async () => {
-    if (isLoadingMore || oldestFetchedBlockHeight === null || oldestFetchedBlockHeight <= 1) return // Prevent loading past genesis
+    if (isLoadingMore || oldestFetchedBlockHeight === null || oldestFetchedBlockHeight <= 1) return
 
     setIsLoadingMore(true)
     try {
@@ -96,6 +97,10 @@ export function BlockExplorer() {
       setBlocks((prevBlocks) => [...prevBlocks, ...newBlocksWithWeight])
       if (newBlocksWithWeight.length > 0) {
         setOldestFetchedBlockHeight(newBlocksWithWeight[newBlocksWithWeight.length - 1].height)
+      } else {
+        // If no new blocks were fetched, it means we've reached the end (or there are no more blocks)
+        // Set oldestFetchedBlockHeight to 1 to prevent further load attempts
+        setOldestFetchedBlockHeight(1)
       }
     } catch (error) {
       console.error("Error loading more past blocks:", error)
@@ -104,9 +109,9 @@ export function BlockExplorer() {
       // After loading, re-evaluate scroll position to update button visibility
       setTimeout(() => handleScroll(), 50)
     }
-  }, [isLoadingMore, oldestFetchedBlockHeight, handleScroll]) // Added handleScroll to dependencies
+  }, [isLoadingMore, oldestFetchedBlockHeight, handleScroll])
 
-  const fetchInitialBlocks = useCallback(async () => {
+  const fetchInitialBlocksAndHeight = useCallback(async () => {
     try {
       const [blocksRes, heightRes, projectedRes] = await Promise.all([
         fetch("https://mempool.space/api/blocks"), // Gets 10 most recent blocks
@@ -151,17 +156,30 @@ export function BlockExplorer() {
               const elementWidth = (currentBlockElement as HTMLElement).offsetWidth
               scrollRef.current.scrollLeft = elementLeft - containerWidth / 2 + elementWidth / 2
               isInitialCenteringDone.current = true // Mark as done
-              // After centering, explicitly call handleScroll to set initial button visibility
-              handleScroll()
+              handleScroll() // Call handleScroll after initial centering
             }
           }
         }, 100)
         return () => clearTimeout(timer)
       }
     } catch (error) {
-      console.error("Error fetching blocks:", error)
+      console.error("Error fetching initial blocks and height:", error)
     }
-  }, [handleScroll]) // Dependency on handleScroll ensures it uses the latest memoized version
+  }, [handleScroll]) // Dependency on handleScroll
+
+  const fetchCurrentHeightPeriodically = useCallback(async () => {
+    try {
+      const heightRes = await fetch("https://mempool.space/api/blocks/tip/height")
+      const blockHeight = await heightRes.text()
+      setCurrentHeight(Number.parseInt(blockHeight, 10))
+
+      const projectedRes = await fetch("https://mempool.space/api/v1/fees/mempool-blocks")
+      const projectedData = await projectedRes.json()
+      setProjectedBlocks(projectedData)
+    } catch (error) {
+      console.error("Error fetching current height or projected blocks periodically:", error)
+    }
+  }, [])
 
   const handleProjectedBlockClick = useCallback(
     (proj: ProjectedBlock, index: number) => {
@@ -187,11 +205,16 @@ export function BlockExplorer() {
     setIsProjectedBlockDetailsModalOpen(false)
   }, [])
 
+  // Effect for initial data fetch
   useEffect(() => {
-    fetchInitialBlocks()
-    const interval = setInterval(fetchInitialBlocks, 60000)
+    fetchInitialBlocksAndHeight()
+  }, [fetchInitialBlocksAndHeight])
+
+  // Effect for periodic current height and projected blocks update
+  useEffect(() => {
+    const interval = setInterval(fetchCurrentHeightPeriodically, 60000) // Update every 60 seconds
     return () => clearInterval(interval)
-  }, [fetchInitialBlocks])
+  }, [fetchCurrentHeightPeriodically])
 
   // Dedicated useEffect for scroll listener
   useEffect(() => {
@@ -206,7 +229,7 @@ export function BlockExplorer() {
         }
       }
     }
-  }, [handleScroll]) // Dependency on handleScroll ensures listener is re-attached if handleScroll changes
+  }, [handleScroll])
 
   const formatTimeAgo = (timestamp: number) => {
     const now = Date.now()
@@ -236,29 +259,25 @@ export function BlockExplorer() {
   // Function to get interpolated HSL color based on fee rate
   const getInterpolatedFeeColor = (feeRate: number, alpha = 1) => {
     let hue: number
-    const saturation = 70 // Adjusted saturation for a more "Tailwind green" feel
-    const lightness = 50 // Keep lightness around 50% for good visibility
+    const saturation = 70
+    const lightness = 50
 
     if (feeRate <= 1) {
-      hue = 140 // Starting hue for a vibrant green (closer to Tailwind green-500)
+      hue = 140
     } else if (feeRate <= 5) {
-      // Interpolate from vibrant green (140) to yellow-green (90)
       const t = (feeRate - 1) / (5 - 1)
       hue = lerp(140, 90, t)
     } else if (feeRate <= 10) {
-      // Interpolate from yellow-green (90) to yellow (60)
       const t = (feeRate - 5) / (10 - 5)
       hue = lerp(90, 60, t)
     } else if (feeRate <= 20) {
-      // Interpolate from yellow (60) to orange (30)
       const t = (feeRate - 10) / (20 - 10)
       hue = lerp(60, 30, t)
     } else if (feeRate <= 50) {
-      // Interpolate from orange (30) to red (0)
       const t = (feeRate - 20) / (50 - 20)
       hue = lerp(30, 0, t)
     } else {
-      hue = 0 // Pure red for very high fees
+      hue = 0
     }
 
     return `hsla(${Math.round(hue)}, ${saturation}%, ${lightness}%, ${alpha})`
@@ -266,7 +285,7 @@ export function BlockExplorer() {
 
   return (
     <>
-      <div className="absolute top-32 left-1/2 transform -translate-x-1/2 w-[95%] max-w-6xl z-10">
+      <div className="absolute top-20 md:top-32 left-1/2 transform -translate-x-1/2 w-[95%] max-w-6xl z-10">
         <Card className="bg-black/50 border-orange-500/25 backdrop-blur-sm relative">
           {/* Left Fade Overlay (Desktop Only) */}
           <div className="absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-black/50 to-transparent z-20 hidden md:block pointer-events-none" />
@@ -335,11 +354,10 @@ export function BlockExplorer() {
                   <div
                     key={block.height}
                     onClick={() => handleBlockClick(block)}
-                    className={`relative flex-shrink-0 p-3 rounded-lg border text-center min-w-[100px] cursor-pointer overflow-hidden hover:scale-105 transition-all duration-200 ${
-                      block.height === currentHeight
+                    className={`relative flex-shrink-0 p-3 rounded-lg border text-center min-w-[100px] cursor-pointer overflow-hidden hover:scale-105 transition-all duration-200 ${block.height === currentHeight
                         ? "border-blue-400 bg-black/50 shadow-lg shadow-blue-500/30 current-block hover:shadow-blue-500/50"
                         : "border-blue-500/30 bg-black/50 hover:border-blue-400/50 hover:bg-black/50"
-                    }`}
+                      }`}
                     title={`Click to view details for block ${block.height}`}
                   >
                     {/* Blue fill layer */}
@@ -421,3 +439,4 @@ export function BlockExplorer() {
     </>
   )
 }
+
