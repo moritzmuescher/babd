@@ -20,7 +20,7 @@ export function DonationQR() {
   }
 
   return (
-    <div className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10">
+    <div className="absolute right-4 bottom-20 z-10">
       <Card className="bg-black/50 border-orange-500/25 backdrop-blur-sm p-2 md:p-4 text-center">
         <img
           src="/images/ln_qr.jpeg"
@@ -50,3 +50,4 @@ export function DonationQR() {
     </div>
   )
 }
+
