@@ -31,7 +31,10 @@ export function ThreeScene() {
       controls.enablePan = false
       controls.maxDistance = 500
       controls.minDistance = 0.1
-      camera.position.z = 10
+
+      // Set different initial camera position for mobile vs desktop
+      const isMobile = window.innerWidth < 768
+      camera.position.z = isMobile ? 15 : 10
 
       // Create circle texture
       const canvas = document.createElement("canvas")
@@ -258,6 +261,16 @@ export function ThreeScene() {
         camera.aspect = width / height
         camera.updateProjectionMatrix()
         renderer.setSize(width, height)
+
+        // Adjust camera position on resize if switching between mobile/desktop
+        const isMobileNow = width < 768
+        const currentZ = camera.position.z
+        const targetZ = isMobileNow ? 15 : 10
+
+        // Only adjust if there's a significant difference to avoid constant adjustments
+        if (Math.abs(currentZ - targetZ) > 2) {
+          camera.position.z = targetZ
+        }
       }
       window.addEventListener("resize", handleResize)
 
@@ -271,3 +284,4 @@ export function ThreeScene() {
 
   return <div ref={containerRef} className="absolute inset-0" />
 }
+
