@@ -6,7 +6,7 @@ A modern, interactive Bitcoin blockchain explorer with a unique 3D visualization
 
 ## ✨ Features
 
-*   **Immersive 3D Visualization**: A captivating Three.js scene featuring a central planet with a glowing effect, an orbiting accretion disk, and a starfield with a gravitational lensing effect, creating a "black hole" aesthetic.
+*   **Immersive 3D Visualization**: A captivating Three.js scene featuring a central planet with a glowing effect, an orbiting accretion disk, and a starfield with a gravitational lensing effect.
 *   **Real-time Bitcoin Metrics**: Displays live data including Bitcoin price, mempool size, high-priority fee rates, unconfirmed transactions, and current block height, fetched from the Mempool.space API.
 *   **Interactive Block Explorer**:
     *   Visually represents recent and projected future blocks.
