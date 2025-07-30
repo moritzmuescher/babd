@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Loader2 } from "lucide-react"
+// Loader2 is no longer needed if Load More is removed, but keeping it for now as it might be used elsewhere or for future features.
+// import { Loader2 } from 'lucide-react'
 import { BlockDetailsModal } from "@/components/block-details-modal"
 import { ProjectedBlockDetailsModal } from "@/components/projected-block-details-modal"
 
@@ -31,7 +32,7 @@ interface BlockExplorerProps {
 
 const MAX_BLOCK_WEIGHT_WU = 4000000
 const BYTES_TO_WU_RATIO = 4
-const BLOCKS_TO_LOAD = 10 // Number of blocks to load per click
+// const BLOCKS_TO_LOAD = 10 // No longer needed as "Load More" is removed
 
 export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
   const [blocks, setBlocks] = useState<Block[]>([])
@@ -42,90 +43,25 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
   >(null)
   const [isBlockDetailsModalOpen, setIsBlockDetailsModalOpen] = useState(false)
   const [isProjectedBlockDetailsModalOpen, setIsProjectedBlockDetailsModalOpen] = useState(false)
-  const [oldestFetchedBlockHeight, setOldestFetchedBlockHeight] = useState<number | null>(null)
-  const [isLoadingMore, setIsLoadingMore] = useState(false)
-  const [showLoadMorePast, setShowLoadMorePast] = useState(false)
+  // Removed oldestFetchedBlockHeight, isLoadingMore, showLoadMorePast states
+  // const [oldestFetchedBlockHeight, setOldestFetchedBlockHeight] = useState<number | null>(null)
+  // const [isLoadingMore, setIsLoadingMore] = useState(false)
+  // const [showLoadMorePast, setShowLoadMorePast] = useState(false)
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const isInitialCenteringDone = useRef(false)
 
-  const handleScroll = useCallback(() => {
-    const container = scrollRef.current
-    if (!container) {
-      setShowLoadMorePast(false)
-      return
-    }
-
-    const { scrollLeft, scrollWidth, clientWidth } = container
-    const scrollThreshold = 5 // pixels from the edge
-
-    const isContentScrollable = scrollWidth > clientWidth
-    const isAtRightmostEnd = scrollLeft <= scrollThreshold // For RTL, 0 is rightmost
-
-    // Only show "Load More" if scrollable, at the end, and there are older blocks to fetch
-    if (isContentScrollable && isAtRightmostEnd && oldestFetchedBlockHeight !== null && oldestFetchedBlockHeight > 1) {
-      setShowLoadMorePast(true)
-    } else {
-      setShowLoadMorePast(false)
-    }
-  }, [oldestFetchedBlockHeight])
-
-  const loadMorePastBlocks = useCallback(async () => {
-    if (isLoadingMore || oldestFetchedBlockHeight === null || oldestFetchedBlockHeight <= 1) return
-
-    setIsLoadingMore(true)
-    try {
-      const response = await fetch(`https://mempool.space/api/v1/blocks/${oldestFetchedBlockHeight - 1}`)
-      if (!response.ok) {
-        throw new Error("Failed to fetch older blocks")
-      }
-      const newBlocksData = await response.json()
-
-      const newBlocksWithWeight = await Promise.all(
-        newBlocksData.map(async (block: Block) => {
-          try {
-            const blockDetailRes = await fetch(`https://mempool.space/api/block/${block.id}`)
-            if (!blockDetailRes.ok) {
-              console.error(
-                `Failed to fetch block details for block ${block.height}: ${blockDetailRes.status} ${blockDetailRes.statusText}`,
-              )
-              return { ...block, weight: 0 } // Return with default weight on failure
-            }
-            const blockDetail = await blockDetailRes.json()
-            // Ensure weight is a number, default to 0 if not
-            const weight = typeof blockDetail.weight === "number" ? blockDetail.weight : 0
-            if (typeof blockDetail.weight !== "number") {
-              console.warn(`Block ${block.height} weight is not a number:`, blockDetail.weight)
-            }
-            return { ...block, weight: weight }
-          } catch (error) {
-            console.error(`Error fetching weight for block ${block.height}:`, error)
-            return { ...block, weight: 0 }
-          }
-        }),
-      )
-
-      setBlocks((prevBlocks) => [...prevBlocks, ...newBlocksWithWeight])
-      if (newBlocksWithWeight.length > 0) {
-        setOldestFetchedBlockHeight(newBlocksWithWeight[newBlocksWithWeight.length - 1].height)
-      } else {
-        setOldestFetchedBlockHeight(1)
-      }
-    } catch (error) {
-      console.error("Error loading more past blocks:", error)
-    } finally {
-      setIsLoadingMore(false)
-      setTimeout(() => handleScroll(), 50)
-    }
-  }, [isLoadingMore, oldestFetchedBlockHeight, handleScroll])
+  // Removed handleScroll and loadMorePastBlocks as they are no longer needed
+  // const handleScroll = useCallback(() => { ... }, [...])
+  // const loadMorePastBlocks = useCallback(async () => { ... }, [...])
 
   const fetchBlocksForCurrentHeight = useCallback(
     async (height: number) => {
-      if (height === 0) return
+      if (height === 0) return // Don't fetch if height is not yet available
 
       try {
         const [blocksRes, projectedRes] = await Promise.all([
-          fetch("https://mempool.space/api/blocks"),
+          fetch("https://mempool.space/api/blocks"), // Gets 10 most recent blocks
           fetch("https://mempool.space/api/v1/fees/mempool-blocks"),
         ])
 
@@ -158,10 +94,11 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
 
         setBlocks(blocksWithWeight)
         setProjectedBlocks(projectedData)
-        if (blocksWithWeight.length > 0) {
-          setOldestFetchedBlockHeight(blocksWithWeight[blocksWithWeight.length - 1].height)
-        }
+        // Removed setOldestFetchedBlockHeight
+        // setOldestFetchedBlockHeight(blocksWithWeight[blocksWithWeight.length - 1]?.height || null)
 
+        // Initial centering logic - runs only once per new height
+        // Reset isInitialCenteringDone if height changes to re-center
         if (isInitialCenteringDone.current === false || blocksWithWeight[0]?.height !== height) {
           const timer = setTimeout(() => {
             if (scrollRef.current) {
@@ -171,8 +108,8 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
                 const elementLeft = (currentBlockElement as HTMLElement).offsetLeft
                 const elementWidth = (currentBlockElement as HTMLElement).offsetWidth
                 scrollRef.current.scrollLeft = elementLeft - containerWidth / 2 + elementWidth / 2
-                isInitialCenteringDone.current = true
-                handleScroll()
+                isInitialCenteringDone.current = true // Mark as done for this height
+                // Removed handleScroll() call
               }
             }
           }, 100)
@@ -182,9 +119,10 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
         console.error("Error fetching blocks for current height:", error)
       }
     },
-    [handleScroll],
+    [], // No dependencies needed for this useCallback as handleScroll is removed
   )
 
+  // Effect for periodic projected blocks update (currentHeight is now from prop)
   useEffect(() => {
     const fetchProjectedBlocksPeriodically = async () => {
       try {
@@ -196,30 +134,21 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
       }
     }
 
-    fetchProjectedBlocksPeriodically()
-    const interval = setInterval(fetchProjectedBlocksPeriodically, 30000)
+    fetchProjectedBlocksPeriodically() // Fetch immediately
+    const interval = setInterval(fetchProjectedBlocksPeriodically, 30000) // Update projected blocks more frequently (e.g., every 30 seconds)
     return () => clearInterval(interval)
   }, [])
 
+  // Effect to re-fetch blocks whenever currentHeight prop changes
   useEffect(() => {
     if (currentHeight > 0) {
       fetchBlocksForCurrentHeight(currentHeight)
-      isInitialCenteringDone.current = false
+      isInitialCenteringDone.current = false // Reset centering flag when height changes
     }
   }, [currentHeight, fetchBlocksForCurrentHeight])
 
-  useEffect(() => {
-    const currentScrollRef = scrollRef.current
-    if (currentScrollRef) {
-      currentScrollRef.addEventListener("scroll", handleScroll)
-      handleScroll()
-      return () => {
-        if (currentScrollRef) {
-          currentScrollRef.removeEventListener("scroll", handleScroll)
-        }
-      }
-    }
-  }, [handleScroll])
+  // Removed dedicated useEffect for scroll listener
+  // useEffect(() => { ... }, [...])
 
   const formatTimeAgo = (timestamp: number) => {
     const now = Date.now()
@@ -243,8 +172,10 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
     return `~${Math.round(median)}`
   }
 
+  // Linear interpolation helper
   const lerp = (a: number, b: number, t: number) => a + (b - a) * t
 
+  // Function to get interpolated HSL color based on fee rate
   const getInterpolatedFeeColor = (feeRate: number, alpha = 1) => {
     let hue: number
     const saturation = 70
@@ -283,13 +214,13 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
   }
 
   const handleCloseBlockDetailsModal = () => {
-    setSelectedBlockHash(null)
     setIsBlockDetailsModalOpen(false)
+    setSelectedBlockHash(null)
   }
 
   const handleCloseProjectedBlockDetailsModal = () => {
-    setSelectedProjectedBlock(null)
     setIsProjectedBlockDetailsModalOpen(false)
+    setSelectedProjectedBlock(null)
   }
 
   return (
@@ -303,7 +234,7 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
           <div
             ref={scrollRef}
             className="flex overflow-x-auto p-4 space-x-4 scrollbar-thin scrollbar-thumb-orange-500/50 scrollbar-track-transparent"
-            style={{ direction: "rtl" }}
+            style={{ direction: "rtl" }} // Keep RTL for scroll behavior
           >
             <div className="flex space-x-4" style={{ direction: "ltr" }}>
               {/* Future projected blocks - rightmost, reversed order */}
@@ -318,8 +249,8 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
                     : 0
 
                   const estimatedFeeRate = Number.parseFloat(getAverageFeeRate(proj.feeRange).replace("~", ""))
-                  const interpolatedFillColor = getInterpolatedFeeColor(estimatedFeeRate, 0.4)
-                  const interpolatedTextColor = getInterpolatedFeeColor(estimatedFeeRate)
+                  const interpolatedFillColor = getInterpolatedFeeColor(estimatedFeeRate, 0.4) // 40% opacity for fill
+                  const interpolatedTextColor = getInterpolatedFeeColor(estimatedFeeRate) // Full opacity for text and badge
 
                   return (
                     <div
@@ -363,7 +294,7 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
                   <div
                     key={block.height}
                     onClick={() => handleBlockClick(block)}
-                    className={`relative flex-shrink-0 p-3 rounded-lg border text-center min-w-[100px] cursor-pointer overflow-hidden hover:scale-105 transition-all duration-200 ${block.height === currentHeight
+                    className={`relative flex-shrink-0 p-3 rounded-lg border text-center min-w-[100px] cursor-pointer overflow-hidden hover:scale-105 transition-all duration-200 ${block.height === currentHeight // Use prop here
                         ? "border-blue-400 bg-black/50 shadow-lg shadow-blue-500/30 current-block hover:shadow-blue-500/50"
                         : "border-blue-500/30 bg-black/50 hover:border-blue-400/50 hover:bg-black/50"
                       }`}
@@ -393,40 +324,7 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
                   </div>
                 )
               })}
-
-              {/* Load More Past Blocks "Block" - Appears on the right when scrolled to the rightmost end */}
-              {showLoadMorePast && (
-                <div
-                  onClick={loadMorePastBlocks}
-                  className={`relative flex-shrink-0 p-3 rounded-lg border text-center min-w-[100px] cursor-pointer overflow-hidden hover:scale-105 transition-all duration-200 
-                    border-orange-500/50 bg-black/50 hover:border-orange-400/50 hover:bg-black/50 
-                    flex flex-col items-center justify-center ${isLoadingMore ? "opacity-70 cursor-not-allowed" : ""}`}
-                  title={isLoadingMore ? "Loading..." : "Load older blocks"}
-                >
-                  {/* Mimic the internal structure of other blocks for consistent sizing */}
-                  <div className="relative z-10 flex flex-col h-full justify-between">
-                    <div>
-                      {isLoadingMore ? (
-                        <div className="flex items-center justify-center h-full">
-                          <Loader2 className="w-8 h-8 animate-spin text-orange-400" />
-                        </div>
-                      ) : (
-                        <>
-                          <div className="text-xl font-bold text-orange-400 mb-1">Load More</div>
-                          <div className="text-xs text-white space-y-1">
-                            <div>Older Blocks</div>
-                            <div>Available</div>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                    {/* Placeholder to take up space similar to the Badge in other blocks */}
-                    <Badge className="mt-2 bg-transparent text-transparent text-xs self-center pointer-events-none">
-                      &nbsp;
-                    </Badge>
-                  </div>
-                </div>
-              )}
+              {/* The "Load More Past Blocks" div has been removed */}
             </div>
           </div>
         </Card>
