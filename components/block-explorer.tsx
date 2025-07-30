@@ -34,10 +34,8 @@ const BYTES_TO_WU_RATIO = 4
 const BLOCKS_TO_LOAD = 10 // Number of blocks to load per click
 
 export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
-  // Accept currentHeight as prop
   const [blocks, setBlocks] = useState<Block[]>([])
   const [projectedBlocks, setProjectedBlocks] = useState<ProjectedBlock[]>([])
-  // const [currentHeight, setCurrentHeight] = useState(0) // Removed internal state
   const [selectedBlockHash, setSelectedBlockHash] = useState<string | null>(null)
   const [selectedProjectedBlock, setSelectedProjectedBlock] = useState<
     (ProjectedBlock & { height: number; estimatedTime: string }) | null
@@ -70,14 +68,13 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
     } else {
       setShowLoadMorePast(false)
     }
-  }, [oldestFetchedBlockHeight]) // Dependency on oldestFetchedBlockHeight
+  }, [oldestFetchedBlockHeight])
 
   const loadMorePastBlocks = useCallback(async () => {
     if (isLoadingMore || oldestFetchedBlockHeight === null || oldestFetchedBlockHeight <= 1) return
 
     setIsLoadingMore(true)
     try {
-      // Fetch blocks starting from (oldestFetchedBlockHeight - 1) downwards
       const response = await fetch(`https://mempool.space/api/v1/blocks/${oldestFetchedBlockHeight - 1}`)
       if (!response.ok) {
         throw new Error("Failed to fetch older blocks")
@@ -88,14 +85,23 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
         newBlocksData.map(async (block: Block) => {
           try {
             const blockDetailRes = await fetch(`https://mempool.space/api/block/${block.id}`)
-            if (blockDetailRes.ok) {
-              const blockDetail = await blockDetailRes.json()
-              return { ...block, weight: blockDetail.weight }
+            if (!blockDetailRes.ok) {
+              console.error(
+                `Failed to fetch block details for block ${block.height}: ${blockDetailRes.status} ${blockDetailRes.statusText}`,
+              )
+              return { ...block, weight: 0 } // Return with default weight on failure
             }
+            const blockDetail = await blockDetailRes.json()
+            // Ensure weight is a number, default to 0 if not
+            const weight = typeof blockDetail.weight === "number" ? blockDetail.weight : 0
+            if (typeof blockDetail.weight !== "number") {
+              console.warn(`Block ${block.height} weight is not a number:`, blockDetail.weight)
+            }
+            return { ...block, weight: weight }
           } catch (error) {
             console.error(`Error fetching weight for block ${block.height}:`, error)
+            return { ...block, weight: 0 }
           }
-          return { ...block, weight: 0 }
         }),
       )
 
@@ -103,27 +109,23 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
       if (newBlocksWithWeight.length > 0) {
         setOldestFetchedBlockHeight(newBlocksWithWeight[newBlocksWithWeight.length - 1].height)
       } else {
-        // If no new blocks were fetched, it means we've reached the end (or there are no more blocks)
-        // Set oldestFetchedBlockHeight to 1 to prevent further load attempts
         setOldestFetchedBlockHeight(1)
       }
     } catch (error) {
       console.error("Error loading more past blocks:", error)
     } finally {
       setIsLoadingMore(false)
-      // After loading, re-evaluate scroll position to update button visibility
       setTimeout(() => handleScroll(), 50)
     }
   }, [isLoadingMore, oldestFetchedBlockHeight, handleScroll])
 
-  // Renamed and modified to fetch blocks based on the passed currentHeight
   const fetchBlocksForCurrentHeight = useCallback(
     async (height: number) => {
-      if (height === 0) return // Don't fetch if height is not yet available
+      if (height === 0) return
 
       try {
         const [blocksRes, projectedRes] = await Promise.all([
-          fetch("https://mempool.space/api/blocks"), // Gets 10 most recent blocks
+          fetch("https://mempool.space/api/blocks"),
           fetch("https://mempool.space/api/v1/fees/mempool-blocks"),
         ])
 
@@ -134,14 +136,23 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
           blocksData.map(async (block: Block) => {
             try {
               const blockDetailRes = await fetch(`https://mempool.space/api/block/${block.id}`)
-              if (blockDetailRes.ok) {
-                const blockDetail = await blockDetailRes.json()
-                return { ...block, weight: blockDetail.weight }
+              if (!blockDetailRes.ok) {
+                console.error(
+                  `Failed to fetch block details for block ${block.height}: ${blockDetailRes.status} ${blockDetailRes.statusText}`,
+                )
+                return { ...block, weight: 0 } // Return with default weight on failure
               }
+              const blockDetail = await blockDetailRes.json()
+              // Ensure weight is a number, default to 0 if not
+              const weight = typeof blockDetail.weight === "number" ? blockDetail.weight : 0
+              if (typeof blockDetail.weight !== "number") {
+                console.warn(`Block ${block.height} weight is not a number:`, blockDetail.weight)
+              }
+              return { ...block, weight: weight }
             } catch (error) {
               console.error(`Error fetching weight for block ${block.height}:`, error)
+              return { ...block, weight: 0 }
             }
-            return { ...block, weight: 0 }
           }),
         )
 
@@ -151,8 +162,6 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
           setOldestFetchedBlockHeight(blocksWithWeight[blocksWithWeight.length - 1].height)
         }
 
-        // Initial centering logic - runs only once per new height
-        // Reset isInitialCenteringDone if height changes to re-center
         if (isInitialCenteringDone.current === false || blocksWithWeight[0]?.height !== height) {
           const timer = setTimeout(() => {
             if (scrollRef.current) {
@@ -162,8 +171,8 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
                 const elementLeft = (currentBlockElement as HTMLElement).offsetLeft
                 const elementWidth = (currentBlockElement as HTMLElement).offsetWidth
                 scrollRef.current.scrollLeft = elementLeft - containerWidth / 2 + elementWidth / 2
-                isInitialCenteringDone.current = true // Mark as done for this height
-                handleScroll() // Call handleScroll after initial centering
+                isInitialCenteringDone.current = true
+                handleScroll()
               }
             }
           }, 100)
@@ -174,9 +183,8 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
       }
     },
     [handleScroll],
-  ) // Dependency on handleScroll
+  )
 
-  // Effect for periodic projected blocks update (currentHeight is now from prop)
   useEffect(() => {
     const fetchProjectedBlocksPeriodically = async () => {
       try {
@@ -188,25 +196,22 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
       }
     }
 
-    fetchProjectedBlocksPeriodically() // Fetch immediately
-    const interval = setInterval(fetchProjectedBlocksPeriodically, 30000) // Update projected blocks more frequently (e.g., every 30 seconds)
+    fetchProjectedBlocksPeriodically()
+    const interval = setInterval(fetchProjectedBlocksPeriodically, 30000)
     return () => clearInterval(interval)
   }, [])
 
-  // Effect to re-fetch blocks whenever currentHeight prop changes
   useEffect(() => {
     if (currentHeight > 0) {
       fetchBlocksForCurrentHeight(currentHeight)
-      isInitialCenteringDone.current = false // Reset centering flag when height changes
+      isInitialCenteringDone.current = false
     }
   }, [currentHeight, fetchBlocksForCurrentHeight])
 
-  // Dedicated useEffect for scroll listener
   useEffect(() => {
     const currentScrollRef = scrollRef.current
     if (currentScrollRef) {
       currentScrollRef.addEventListener("scroll", handleScroll)
-      // Call handleScroll once after attaching to check initial state
       handleScroll()
       return () => {
         if (currentScrollRef) {
@@ -238,10 +243,8 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
     return `~${Math.round(median)}`
   }
 
-  // Linear interpolation helper
   const lerp = (a: number, b: number, t: number) => a + (b - a) * t
 
-  // Function to get interpolated HSL color based on fee rate
   const getInterpolatedFeeColor = (feeRate: number, alpha = 1) => {
     let hue: number
     const saturation = 70
@@ -300,7 +303,7 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
           <div
             ref={scrollRef}
             className="flex overflow-x-auto p-4 space-x-4 scrollbar-thin scrollbar-thumb-orange-500/50 scrollbar-track-transparent"
-            style={{ direction: "rtl" }} // Keep RTL for scroll behavior
+            style={{ direction: "rtl" }}
           >
             <div className="flex space-x-4" style={{ direction: "ltr" }}>
               {/* Future projected blocks - rightmost, reversed order */}
@@ -315,8 +318,8 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
                     : 0
 
                   const estimatedFeeRate = Number.parseFloat(getAverageFeeRate(proj.feeRange).replace("~", ""))
-                  const interpolatedFillColor = getInterpolatedFeeColor(estimatedFeeRate, 0.4) // 40% opacity for fill
-                  const interpolatedTextColor = getInterpolatedFeeColor(estimatedFeeRate) // Full opacity for text and badge
+                  const interpolatedFillColor = getInterpolatedFeeColor(estimatedFeeRate, 0.4)
+                  const interpolatedTextColor = getInterpolatedFeeColor(estimatedFeeRate)
 
                   return (
                     <div
@@ -360,7 +363,7 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
                   <div
                     key={block.height}
                     onClick={() => handleBlockClick(block)}
-                    className={`relative flex-shrink-0 p-3 rounded-lg border text-center min-w-[100px] cursor-pointer overflow-hidden hover:scale-105 transition-all duration-200 ${block.height === currentHeight // Use prop here
+                    className={`relative flex-shrink-0 p-3 rounded-lg border text-center min-w-[100px] cursor-pointer overflow-hidden hover:scale-105 transition-all duration-200 ${block.height === currentHeight
                         ? "border-blue-400 bg-black/50 shadow-lg shadow-blue-500/30 current-block hover:shadow-blue-500/50"
                         : "border-blue-500/30 bg-black/50 hover:border-blue-400/50 hover:bg-black/50"
                       }`}
@@ -377,10 +380,10 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
                         <div className="text-xl font-bold text-blue-400 mb-1">{block.height}</div>
                         <div className="text-xs text-white space-y-1">
                           <div>{(block.size / 1000000).toFixed(2)} MB</div>
-                          <div>{block.tx_count.toLocaleString()} TX</div>
                           <div className="text-gray-400">
                             {block.weight ? `${(block.weight / 1000000).toFixed(2)} MWU` : "-- MWU"}
                           </div>
+                          <div>{block.tx_count.toLocaleString()} TX</div>
                         </div>
                       </div>
                       <Badge className="mt-2 bg-blue-500 text-white text-xs self-center">
