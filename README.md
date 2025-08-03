@@ -1,4 +1,4 @@
-# Babd Timechain Explorer
+# Bitcoin Timechain Explorer
 
 https://babd.space
 
