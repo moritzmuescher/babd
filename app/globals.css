@@ -89,3 +89,56 @@
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(249, 115, 22, 0.7);
 }
+
+/* Adding search bar animation effects */
+@keyframes borderGlow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(249, 115, 22, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(249, 115, 22, 0.6);
+  }
+}
+
+.search-bar-glow {
+  position: relative;
+  background: linear-gradient(
+    45deg,
+    rgba(249, 115, 22, 0.8),
+    rgba(251, 191, 36, 0.8),
+    rgba(249, 115, 22, 0.8),
+    rgba(251, 191, 36, 0.8)
+  );
+  background-size: 400% 400%;
+  animation: borderGlow 8s ease-in-out infinite;
+  border-radius: 0.75rem;
+  padding: 2px;
+}
+
+.search-bar-inner {
+  background: rgba(0, 0, 0, 0.8);
+  border-radius: 0.625rem;
+  backdrop-filter: blur(12px);
+}
+
+.search-bar-container:hover .search-bar-glow {
+  animation: borderGlow 6s ease-in-out infinite, pulse 4s ease-in-out infinite;
+}
+
+.search-input-glow:focus {
+  box-shadow: 0 0 15px rgba(249, 115, 22, 0.4);
+  border-color: rgba(249, 115, 22, 0.8);
+}
