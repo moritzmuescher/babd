@@ -98,7 +98,7 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
     }
   }, [isLoadingMore, oldestHeight, blocks.length])
 
-  // Observe RIGHT edge to lazy-load older blocks
+  // Observe RIGHT boundary (past blocks) to lazy-load older blocks
   useEffect(() => {
     if (typeof window === "undefined" || !("IntersectionObserver" in window)) return;
     const root = scrollRef.current
@@ -163,7 +163,7 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
         // Initial centering logic - runs only once per new height
         // Reset isInitialCenteringDone if height changes to re-center
         if (isInitialCenteringDone.current === false || blocksWithWeight[0]?.height !== height) {
-          const timer = setTimeout(() => {
+          const timer = requestAnimationFrame(() => {
             if (scrollRef.current) {
               const currentBlockElement = scrollRef.current.querySelector(".current-block")
               if (currentBlockElement) {
@@ -176,7 +176,7 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
               }
             }
           }, 100)
-          return () => clearTimeout(timer)
+          return () => cancelAnimationFrame(timer)
         }
       } catch (error) {
         console.error("Error fetching blocks for current height:", error)
@@ -297,9 +297,11 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
           <div
             ref={scrollRef}
             className="flex overflow-x-auto p-4 space-x-4 scrollbar-thin scrollbar-thumb-orange-500/50 scrollbar-track-transparent"
-            style={{ direction: "rtl" }} // Keep RTL for scroll behavior
+            
           >
             <div className="flex space-x-4" style={{ direction: "ltr" }}>
+              {/* Sentinel for older blocks (right boundary of past) */}
+              <div ref={olderSentinelRef} className="w-px h-1" />
               {/* Future projected blocks - rightmost, reversed order */}
               {projectedBlocks
                 .slice()
@@ -351,7 +353,7 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
                 })}
 
               {/* Past blocks - newest to oldest (right to left) */}
-              {blocks.map((block) => {
+              {blocks.slice().reverse().map((block) => {
                 const weightPercentage = block.weight ? Math.min((block.weight / MAX_BLOCK_WEIGHT_WU) * 100, 100) : 0
                 return (
                   <div
@@ -389,9 +391,6 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
               })}
               {/* The "Load More Past Blocks" div has been removed */}
             </div>
-              {/* Sentinel for older blocks (right edge) */}
-              <div ref={olderSentinelRef} className="w-px h-1" />
-
           </div>
         </Card>
       </div>
