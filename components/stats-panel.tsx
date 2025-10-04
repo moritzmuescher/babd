@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { ChartModal } from "@/components/chart-modal"
 
 interface BitcoinStats {
   price: number
@@ -21,6 +23,7 @@ export function StatsPanel({ blockHeight }: StatsPanelProps) {
     highPriority: 0,
     unconfirmed: 0,
   })
+  const [isChartOpen, setIsChartOpen] = useState(false)
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -77,6 +80,16 @@ export function StatsPanel({ blockHeight }: StatsPanelProps) {
         </Card>
       </div>
 
+      <div className="absolute top-24 left-4 z-10">
+        <Button
+          onClick={() => setIsChartOpen(true)}
+          className="bg-black/50 border border-orange-500/25 backdrop-blur-sm hover:bg-orange-500/10 text-orange-400 hover:text-orange-300"
+          variant="outline"
+        >
+          Chart
+        </Button>
+      </div>
+
       {/* High Priority - Top Right */}
       <div className="absolute top-4 right-4 z-10">
         <Card className="bg-black/50 border-orange-500/25 backdrop-blur-sm">
@@ -112,6 +125,8 @@ export function StatsPanel({ blockHeight }: StatsPanelProps) {
           </div>
         </Card>
       </div>
+
+      <ChartModal open={isChartOpen} onOpenChange={setIsChartOpen} />
     </>
   )
 }
