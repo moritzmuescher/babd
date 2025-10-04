@@ -222,7 +222,6 @@ float intensity = d * d;
         transparent: true,
   depthWrite: true
 })
-      })pointsMaterial.emissiveIntensity = 0.6
 
       const textPoints = new THREE.Points(textGeometry, pointsMaterial)
 
