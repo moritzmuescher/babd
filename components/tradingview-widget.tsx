@@ -2,91 +2,75 @@
 
 import React, { useEffect, useRef, memo } from "react"
 
-declare global {
-  interface Window {
-    TradingView?: any
-  }
-}
-
-type Props = {
-  /** Symbol to load, e.g. "BTCUSD" or "BTCEUR" */
-  symbol?: string
-}
-
 /**
- * TradingView Advanced Chart widget wrapper
- * - Re-initializes when `symbol` changes
- * - Uses interval "D" for USD, "60" (1h) for EUR as requested
+ * TradingView Advanced Chart (BTCUSD)
+ * Loads the official TradingView advanced chart widget.
+ * NOTE: Uses a client-side script injection – safe for Next.js "use client" components.
  */
-function TradingViewWidget({ symbol = "BTCUSD" }: Props) {
-  const containerRef = useRef<HTMLDivElement | null>(null)
-  const containerIdRef = useRef<string>(() => `tv_${Math.random().toString(36).slice(2)}` as unknown as string) as React.MutableRefObject<string>
-
-  // Utility to (re)create the chart
-  const createChart = () => {
-    if (!containerRef.current) return
-
-    // Clear any previous widget
-    containerRef.current.innerHTML = ""
-
-    const make = () => {
-      if (!window.TradingView) return
-
-      const interval = symbol.endsWith("EUR") ? "60" : "D" // 1h for EUR, 1d for USD
-      const config = {
-        autosize: true,
-        symbol,
-        interval,
-        timezone: "Etc/UTC",
-        theme: "dark",
-        style: "1",
-        locale: "en",
-        allow_symbol_change: false,
-        hide_side_toolbar: false,
-        container_id: containerIdRef.current,
-        withdateranges: true,
-        studies: [],
-      }
-
-      // Create the actual widget
-      // eslint-disable-next-line new-cap
-      new window.TradingView.widget(config)
-    }
-
-    if (window.TradingView) {
-      make()
-    } else {
-      // Load script once, then build
-      const script = document.createElement("script")
-      script.src = "https://s3.tradingview.com/tv.js"
-      script.async = true
-      script.onload = () => make()
-      containerRef.current.appendChild(script)
-    }
-  }
+function TradingViewWidget({ symbol = "BTCUSD" }: { symbol?: string }) {
+  const container = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
-    createChart()
-    // cleanup on unmount
+    if (!container.current) return
+
+    // cleanup previous widget on re-init
+    container.current.innerHTML = ""
+
+    // Clean any previous widget if re-mounted
+    container.current.innerHTML = ""
+
+    const script = document.createElement("script")
+    script.src = "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js"
+    script.type = "text/javascript"
+    script.async = true
+    // You asked for ticker BTCUSD. We pick a widely-supported exchange symbol.
+    // You can change it to e.g. "BITSTAMP:BTCUSD" or "COINBASE:BTCUSD".
+    script.innerHTML = `{
+      "allow_symbol_change": true,
+      "calendar": false,
+      "details": false,
+      "hide_side_toolbar": true,
+      "hide_top_toolbar": false,
+      "hide_legend": false,
+      "hide_volume": false,
+      "hotlist": false,
+      "interval": "D",
+      "locale": "en",
+      "save_image": true,
+      "style": "1",
+      "symbol": "BITSTAMP:BTCUSD",
+      "theme": "dark",
+      "timezone": "Etc/UTC",
+      "backgroundColor": "#0F0F0F",
+      "gridColor": "rgba(242, 242, 242, 0.06)",
+      "watchlist": [],
+      "withdateranges": false,
+      "compareSymbols": [],
+      "studies": [],
+      "autosize": true
+    }`
+
+    container.current.appendChild(script)
+
     return () => {
-      if (containerRef.current) {
-        containerRef.current.innerHTML = ""
+      // Best-effort cleanup
+      if (container.current) {
+        container.current.innerHTML = ""
       }
     }
-    // Re-init when symbol changes
   }, [symbol])
 
   return (
-    <div className="tradingview-widget-container h-full w-full">
-      <div id={containerIdRef.current} ref={containerRef} className="h-full w-full" />
-      <div className="tradingview-widget-copyright text-xs text-orange-300/70 mt-2">
+    <div className="tradingview-widget-container h-full w-full" ref={container as React.RefObject<HTMLDivElement>}>
+      <div className="tradingview-widget-container__widget h-full w-full" />
+      <div className="tradingview-widget-copyright text-xs text-muted-foreground px-2 py-1">
         <a
           href={`https://www.tradingview.com/symbols/${symbol}/`}
           rel="noopener nofollow"
           target="_blank"
           className="underline"
         >
-          {symbol} chart
+          BTCUSD chart
         </a>
         <span className="ml-1">by TradingView</span>
       </div>
