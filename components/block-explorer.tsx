@@ -49,16 +49,26 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
   // const [showLoadMorePast, setShowLoadMorePast] = useState(false)
 
   const scrollRef = useRef<HTMLDivElement>(null)
-  const isProgrammaticScrollRef = useRef(false)
-  const hasUserScrolledRef = useRef(false)
-  
+  const olderSentinelRef = useRef<HTMLDivElement>(null)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [oldestHeight, setOldestHeight] = useState<number | null>(null)
   const isInitialCenteringDone = useRef(false)
 
   
 
-  // Removed  and loadMorePastBlocks as they are no longer needed
+  
+  // Drag-to-pan
+  const isPointerDown = useRef(false)
+  const startX = useRef(0)
+  const startScrollLeft = useRef(0)
+  const hasDragged = useRef(false)
+  const dragThreshold = 6
+  const [isDragging, setIsDragging] = useState(false)
+  // Centering spacer + group refs
+  const [leftPadPx, setLeftPadPx] = useState(0)
+  const projectedGroupRef = useRef<HTMLDivElement>(null)
+  const blocksGroupRef = useRef<HTMLDivElement>(null)
+// Removed handleScroll and loadMorePastBlocks as they are no longer needed
 
   // Load older blocks (older = lower height)
   const loadOlderBlocks = useCallback(async (count: number = 10) => {
@@ -100,12 +110,266 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
     }
   }, [isLoadingMore, oldestHeight, blocks.length])
 
+  // Observe RIGHT edge to lazy-load older blocks
+  useEffect(() => {
+    if (typeof window === "undefined" || !("IntersectionObserver" in window)) return;
+    const root = scrollRef.current
+    const target = olderSentinelRef.current
+    if (!root || !target) return
+    const io = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          loadOlderBlocks(10)
+        }
+      }
+    }, { root, rootMargin: "200px", threshold: 0.1 })
+    io.observe(target)
+    return () => io.disconnect()
+  }, [scrollRef, olderSentinelRef, loadOlderBlocks])
+
+  // const handleScroll = useCallback(() => { ... }, [...])
+  // const loadMorePastBlocks = useCallback(async () => { ... }, [...])
+
+  const fetchBlocksForCurrentHeight = useCallback(
+    async (height: number) => {
+      if (height === 0) return // Don't fetch if height is not yet available
+
+      try {
+        const [blocksRes, projectedRes] = await Promise.all([
+          fetch("https://mempool.space/api/blocks"), // Gets 10 most recent blocks
+          fetch("https://mempool.space/api/v1/fees/mempool-blocks"),
+        ])
+
+        const blocksData = await blocksRes.json()
+        const projectedData = await projectedRes.json()
+
+        let blocksWithWeight = await Promise.all(
+          blocksData.map(async (block: Block) => {
+            try {
+              const blockDetailRes = await fetch(`https://mempool.space/api/block/${block.id}`)
+              if (!blockDetailRes.ok) {
+                console.error(
+                  `Failed to fetch block details for block ${block.height}: ${blockDetailRes.status} ${blockDetailRes.statusText}`,
+                )
+                return { ...block, weight: 0 } // Return with default weight on failure
               }
+              const blockDetail = await blockDetailRes.json()
+              // Ensure weight is a number, default to 0 if not
+              const weight = typeof blockDetail.weight === "number" ? blockDetail.weight : 0
+              if (typeof blockDetail.weight !== "number") {
+                console.warn(`Block ${block.height} weight is not a number:`, blockDetail.weight)
+              }
+              return { ...block, weight: weight }
+            } catch (error) {
+              console.error(`Error fetching weight for block ${block.height}:`, error)
+              return { ...block, weight: 0 }
+            }
+          }),
+        )
+
+        setBlocks(blocksWithWeight)
+        setProjectedBlocks(projectedData)
+        // Removed setOldestFetchedBlockHeight
+        // setOldestFetchedBlockHeight(blocksWithWeight[blocksWithWeight.length - 1]?.height || null)
+
+        // Initial centering logic - runs only once per new height
+        // Reset isInitialCenteringDone if height changes to re-center
+        if (isInitialCenteringDone.current === false || blocksWithWeight[0]?.height !== height) {
+          const timer = setTimeout(() => {
+            if (scrollRef.current) {
+              const currentBlockElement = scrollRef.current.querySelector(".current-block")
+              if (currentBlockElement) {
+                const containerWidth = scrollRef.current.clientWidth
+                const elementLeft = (currentBlockElement as HTMLElement).offsetLeft
+                const elementWidth = (currentBlockElement as HTMLElement).offsetWidth
+                scrollRef.current.scrollLeft = elementLeft - containerWidth / 2 + elementWidth / 2
+                isInitialCenteringDone.current = true // Mark as done for this height
+                // Removed handleScroll() call
+              }
+            }
+          }, 100)
+          return () => clearTimeout(timer)
+        }
+      } catch (error) {
+        console.error("Error fetching blocks for current height:", error)
+      }
+    },
+    [], // No dependencies needed for this useCallback as handleScroll is removed
+  )
+
+  // Effect for periodic projected blocks update (currentHeight is now from prop)
+  useEffect(() => {
+    const fetchProjectedBlocksPeriodically = async () => {
+      try {
+        const projectedRes = await fetch("https://mempool.space/api/v1/fees/mempool-blocks")
+        const projectedData = await projectedRes.json()
+        setProjectedBlocks(projectedData)
+      } catch (error) {
+        console.error("Error fetching projected blocks periodically:", error)
+      }
+    }
+
+    fetchProjectedBlocksPeriodically() // Fetch immediately
+    const interval = setInterval(fetchProjectedBlocksPeriodically, 30000) // Update projected blocks more frequently (e.g., every 30 seconds)
+    return () => clearInterval(interval)
+  }, [])
+
+  // Effect to re-fetch blocks whenever currentHeight prop changes
+  useEffect(() => {
+    if (currentHeight > 0) {
+      fetchBlocksForCurrentHeight(currentHeight)
+      isInitialCenteringDone.current = false // Reset centering flag when height changes
+    }
+  }, [currentHeight, fetchBlocksForCurrentHeight])
+
+  
+  // Center current block at left cap
+  useEffect(() => {
+    const root = scrollRef.current
+    if (!root) return
+    const projected = projectedGroupRef.current
+    const currentEl = root.querySelector(".current-block") as HTMLElement | null
+    if (!projected || !currentEl) return
+    const containerWidth = root.clientWidth
+    const projectedWidth = projected.scrollWidth
+    const innerRect = (blocksGroupRef.current || projected).getBoundingClientRect()
+    const currentRect = currentEl.getBoundingClientRect()
+    const currentOffset = currentRect.left - innerRect.left
+    const desired = containerWidth / 2
+    let pad = Math.round(desired - (projectedWidth + currentOffset + currentEl.offsetWidth / 2))
+    if (pad < 0) pad = 0
+    setLeftPadPx(pad)
+    root.scrollLeft = 0
+  }, [blocks, projectedBlocks, currentHeight])
+// Removed dedicated useEffect for scroll listener
+  // useEffect(() => { ... }, [...])
+
+  const formatTimeAgo = (timestamp: number) => {
+    const now = Date.now()
+    const diffMinutes = Math.round((now - timestamp * 1000) / 60000)
+    if (diffMinutes < 60) {
+      return `${diffMinutes}m ago`
+    } else {
+      const diffHours = Math.round(diffMinutes / 60)
+      return `${diffHours}h ago`
+    }
+  }
+
+  const getEstimatedTime = (indexInReversedArray: number) => {
+    return `~${(projectedBlocks.length - indexInReversedArray) * 10}m`
+  }
+
+  const getAverageFeeRate = (feeRange: number[]) => {
+    if (!feeRange || feeRange.length === 0) return "~1"
+    const sortedFees = [...feeRange].sort((a, b) => a - b)
+    const median = sortedFees[Math.floor(sortedFees.length / 2)]
+    return `~${Math.round(median)}`
+  }
+
+  // Linear interpolation helper
+  const lerp = (a: number, b: number, t: number) => a + (b - a) * t
+
+  // Function to get interpolated HSL color based on fee rate
+  const getInterpolatedFeeColor = (feeRate: number, alpha = 1) => {
+    let hue: number
+    const saturation = 70
+    const lightness = 50
+
+    if (feeRate <= 1) {
+      hue = 140
+    } else if (feeRate <= 5) {
+      const t = (feeRate - 1) / (5 - 1)
+      hue = lerp(140, 90, t)
+    } else if (feeRate <= 10) {
+      const t = (feeRate - 5) / (10 - 5)
+      hue = lerp(90, 60, t)
+    } else if (feeRate <= 20) {
+      const t = (feeRate - 10) / (20 - 10)
+      hue = lerp(60, 30, t)
+    } else if (feeRate <= 50) {
+      const t = (feeRate - 20) / (50 - 20)
+      hue = lerp(30, 0, t)
+    } else {
+      hue = 0
+    }
+
+    return `hsla(${Math.round(hue)}, ${saturation}%, ${lightness}%, ${alpha})`
+  }
+
+  const handleProjectedBlockClick = (proj: ProjectedBlock, index: number) => {
+    const futureHeight = currentHeight + (projectedBlocks.length - index)
+    setSelectedProjectedBlock({ ...proj, height: futureHeight, estimatedTime: getEstimatedTime(index) })
+    setIsProjectedBlockDetailsModalOpen(true)
+  }
+
+  const handleBlockClick = (block: Block) => {
+    if (isDragging || hasDragged.current) return
+    setSelectedBlockHash(block.id)
+    setIsBlockDetailsModalOpen(true)
+  }
+
+  const handleCloseBlockDetailsModal = () => {
+    setIsBlockDetailsModalOpen(false)
+    setSelectedBlockHash(null)
+  }
+
+  const handleCloseProjectedBlockDetailsModal = () => {
+    setIsProjectedBlockDetailsModalOpen(false)
+    setSelectedProjectedBlock(null)
+  }
+
+  return (
+    <>
+      <div className="absolute top-20 md:top-32 left-0 right-0 w-full z-10">
+        <Card className="bg-transparent border-transparent shadow-none relative">
+          {/* Left Fade Overlay (Desktop Only) */}
+          <div className="absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-black/50 to-transparent z-20 hidden md:block pointer-events-none" />
+          {/* Right Fade Overlay (Desktop Only) */}
+          <div className="absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-black/50 to-transparent z-20 hidden md:block pointer-events-none" />
+          <div
+            ref={scrollRef}
+            className="flex overflow-x-auto p-4 space-x-4 no-scrollbar select-none"
+            style={{ direction: "ltr", cursor: isDragging ? "grabbing" : "grab", scrollbarWidth: "none", msOverflowStyle: "none" }}
+            onPointerDown={(e) => {
+              const root = scrollRef.current
+              if (!root) return
+              isPointerDown.current = true
+              hasDragged.current = false
+              setIsDragging(false)
+              startX.current = e.clientX
+              startScrollLeft.current = root.scrollLeft
             }}
-            className="flex overflow-x-auto p-4 space-x-4 scrollbar-thin scrollbar-thumb-orange-500/50 scrollbar-track-transparent"
-            
+            onPointerMove={(e) => {
+              const root = scrollRef.current
+              if (!root || !isPointerDown.current) return
+              const dx = e.clientX - startX.current
+              if (!hasDragged.current && Math.abs(dx) < dragThreshold) return
+              hasDragged.current = true
+              setIsDragging(true)
+              let next = startScrollLeft.current - dx
+              const max = root.scrollWidth - root.clientWidth
+              if (next < 0) next = 0
+              if (next > max) next = max
+              root.scrollLeft = next
+            }}
+            onPointerUp={() => {
+              isPointerDown.current = false
+              setIsDragging(false)
+            }}
+            onPointerLeave={() => {
+              isPointerDown.current = false
+              setIsDragging(false)
+            }}
           >
+            <style jsx>{`
+              .no-scrollbar::-webkit-scrollbar { display: none; }
+            `}</style>
+
             <div className="flex space-x-4" style={{ direction: "ltr" }}>
+              {/* Left spacer to center current block at left cap */}
+              <div style={{ width: `${leftPadPx}px`, flex: "0 0 auto" }} />
+              {/* Future projected blocks group */}
+              <div ref={projectedGroupRef} className="flex space-x-4">
               {/* Future projected blocks - rightmost, reversed order */}
               {projectedBlocks
                 .slice()
@@ -156,7 +420,10 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
                   )
                 })}
 
-              {/* Past blocks - newest to oldest (right to left) */}
+              </div>
+              {/* Past blocks group */}
+              <div ref={blocksGroupRef} className="flex space-x-4">
+{/* Past blocks - newest to oldest (right to left) */}
               {blocks.map((block) => {
                 const weightPercentage = block.weight ? Math.min((block.weight / MAX_BLOCK_WEIGHT_WU) * 100, 100) : 0
                 return (
@@ -194,7 +461,14 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
                 )
               })}
               {/* The "Load More Past Blocks" div has been removed */}
+              </div>
             </div>
+              {/* Sentinel for older blocks (right edge) */}
+              <div ref={olderSentinelRef} className="w-px h-1" />
+
+              {/* Sentinel for older blocks (right edge in LTR) */}
+              <div ref={olderSentinelRef} className="w-px h-1" />
+
           </div>
         </Card>
       </div>
@@ -215,3 +489,4 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
     </>
   )
 }
+

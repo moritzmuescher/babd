@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import TradingViewWidget from "@/components/tradingview-widget"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 interface BitcoinStats {
   price: number
@@ -15,6 +18,7 @@ interface StatsPanelProps {
 }
 
 export function StatsPanel({ blockHeight }: StatsPanelProps) {
+  const [isChartOpen, setIsChartOpen] = useState(false)
   const [stats, setStats] = useState<BitcoinStats>({
     price: 0,
     mempoolSize: 0,
@@ -68,13 +72,20 @@ export function StatsPanel({ blockHeight }: StatsPanelProps) {
       {/* Price - Top Left */}
       <div className="absolute top-4 left-4 z-10">
         <Card className="bg-black/50 border-orange-500/25 backdrop-blur-sm">
-          <div className="p-3">
+          <div className="p-3 relative">
+            <Button variant="ghost" size="sm" className="absolute top-1.5 right-1.5 text-orange-400 hover:text-orange-300 hover:bg-orange-500/10" onClick={() => setIsChartOpen(true)}>
+              Chart
+            </Button>
             <div className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-yellow-400 bg-clip-text text-transparent">
               ${stats.price.toLocaleString()}
             </div>
             <div className="text-orange-400 text-sm">Price</div>
           </div>
         </Card>
+        <div className="mt-2">
+          
+        </div>
+
       </div>
 
       {/* High Priority - Top Right */}
@@ -92,7 +103,8 @@ export function StatsPanel({ blockHeight }: StatsPanelProps) {
       {/* Mempool Size - Bottom Left */}
       <div className="absolute bottom-20 md:bottom-4 left-4 z-10">
         <Card className="bg-black/50 border-orange-500/25 backdrop-blur-sm">
-          <div className="p-3">
+          <div className="p-3 relative">
+            
             <div className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-yellow-400 bg-clip-text text-transparent">
               {stats.mempoolSize.toFixed(2)} MB
             </div>
@@ -112,6 +124,21 @@ export function StatsPanel({ blockHeight }: StatsPanelProps) {
           </div>
         </Card>
       </div>
-    </>
+    
+      {/* Chart Modal */}
+
+      {/* Chart Modal (TradingView) */}
+      <Dialog open={isChartOpen} onOpenChange={setIsChartOpen}>
+        <DialogContent className="max-w-[95vw] w-[95vw] h-[80vh] p-0 bg-black text-white border border-orange-500/25">
+          <DialogHeader className="p-4">
+            <DialogTitle>BTCUSD — Advanced Chart</DialogTitle>
+          </DialogHeader>
+          <div className="h-[calc(80vh-72px)] w-full">
+            <TradingViewWidget />
+          </div>
+        </DialogContent>
+      </Dialog>
+</>
   )
 }
+
