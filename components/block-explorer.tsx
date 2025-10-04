@@ -50,7 +50,9 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const isProgrammaticScrollRef = useRef(false)
-  const hasUserScrolledRef = useRef(false)const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const hasUserScrolledRef = useRef(false)
+  
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [oldestHeight, setOldestHeight] = useState<number | null>(null)
   const isInitialCenteringDone = useRef(false)
 
@@ -96,7 +98,18 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
     } finally {
       setIsLoadingMore(false)
     }
-  }, [isLoadingMore, oldestHeight, blocks.length])// const handleScroll = useCallback(() => { ... }, [...])
+  }, [isLoadingMore, oldestHeight, blocks.length])const handleScroll = useCallback(() => {
+    const el = scrollRef.current
+    if (!el) return
+    if (isProgrammaticScrollRef.current) return
+    hasUserScrolledRef.current = true
+
+    const threshold = 32 // px
+    const atRight = el.scrollLeft + el.clientWidth >= el.scrollWidth - threshold
+    if (atRight) {
+      loadOlderBlocks(10)
+    }
+  }, [loadOlderBlocks])
   // const loadMorePastBlocks = useCallback(async () => { ... }, [...])
 
   const fetchBlocksForCurrentHeight = useCallback(
