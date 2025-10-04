@@ -54,21 +54,7 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
   const [oldestHeight, setOldestHeight] = useState<number | null>(null)
   const isInitialCenteringDone = useRef(false)
 
-  // Observe left edge to lazy-load older blocks
-  useEffect(() => {
-    const root = scrollRef.current
-    const target = olderSentinelRef.current
-    if (!root || !target) return
-    const io = new IntersectionObserver((entries) => {
-      for (const entry of entries) {
-        if (entry.isIntersecting) {
-          loadOlderBlocks(10)
-        }
-      }
-    }, { root, rootMargin: "200px", threshold: 0.1 })
-    io.observe(target)
-    return () => io.disconnect()
-  }, [scrollRef, olderSentinelRef, loadOlderBlocks])
+  
 
   // Removed handleScroll and loadMorePastBlocks as they are no longer needed
 
@@ -111,6 +97,24 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
       setIsLoadingMore(false)
     }
   }, [isLoadingMore, oldestHeight, blocks.length])
+
+  // Observe left edge to lazy-load older blocks
+  useEffect(() => {
+    if (typeof window === "undefined" || !("IntersectionObserver" in window)) return;
+    const root = scrollRef.current
+    const target = olderSentinelRef.current
+    if (!root || !target) return
+    const io = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          loadOlderBlocks(10)
+        }
+      }
+    }, { root, rootMargin: "200px", threshold: 0.1 })
+    io.observe(target)
+    return () => io.disconnect()
+  }, [scrollRef, olderSentinelRef, loadOlderBlocks])
+
   // const handleScroll = useCallback(() => { ... }, [...])
   // const loadMorePastBlocks = useCallback(async () => { ... }, [...])
 
