@@ -81,9 +81,7 @@ const [stats, setStats] = useState<BitcoinStats>({
           </div>
         </Card>
         <div className="mt-2">
-          <Button variant="outline" size="sm" onClick={() => setIsChartOpen(true)}>
-            Chart
-          </Button>
+          <Button onClick={() => setIsChartOpen(true)} className="bg-black text-white hover:bg-black/80 border border-orange-500/25 px-3 py-1 rounded-md">Chart</Button>
         </div>
       </div>
 
@@ -122,17 +120,9 @@ const [stats, setStats] = useState<BitcoinStats>({
           </div>
         </Card>
       </div>
-
-      {/* Chart Button - Top Left under Price */}
-      <div className="absolute left-4 top-20 z-10">
-        <Button variant="outline" size="sm" onClick={() => setIsChartOpen(true)}>
-          Chart
-        </Button>
-      </div>
-
       {/* Chart Modal */}
       <Dialog open={isChartOpen} onOpenChange={setIsChartOpen}>
-        <DialogContent className="max-w-[95vw] w-[95vw] h-[80vh] p-0">
+        <DialogContent className="max-w-[95vw] w-[95vw] h-[80vh] p-0 bg-black text-white border border-orange-500/25">
           <DialogHeader className="p-4">
             <DialogTitle>BTCUSD — Advanced Chart</DialogTitle>
           </DialogHeader>
