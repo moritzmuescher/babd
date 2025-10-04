@@ -36,4 +36,5 @@ export const viewport = {
   maximumScale: 1,
   userScalable: "no",
   viewportFit: "cover",
+  interactiveWidget: "resizes-content",
 }

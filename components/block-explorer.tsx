@@ -49,7 +49,26 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
   // const [showLoadMorePast, setShowLoadMorePast] = useState(false)
 
   const scrollRef = useRef<HTMLDivElement>(null)
+  const olderSentinelRef = useRef<HTMLDivElement>(null)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [oldestHeight, setOldestHeight] = useState<number | null>(null)
   const isInitialCenteringDone = useRef(false)
+
+  // Observe left edge to lazy-load older blocks
+  useEffect(() => {
+    const root = scrollRef.current
+    const target = olderSentinelRef.current
+    if (!root || !target) return
+    const io = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          loadOlderBlocks(10)
+        }
+      }
+    }, { root, rootMargin: "200px", threshold: 0.1 })
+    io.observe(target)
+    return () => io.disconnect()
+  }, [scrollRef, olderSentinelRef, loadOlderBlocks])
 
   // Removed handleScroll and loadMorePastBlocks as they are no longer needed
 
@@ -277,6 +296,8 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
             style={{ direction: "rtl" }} // Keep RTL for scroll behavior
           >
             <div className="flex space-x-4" style={{ direction: "ltr" }}>
+              {/* Sentinel for older blocks (left edge) */}
+              <div ref={olderSentinelRef} className="w-px h-1" />
               {/* Future projected blocks - rightmost, reversed order */}
               {projectedBlocks
                 .slice()
