@@ -98,7 +98,7 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
     }
   }, [isLoadingMore, oldestHeight, blocks.length])
 
-  // Observe left edge to lazy-load older blocks
+  // Observe RIGHT edge to lazy-load older blocks
   useEffect(() => {
     if (typeof window === "undefined" || !("IntersectionObserver" in window)) return;
     const root = scrollRef.current
@@ -300,8 +300,6 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
             style={{ direction: "rtl" }} // Keep RTL for scroll behavior
           >
             <div className="flex space-x-4" style={{ direction: "ltr" }}>
-              {/* Sentinel for older blocks (left edge) */}
-              <div ref={olderSentinelRef} className="w-px h-1" />
               {/* Future projected blocks - rightmost, reversed order */}
               {projectedBlocks
                 .slice()
@@ -391,6 +389,9 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
               })}
               {/* The "Load More Past Blocks" div has been removed */}
             </div>
+              {/* Sentinel for older blocks (right edge) */}
+              <div ref={olderSentinelRef} className="w-px h-1" />
+
           </div>
         </Card>
       </div>
