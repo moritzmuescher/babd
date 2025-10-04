@@ -300,8 +300,6 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
             
           >
             <div className="flex space-x-4" style={{ direction: "ltr" }}>
-              {/* Sentinel for older blocks (right boundary of past) */}
-              <div ref={olderSentinelRef} className="w-px h-1" />
               {/* Future projected blocks - rightmost, reversed order */}
               {projectedBlocks
                 .slice()
