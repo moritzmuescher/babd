@@ -7,11 +7,14 @@ import React, { useEffect, useRef, memo } from "react"
  * Loads the official TradingView advanced chart widget.
  * NOTE: Uses a client-side script injection – safe for Next.js "use client" components.
  */
-function TradingViewWidget() {
+function TradingViewWidget({ symbol = "BTCUSD" }: { symbol?: string }) {
   const container = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     if (!container.current) return
+
+    // cleanup previous widget on re-init
+    container.current.innerHTML = ""
 
     // Clean any previous widget if re-mounted
     container.current.innerHTML = ""
@@ -55,14 +58,14 @@ function TradingViewWidget() {
         container.current.innerHTML = ""
       }
     }
-  }, [])
+  }, [symbol])
 
   return (
     <div className="tradingview-widget-container h-full w-full" ref={container as React.RefObject<HTMLDivElement>}>
       <div className="tradingview-widget-container__widget h-full w-full" />
       <div className="tradingview-widget-copyright text-xs text-muted-foreground px-2 py-1">
         <a
-          href="https://www.tradingview.com/symbols/BTCUSD/"
+          href={`https://www.tradingview.com/symbols/${symbol}/`}
           rel="noopener nofollow"
           target="_blank"
           className="underline"
