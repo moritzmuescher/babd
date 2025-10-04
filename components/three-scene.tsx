@@ -99,18 +99,15 @@ export function ThreeScene() {
 
       planetGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3))
       planetGeometry.setAttribute("color", new THREE.BufferAttribute(colors, 3))
-      const plannew THREE.PointsMaterial({
+      const planetMaterial = new THREE.PointsMaterial({
         size: 0.1,
         vertexColors: true,
         map: circleTexture,
         transparent: true,
         depthWrite: true,
-      })lse,
       })
 
       const planet = new THREE.Points(planetGeometry, planetMaterial)
-      planet.material.emissive = new THREE.Color(0x442200)
-      planet.material.emissiveIntensity = 0.4
       scene.add(planet)
 
       // Add glow sphere around planet
@@ -218,16 +215,14 @@ float intensity = d * d;
       textGeometry.setAttribute("position", new THREE.Float32BufferAttribute(points, 3))
       textGeometry.setIndex(lineIndices)
 
-      const pointnew THREE.PointsMaterial({
+      const pointsMaterial = new THREE.PointsMaterial({
         size: 0.05,
         color: 0xff9900,
         map: circleTexture,
         transparent: true,
   depthWrite: true
-})ue,
-      })
-      pointsMaterial.emissive = new THREE.Color(0xff6600)
-      pointsMaterial.emissiveIntensity = 0.6
+})
+      })pointsMaterial.emissiveIntensity = 0.6
 
       const textPoints = new THREE.Points(textGeometry, pointsMaterial)
 
@@ -236,8 +231,6 @@ float intensity = d * d;
         transparent: true,
         opacity: 1.0,
       })
-      lineMaterial.emissive = new THREE.Color(0xff6600)
-      lineMaterial.emissiveIntensity = 0.4
       const textLines = new THREE.LineSegments(textGeometry, lineMaterial)
 
       const textGroup = new THREE.Group()
