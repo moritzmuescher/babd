@@ -63,7 +63,8 @@ export function ThreeScene() {
         size: 0.7,
         map: circleTexture,
         transparent: true,
-      })
+  depthWrite: true
+})
       const stars = new THREE.Points(starGeometry, starMaterial)
       scene.add(stars)
 
@@ -98,12 +99,13 @@ export function ThreeScene() {
 
       planetGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3))
       planetGeometry.setAttribute("color", new THREE.BufferAttribute(colors, 3))
-      const planetMaterial = new THREE.PointsMaterial({
+      const plannew THREE.PointsMaterial({
         size: 0.1,
         vertexColors: true,
         map: circleTexture,
         transparent: true,
-        depthWrite: false,
+        depthWrite: true,
+      })lse,
       })
 
       const planet = new THREE.Points(planetGeometry, planetMaterial)
@@ -128,7 +130,9 @@ export function ThreeScene() {
           uniform float time;
           varying vec3 vNormal;
           void main() {
-            float intensity = pow(0.7 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.0);
+            vec3 n = normalize(vNormal);
+float d = max(0.0, 0.7 - n.z);
+float intensity = d * d;
             vec3 glow = vec3(1.0, 0.4, 0.0) * intensity;
             gl_FragColor = vec4(glow, intensity * 0.4);
           }
@@ -136,7 +140,12 @@ export function ThreeScene() {
         side: THREE.BackSide,
         blending: THREE.AdditiveBlending,
         transparent: true,
-      })
+  side: THREE.BackSide,
+  transparent: true,
+  blending: THREE.AdditiveBlending,
+  depthWrite: false,
+  depthTest: true
+})
       const glowSphere = new THREE.Mesh(glowGeometry, glowMaterial)
       scene.add(glowSphere)
 
@@ -209,11 +218,13 @@ export function ThreeScene() {
       textGeometry.setAttribute("position", new THREE.Float32BufferAttribute(points, 3))
       textGeometry.setIndex(lineIndices)
 
-      const pointsMaterial = new THREE.PointsMaterial({
+      const pointnew THREE.PointsMaterial({
         size: 0.05,
         color: 0xff9900,
         map: circleTexture,
         transparent: true,
+  depthWrite: true
+})ue,
       })
       pointsMaterial.emissive = new THREE.Color(0xff6600)
       pointsMaterial.emissiveIntensity = 0.6
