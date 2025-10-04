@@ -1,9 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { ChartModal } from "@/components/chart-modal"
+import { Card } from "@/components/ui/card"
+import TradingViewWidget from "@/components/tradingview-widget"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog"
 
 interface BitcoinStats {
   price: number
@@ -17,13 +18,14 @@ interface StatsPanelProps {
 }
 
 export function StatsPanel({ blockHeight }: StatsPanelProps) {
-  const [stats, setStats] = useState<BitcoinStats>({
+  
+  const [isChartOpen, setIsChartOpen] = useState(false)
+const [stats, setStats] = useState<BitcoinStats>({
     price: 0,
     mempoolSize: 0,
     highPriority: 0,
     unconfirmed: 0,
   })
-  const [isChartOpen, setIsChartOpen] = useState(false)
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -78,16 +80,11 @@ export function StatsPanel({ blockHeight }: StatsPanelProps) {
             <div className="text-orange-400 text-sm">Price</div>
           </div>
         </Card>
-      </div>
-
-      <div className="absolute top-24 left-4 z-10">
-        <Button
-          onClick={() => setIsChartOpen(true)}
-          className="bg-black/50 border border-orange-500/25 backdrop-blur-sm hover:bg-orange-500/10 text-orange-400 hover:text-orange-300"
-          variant="outline"
-        >
-          Chart
-        </Button>
+        <div className="mt-2">
+          <Button variant="outline" size="sm" onClick={() => setIsChartOpen(true)}>
+            Chart
+          </Button>
+        </div>
       </div>
 
       {/* High Priority - Top Right */}
@@ -126,7 +123,25 @@ export function StatsPanel({ blockHeight }: StatsPanelProps) {
         </Card>
       </div>
 
-      <ChartModal open={isChartOpen} onOpenChange={setIsChartOpen} />
+      {/* Chart Button - Top Left under Price */}
+      <div className="absolute left-4 top-20 z-10">
+        <Button variant="outline" size="sm" onClick={() => setIsChartOpen(true)}>
+          Chart
+        </Button>
+      </div>
+
+      {/* Chart Modal */}
+      <Dialog open={isChartOpen} onOpenChange={setIsChartOpen}>
+        <DialogContent className="max-w-[95vw] w-[95vw] h-[80vh] p-0">
+          <DialogHeader className="p-4">
+            <DialogTitle>BTCUSD — Advanced Chart</DialogTitle>
+          </DialogHeader>
+          <div className="h-[calc(80vh-72px)] w-full">
+            <TradingViewWidget />
+          </div>
+        </DialogContent>
+      </Dialog>
+
     </>
   )
 }

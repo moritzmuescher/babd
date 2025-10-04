@@ -12,7 +12,7 @@ export function ThreeScene() {
 
     const initThree = async () => {
       const THREE = await import("three")
-      const { OrbitControls } = await import("three-stdlib")
+      const { OrbitControls } = await import("three/examples/jsm/controls/OrbitControls.js")
 
       // Basic setup
       scene = new THREE.Scene()
@@ -284,3 +284,4 @@ export function ThreeScene() {
 
   return <div ref={containerRef} className="absolute inset-0" />
 }
+
