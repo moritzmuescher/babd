@@ -49,8 +49,8 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
   // const [showLoadMorePast, setShowLoadMorePast] = useState(false)
 
   const scrollRef = useRef<HTMLDivElement>(null)
-  const olderSentinelRef = useRef<HTMLDivElement>(null)
-  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const isProgrammaticScrollRef = useRef(false)
+  const hasUserScrolledRef = useRef(false)const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [oldestHeight, setOldestHeight] = useState<number | null>(null)
   const isInitialCenteringDone = useRef(false)
 
@@ -96,26 +96,7 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
     } finally {
       setIsLoadingMore(false)
     }
-  }, [isLoadingMore, oldestHeight, blocks.length])
-
-  // Observe RIGHT boundary (past blocks) to lazy-load older blocks
-  useEffect(() => {
-    if (typeof window === "undefined" || !("IntersectionObserver" in window)) return;
-    const root = scrollRef.current
-    const target = olderSentinelRef.current
-    if (!root || !target) return
-    const io = new IntersectionObserver((entries) => {
-      for (const entry of entries) {
-        if (entry.isIntersecting) {
-          loadOlderBlocks(10)
-        }
-      }
-    }, { root, rootMargin: "200px", threshold: 0.1 })
-    io.observe(target)
-    return () => io.disconnect()
-  }, [scrollRef, olderSentinelRef, loadOlderBlocks])
-
-  // const handleScroll = useCallback(() => { ... }, [...])
+  }, [isLoadingMore, oldestHeight, blocks.length])// const handleScroll = useCallback(() => { ... }, [...])
   // const loadMorePastBlocks = useCallback(async () => { ... }, [...])
 
   const fetchBlocksForCurrentHeight = useCallback(
@@ -163,6 +144,7 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
         // Initial centering logic - runs only once per new height
         // Reset isInitialCenteringDone if height changes to re-center
         if (isInitialCenteringDone.current === false || blocksWithWeight[0]?.height !== height) {
+          isProgrammaticScrollRef.current = true
           const timer = requestAnimationFrame(() => {
             if (scrollRef.current) {
               const currentBlockElement = scrollRef.current.querySelector(".current-block")
@@ -172,6 +154,8 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
                 const elementWidth = (currentBlockElement as HTMLElement).offsetWidth
                 scrollRef.current.scrollLeft = elementLeft - containerWidth / 2 + elementWidth / 2
                 isInitialCenteringDone.current = true // Mark as done for this height
+                // Allow lazy-load again on next user scroll
+                requestAnimationFrame(() => { isProgrammaticScrollRef.current = false })
                 // Removed handleScroll() call
               }
             }
@@ -207,6 +191,8 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
     if (currentHeight > 0) {
       fetchBlocksForCurrentHeight(currentHeight)
       isInitialCenteringDone.current = false // Reset centering flag when height changes
+      isProgrammaticScrollRef.current = true
+      hasUserScrolledRef.current = false
     }
   }, [currentHeight, fetchBlocksForCurrentHeight])
 
@@ -296,6 +282,7 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
           <div className="absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-black/50 to-transparent z-20 hidden md:block pointer-events-none" />
           <div
             ref={scrollRef}
+            onScroll={handleScroll}
             className="flex overflow-x-auto p-4 space-x-4 scrollbar-thin scrollbar-thumb-orange-500/50 scrollbar-track-transparent"
             
           >
@@ -353,7 +340,7 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
                 })}
 
               {/* Past blocks - newest to oldest (right to left) */}
-              {blocks.slice().reverse().map((block) => {
+              {blocks.map((block) => {
                 const weightPercentage = block.weight ? Math.min((block.weight / MAX_BLOCK_WEIGHT_WU) * 100, 100) : 0
                 return (
                   <div
