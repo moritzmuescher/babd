@@ -34,7 +34,7 @@ export function ThreeScene() {
 
       // Set different initial camera position for mobile vs desktop
       const isMobile = window.innerWidth < 768
-      camera.position.z = isMobile ? 15 : 10
+      camera.position.z = 15
 
       // Create circle texture
       const canvas = document.createElement("canvas")

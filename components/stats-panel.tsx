@@ -1,10 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import TradingViewWidget from "@/components/tradingview-widget"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog"
 
 interface BitcoinStats {
   price: number
@@ -18,9 +15,7 @@ interface StatsPanelProps {
 }
 
 export function StatsPanel({ blockHeight }: StatsPanelProps) {
-  
-  const [isChartOpen, setIsChartOpen] = useState(false)
-const [stats, setStats] = useState<BitcoinStats>({
+  const [stats, setStats] = useState<BitcoinStats>({
     price: 0,
     mempoolSize: 0,
     highPriority: 0,
@@ -80,9 +75,6 @@ const [stats, setStats] = useState<BitcoinStats>({
             <div className="text-orange-400 text-sm">Price</div>
           </div>
         </Card>
-        <div className="mt-2">
-          <Button onClick={() => setIsChartOpen(true)} className="bg-black text-white hover:bg-black/80 border border-orange-500/25 px-3 py-1 rounded-md">Chart</Button>
-        </div>
       </div>
 
       {/* High Priority - Top Right */}
@@ -98,7 +90,7 @@ const [stats, setStats] = useState<BitcoinStats>({
       </div>
 
       {/* Mempool Size - Bottom Left */}
-      <div className="absolute bottom-20 left-4 z-10">
+      <div className="absolute bottom-20 md:bottom-4 left-4 z-10">
         <Card className="bg-black/50 border-orange-500/25 backdrop-blur-sm">
           <div className="p-3">
             <div className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-yellow-400 bg-clip-text text-transparent">
@@ -110,7 +102,7 @@ const [stats, setStats] = useState<BitcoinStats>({
       </div>
 
       {/* Unconfirmed - Bottom Right */}
-      <div className="absolute bottom-20 right-4 z-10">
+      <div className="absolute bottom-20 md:bottom-4 right-4 z-10">
         <Card className="bg-black/50 border-orange-500/25 backdrop-blur-sm">
           <div className="p-3 text-right">
             <div className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-yellow-400 bg-clip-text text-transparent">
@@ -120,18 +112,6 @@ const [stats, setStats] = useState<BitcoinStats>({
           </div>
         </Card>
       </div>
-      {/* Chart Modal */}
-      <Dialog open={isChartOpen} onOpenChange={setIsChartOpen}>
-        <DialogContent className="max-w-[95vw] w-[95vw] h-[80vh] p-0 bg-black text-white border border-orange-500/25">
-          <DialogHeader className="p-4">
-            <DialogTitle>BTCUSD — Advanced Chart</DialogTitle>
-          </DialogHeader>
-          <div className="h-[calc(80vh-72px)] w-full">
-            <TradingViewWidget />
-          </div>
-        </DialogContent>
-      </Dialog>
-
     </>
   )
 }

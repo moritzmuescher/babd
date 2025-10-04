@@ -52,6 +52,46 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
   const isInitialCenteringDone = useRef(false)
 
   // Removed handleScroll and loadMorePastBlocks as they are no longer needed
+
+  // Load older blocks (older = lower height)
+  const loadOlderBlocks = useCallback(async (count: number = 10) => {
+    if (isLoadingMore) return
+    try {
+      setIsLoadingMore(true)
+      const currentOldest = oldestHeight ?? (blocks.length ? blocks[blocks.length - 1].height : null)
+      if (!currentOldest) return
+      // mempool.space returns 10 blocks starting from a given height (older)
+      // We subtract 1 to avoid duplicating the current oldest
+      const start = currentOldest - 1
+      const res = await fetch(`https://mempool.space/api/blocks/${start}`)
+      if (!res.ok) {
+        console.error("Failed to fetch older blocks:", res.status, res.statusText)
+        return
+      }
+      const olderData: Block[] = await res.json()
+      // Optional: limit to 'count'
+      const needed = olderData.slice(0, count)
+      // Fetch weights for each
+      const withWeights: Block[] = await Promise.all(
+        needed.map(async (block: Block) => {
+          try {
+            const blockDetailRes = await fetch(`https://mempool.space/api/block/${block.id}`)
+            if (!blockDetailRes.ok) return { ...block, weight: 0 }
+            const blockDetail = await blockDetailRes.json()
+            const weight = typeof blockDetail.weight === "number" ? blockDetail.weight : 0
+            return { ...block, weight }
+          } catch {
+            return { ...block, weight: 0 }
+          }
+        })
+      )
+      setBlocks((prev) => [...prev, ...withWeights])
+      const newOldest = withWeights.length ? withWeights[withWeights.length - 1].height : currentOldest
+      setOldestHeight(newOldest)
+    } finally {
+      setIsLoadingMore(false)
+    }
+  }, [isLoadingMore, oldestHeight, blocks.length])
   // const handleScroll = useCallback(() => { ... }, [...])
   // const loadMorePastBlocks = useCallback(async () => { ... }, [...])
 
@@ -68,7 +108,7 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
         const blocksData = await blocksRes.json()
         const projectedData = await projectedRes.json()
 
-        const blocksWithWeight = await Promise.all(
+        let blocksWithWeight = await Promise.all(
           blocksData.map(async (block: Block) => {
             try {
               const blockDetailRes = await fetch(`https://mempool.space/api/block/${block.id}`)
@@ -225,7 +265,7 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
 
   return (
     <>
-      <div className="absolute top-20 md:top-32 left-1/2 transform -translate-x-1/2 w-[95%] max-w-6xl z-10">
+      <div className="absolute top-20 md:top-32 left-0 right-0 w-full z-10">
         <Card className="bg-black/50 border-orange-500/25 backdrop-blur-sm relative">
           {/* Left Fade Overlay (Desktop Only) */}
           <div className="absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-black/50 to-transparent z-20 hidden md:block pointer-events-none" />
