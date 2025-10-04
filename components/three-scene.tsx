@@ -119,8 +119,12 @@ export function ThreeScene() {
         
       })
 
+      const initialYaw = 0.18
+      const initialPitch = -0.12
+
       const planet = new THREE.Points(planetGeometry, planetMaterial)
       scene.add(planet)
+      planet.rotation.set(initialPitch, initialYaw, 0)
 
       // Add glow sphere around planet
       const glowGeometry = new THREE.SphereGeometry(sphereRadius * 1.2, 32, 32)
@@ -157,6 +161,7 @@ float intensity = d * d;
 })
       const glowSphere = new THREE.Mesh(glowGeometry, glowMaterial)
       scene.add(glowSphere)
+      glowSphere.rotation.set(initialPitch, initialYaw, 0)
 
       // Text particles
       const textCanvas = document.createElement("canvas")
@@ -250,12 +255,26 @@ float intensity = d * d;
       textGroup.add(textPoints)
       textGroup.add(textLines)
       scene.add(textGroup)
+      textGroup.rotation.set(initialPitch, initialYaw, 0)
 
       // Animation loop
       function animate() {
         requestAnimationFrame(animate)
 
-        planet.rotation.y += 0.001
+        
+        const t = performance.now() * 0.001;
+
+        // Planet diagonal/dynamic motion
+        planet.rotation.y += 0.0012;
+        planet.rotation.x = initialPitch + 0.02 * Math.sin(t * 0.6);
+
+        // Slight dynamic drift for the text so motion isn't purely horizontal
+        textGroup.rotation.y = initialYaw + 0.02 * Math.sin(t * 0.6 + 1.2);
+        textGroup.rotation.x = initialPitch + 0.015 * Math.cos(t * 0.8);
+
+        // Keep the glow sphere aligned with the planet
+        glowSphere.rotation.copy(planet.rotation);
+    
         const starPositions = starGeometry.attributes.position
         for (let i = 0; i < starPositions.count; i++) {
           let z = starPositions.getZ(i)
