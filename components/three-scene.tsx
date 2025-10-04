@@ -46,6 +46,12 @@ export function ThreeScene() {
       ctx.fillStyle = "white"
       ctx.fill()
       const circleTexture = new THREE.CanvasTexture(canvas)
+      circleTexture.minFilter = THREE.LinearFilter
+      circleTexture.magFilter = THREE.LinearFilter
+      circleTexture.generateMipmaps = false
+      circleTexture.wrapS = THREE.ClampToEdgeWrapping
+      circleTexture.wrapT = THREE.ClampToEdgeWrapping
+      circleTexture.needsUpdate = true
 
       // Starfield
       const starGeometry = new THREE.BufferGeometry()
@@ -63,7 +69,8 @@ export function ThreeScene() {
         size: 0.7,
         map: circleTexture,
         transparent: true,
-  depthWrite: true
+        alphaTest: 0.5,
+  depthWrite: false
 })
       const stars = new THREE.Points(starGeometry, starMaterial)
       scene.add(stars)
@@ -104,7 +111,8 @@ export function ThreeScene() {
         vertexColors: true,
         map: circleTexture,
         transparent: true,
-        depthWrite: true,
+        alphaTest: 0.5,
+        depthWrite: false,
       })
 
       const planet = new THREE.Points(planetGeometry, planetMaterial)
@@ -220,7 +228,8 @@ float intensity = d * d;
         color: 0xff9900,
         map: circleTexture,
         transparent: true,
-  depthWrite: true
+        alphaTest: 0.5,
+  depthWrite: false
 })
 
       const textPoints = new THREE.Points(textGeometry, pointsMaterial)
