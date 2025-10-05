@@ -68,7 +68,7 @@ export function ChartModal({ open, onOpenChange }: ChartModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[95vw] w-full h-[90vh] bg-black/95 border border-orange-500/25">
+      <DialogContent className="w-full max-w-[95vw] h-[90vh] bg-black/95 border-orange-500/25">
         <DialogHeader>
           <DialogTitle className="text-orange-400">Bitcoin Price Chart</DialogTitle>
           <DialogDescription className="text-orange-300/70">

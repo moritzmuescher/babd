@@ -1,8 +1,11 @@
-@import "tailwindcss";
-@import "tw-animate-css";
+/* app/globals.css — Tailwind v3 compatible */
 
-@custom-variant dark (&:is(.dark *));
+/* Tailwind v3 entrypoint */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
+/* Design tokens as CSS variables (light) */
 :root {
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -39,6 +42,7 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
+/* Dark theme tokens */
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
@@ -74,47 +78,7 @@
   --sidebar-ring: oklch(0.439 0 0);
 }
 
-@theme inline {
-  /* optional: --font-sans, --font-serif, --font-mono if they are applied in the layout.tsx */
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
-}
-
-/* Removed @apply border-border that was causing the error */
+/* Base layer */
 @layer base {
   * {
     outline: 2px solid transparent;
@@ -125,87 +89,98 @@
   }
 }
 
-/* Custom scrollbar styles */
-.scrollbar-thin {
-  scrollbar-width: thin;
-}
+/* Scrollbars */
+.scrollbar-thin { scrollbar-width: thin; }
+.scrollbar-thumb-orange-500\/50 { scrollbar-color: rgba(249,115,22,0.5) transparent; }
+.scrollbar-track-transparent { scrollbar-track-color: transparent; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(249,115,22,0.5); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(249,115,22,0.7); }
 
-.scrollbar-thumb-orange-500\/50 {
-  scrollbar-color: rgba(249, 115, 22, 0.5) transparent;
-}
-
-.scrollbar-track-transparent {
-  scrollbar-track-color: transparent;
-}
-
-/* Webkit scrollbar styles */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(249, 115, 22, 0.5);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(249, 115, 22, 0.7);
-}
-
-/* Adding search bar animation effects */
+/* Search bar glow */
 @keyframes borderGlow {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
-
 @keyframes pulse {
-  0%,
-  100% {
-    box-shadow: 0 0 20px rgba(249, 115, 22, 0.3);
-  }
-  50% {
-    box-shadow: 0 0 30px rgba(249, 115, 22, 0.6);
-  }
+  0%, 100% { box-shadow: 0 0 20px rgba(249,115,22,0.3); }
+  50%      { box-shadow: 0 0 30px rgba(249,115,22,0.6); }
 }
-
 .search-bar-glow {
   position: relative;
-  background: linear-gradient(
-    45deg,
-    rgba(249, 115, 22, 0.8),
-    rgba(251, 191, 36, 0.8),
-    rgba(249, 115, 22, 0.8),
-    rgba(251, 191, 36, 0.8)
+  background: linear-gradient(45deg,
+    rgba(249,115,22,0.8),
+    rgba(251,191,36,0.8),
+    rgba(249,115,22,0.8),
+    rgba(251,191,36,0.8)
   );
   background-size: 400% 400%;
   animation: borderGlow 8s ease-in-out infinite;
   border-radius: 0.75rem;
   padding: 2px;
 }
-
 .search-bar-inner {
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0,0,0,0.8);
   border-radius: 0.625rem;
   backdrop-filter: blur(12px);
 }
-
 .search-bar-container:hover .search-bar-glow {
   animation: borderGlow 6s ease-in-out infinite, pulse 4s ease-in-out infinite;
 }
-
 .search-input-glow:focus {
-  box-shadow: 0 0 15px rgba(249, 115, 22, 0.4);
-  border-color: rgba(249, 115, 22, 0.8);
+  box-shadow: 0 0 15px rgba(249,115,22,0.4);
+  border-color: rgba(249,115,22,0.8);
 }
+
+/* ------------ Inline replacements for tw-animate-css ------------ */
+@layer utilities {
+  /* Base helpers */
+  .animate-in,
+  .animate-out {
+    animation-duration: var(--animation-duration, 150ms);
+    animation-timing-function: var(--animation-easing, cubic-bezier(0.16,1,0.3,1));
+    animation-fill-mode: both;
+    will-change: transform, opacity;
+  }
+
+  /* Fades */
+  @keyframes fadeIn  { from { opacity: 0 } to { opacity: 1 } }
+  @keyframes fadeOut { from { opacity: 1 } to { opacity: 0 } }
+  .fade-in, .fade-in-0, .fade-in-50 { animation-name: fadeIn; }
+  .fade-out, .fade-out-0, .fade-out-50 { animation-name: fadeOut; }
+
+  /* Zooms */
+  @keyframes zoomIn95  { from { opacity: 0; transform: scale(0.95) } to { opacity: 1; transform: scale(1) } }
+  @keyframes zoomOut95 { from { opacity: 1; transform: scale(1) }   to { opacity: 0; transform: scale(0.95) } }
+  .zoom-in-95  { animation-name: zoomIn95; }
+  .zoom-out-95 { animation-name: zoomOut95; }
+
+  /* Slides (2=0.5rem, 4=1rem) */
+  @keyframes slideInFromTop2    { from { opacity: 0; transform: translateY(-0.5rem) } to { opacity: 1; transform: translateY(0) } }
+  @keyframes slideOutToTop2     { from { opacity: 1; transform: translateY(0) }       to { opacity: 0; transform: translateY(-0.5rem) } }
+  @keyframes slideInFromBottom2 { from { opacity: 0; transform: translateY(0.5rem) }  to { opacity: 1; transform: translateY(0) } }
+  @keyframes slideOutToBottom2  { from { opacity: 1; transform: translateY(0) }       to { opacity: 0; transform: translateY(0.5rem) } }
+  @keyframes slideInFromLeft2   { from { opacity: 0; transform: translateX(-0.5rem) } to { opacity: 1; transform: translateX(0) } }
+  @keyframes slideOutToLeft2    { from { opacity: 1; transform: translateX(0) }       to { opacity: 0; transform: translateX(-0.5rem) } }
+  @keyframes slideInFromRight2  { from { opacity: 0; transform: translateX(0.5rem) }  to { opacity: 1; transform: translateX(0) } }
+  @keyframes slideOutToRight2   { from { opacity: 1; transform: translateX(0) }       to { opacity: 0; transform: translateX(0.5rem) } }
+  .slide-in-from-top-2    { animation-name: slideInFromTop2; }
+  .slide-out-to-top-2     { animation-name: slideOutToTop2; }
+  .slide-in-from-bottom-2 { animation-name: slideInFromBottom2; }
+  .slide-out-to-bottom-2  { animation-name: slideOutToBottom2; }
+  .slide-in-from-left-2   { animation-name: slideInFromLeft2; }
+  .slide-out-to-left-2    { animation-name: slideOutToLeft2; }
+  .slide-in-from-right-2  { animation-name: slideInFromRight2; }
+  .slide-out-to-right-2   { animation-name: slideOutToRight2; }
+
+  /* Accordion + caret */
+  @keyframes accordion-down { from { height: 0 } to { height: var(--radix-accordion-content-height) } }
+  @keyframes accordion-up   { from { height: var(--radix-accordion-content-height) } to { height: 0 } }
+  @keyframes caret-blink    { 0%,70%,100% { opacity: 0 } 20% { opacity: 1 } }
+  .animate-accordion-down { animation: accordion-down 0.2s ease-out; }
+  .animate-accordion-up   { animation: accordion-up   0.2s ease-out; }
+  .animate-caret-blink    { animation: caret-blink 1.25s ease-out infinite; }
+}
+
