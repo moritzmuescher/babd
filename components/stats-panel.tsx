@@ -128,11 +128,10 @@ export function StatsPanel({ blockHeight }: StatsPanelProps) {
       {/* Chart Modal (TradingView) */}
       <Dialog open={isChartOpen} onOpenChange={setIsChartOpen}>
         <DialogContent className="max-w-[95vw] w-[95vw] h-[80vh] p-0 bg-black text-white border border-orange-500/25">
-          <DialogHeader className="p-4">
-            <DialogTitle>{chartSymbol} — Advanced Chart</DialogTitle>
-          </DialogHeader>
+          <DialogHeader className="pt-2 pb-0 px-0">
+            <DialogTitle classname="pt-0 pb-0">
           {/* Symbol toggle */}
-          <div className="px-4 pb-2">
+          <div className="px-0 pb-0">
             <div className="inline-flex rounded-md border border-orange-500/25 overflow-hidden">
               <button
                 className={`px-3 py-1 text-sm ${chartSymbol === "BTCUSD" ? "bg-orange-500/20 text-orange-200" : "text-orange-400 hover:bg-orange-500/10"}`}
@@ -144,7 +143,9 @@ export function StatsPanel({ blockHeight }: StatsPanelProps) {
               >EUR</button>
             </div>
           </div>
-          <div className="h-[calc(80vh-72px)] w-full">
+            </DialogTitle>
+          </DialogHeader>
+          <div className="h-[calc(80vh-28px)] w-full">
             <TradingViewWidget key={chartSymbol} symbol={chartSymbol} />
           </div>
         </DialogContent>
