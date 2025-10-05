@@ -31,7 +31,7 @@ export function SearchBar({ onSearch }: SearchBarProps) {
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Enter TxID or Bitcoin Address..."
+                placeholder="Lookup TxID or Bitcoin Address..."
                 className="flex-1 bg-black/30 border-orange-500/40 text-white placeholder-gray-300 focus:border-orange-400 search-input-glow transition-all duration-300 text-sm font-medium"
                 autoComplete="off"
                 data-1p-ignore
