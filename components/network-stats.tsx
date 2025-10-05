@@ -100,7 +100,7 @@ export function NetworkStats() {
 
   if (loading || !difficultyData || !halvingData) {
     return (
-      <div className="absolute left-4 bottom-24 md:top-2/3 md:bottom-auto md:transform md:-translate-y-1/2 z-10 max-w-xs">
+      <div className="absolute left-4 top-64 md:top-80 z-10 max-w-xs">
         <Card className="bg-black/50 border-orange-500/25 backdrop-blur-sm p-4">
           <div className="text-gray-400 text-xs">Loading...</div>
         </Card>
@@ -113,7 +113,7 @@ export function NetworkStats() {
   const extensionPercent = Math.abs(difficultyData.difficultyChange) * 0.5
 
   return (
-    <div className="absolute left-4 bottom-24 md:top-2/3 md:bottom-auto md:transform md:-translate-y-1/2 z-10 max-w-xs">
+    <div className="absolute left-4 top-64 md:top-80 z-10 max-w-xs">
       <Card className="bg-black/50 border-orange-500/25 backdrop-blur-sm p-4">
         {/* Difficulty Adjustment Section */}
         <div className="mb-4">
