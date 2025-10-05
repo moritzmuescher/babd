@@ -2,7 +2,14 @@
 
 import React, { useEffect, useRef, memo } from "react";
 
-type Props = { symbol?: "BTCUSD" | "BTCEUR" | string };
+type Props = {
+  /** Pass "BTCUSD" or "BTCEUR" (we’ll map to BITSTAMP:…) */
+  symbol?: "BTCUSD" | "BTCEUR" | string;
+  /** Let the widget render an inline USD/EUR switch overlayed in the top-right */
+  inlineToggle?: boolean;
+  /** If you want the inline toggle to control state in your parent */
+  onChangeSymbol?: (s: "BTCUSD" | "BTCEUR") => void;
+};
 
 declare global {
   interface Window {
@@ -10,16 +17,25 @@ declare global {
   }
 }
 
-function TradingViewWidget({ symbol = "BTCUSD" }: Props) {
+function TradingViewWidget({
+  symbol = "BTCUSD",
+  inlineToggle = true,
+  onChangeSymbol,
+}: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const scriptRequestedRef = useRef(false);
   const containerIdRef = useRef(`tv_${Math.random().toString(36).slice(2)}`);
 
-  // Always use Bitstamp for these pairs
+  // Always force Bitstamp
   const mappedSymbol =
     symbol.toUpperCase().includes(":")
       ? symbol.toUpperCase()
       : `BITSTAMP:${symbol.toUpperCase()}`;
+
+  // Decide default interval per pair (USD => daily, EUR => 1h)
+  const pair = mappedSymbol.split(":").pop() || "BTCUSD";
+  const defaultInterval =
+    pair === "BTCUSD" ? "D" : pair === "BTCEUR" ? "60" : "60";
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -30,15 +46,14 @@ function TradingViewWidget({ symbol = "BTCUSD" }: Props) {
     const createWidget = () => {
       if (!window.TradingView) return;
 
-      // Remove any previous iframe/content before creating a new one
+      // Clear any prior iframe/content
       containerRef.current!.innerHTML = "";
 
-      // Instantiate a fresh Advanced Chart widget
       // eslint-disable-next-line no-new
       new window.TradingView.widget({
         container_id: containerIdRef.current,
-        symbol: mappedSymbol,                      // <— BITSTAMP pair
-        interval: "60",
+        symbol: mappedSymbol,              // e.g., BITSTAMP:BTCUSD
+        interval: defaultInterval,         // USD=D, EUR=60
         autosize: true,
         theme: "dark",
         style: "1",
@@ -55,7 +70,6 @@ function TradingViewWidget({ symbol = "BTCUSD" }: Props) {
     if (window.TradingView) {
       createWidget();
     } else if (!scriptRequestedRef.current) {
-      // Load tv.js once
       scriptRequestedRef.current = true;
       const script = document.createElement("script");
       script.src = "https://s3.tradingview.com/tv.js";
@@ -63,7 +77,6 @@ function TradingViewWidget({ symbol = "BTCUSD" }: Props) {
       script.onload = () => createWidget();
       document.head.appendChild(script);
     } else {
-      // If script was requested earlier but TV isn't ready yet, poll briefly
       const id = window.setInterval(() => {
         if (window.TradingView) {
           window.clearInterval(id);
@@ -73,27 +86,52 @@ function TradingViewWidget({ symbol = "BTCUSD" }: Props) {
       return () => window.clearInterval(id);
     }
 
-    // Cleanup on unmount
     return () => {
       if (containerRef.current) containerRef.current.innerHTML = "";
     };
-  }, [mappedSymbol]); // <— Rebuild when the symbol changes
+  }, [mappedSymbol, defaultInterval]);
 
-  const label = mappedSymbol.replace("BITSTAMP:", "");
+  const rawLabel = pair; // "BTCUSD" or "BTCEUR"
+
+  const handleSelect = (next: "BTCUSD" | "BTCEUR") => {
+    if (onChangeSymbol) onChangeSymbol(next);
+    // If you don’t pass onChangeSymbol, control this in your parent as before.
+  };
 
   return (
-    <div className="h-full w-full">
-      <div className="h-[calc(100%-24px)] w-full" ref={containerRef} />
-      <div className="h-6 flex items-center justify-end text-xs text-orange-400/80">
-        <a
-          href={`https://www.tradingview.com/symbols/${label}/`}
-          target="_blank"
-          rel="noopener nofollow"
-          className="underline"
-        >
-          {label} chart
-        </a>
-        <span className="ml-1">by TradingView</span>
+    <div className="relative h-full w-full">
+      {/* Overlay toggle in the chart’s top-right to save vertical space */}
+      {inlineToggle && (
+        <div className="absolute top-2 right-2 z-10 pointer-events-none">
+          <div className="pointer-events-auto flex items-center gap-1 rounded-xl bg-black/50 px-1.5 py-1 text-xs backdrop-blur">
+            <button
+              aria-label="BTCUSD"
+              onClick={() => handleSelect("BTCUSD")}
+              className={`rounded-lg px-2 py-1 transition ${
+                rawLabel === "BTCUSD" ? "bg-white/15" : "hover:bg-white/10"
+              }`}
+            >
+              USD
+            </button>
+            <button
+              aria-label="BTCEUR"
+              onClick={() => handleSelect("BTCEUR")}
+              className={`rounded-lg px-2 py-1 transition ${
+                rawLabel === "BTCEUR" ? "bg-white/15" : "hover:bg-white/10"
+              }`}
+            >
+              EUR
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* TradingView widget container */}
+      <div ref={containerRef} className="h-full w-full" />
+
+      {/* Optional tiny label/footer (kept minimal to preserve height) */}
+      <div className="pointer-events-none absolute bottom-1 right-2 z-10 text-[10px] text-white/50">
+        {rawLabel} • Bitstamp • TradingView
       </div>
     </div>
   );
