@@ -240,7 +240,7 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
     if (pad < 0) pad = 0
     setLeftPadPx(pad)
     root.scrollLeft = 0
-  }, [blocks, projectedBlocks, currentHeight])
+  }, [projectedBlocks, currentHeight])
 // Removed dedicated useEffect for scroll listener
   // useEffect(() => { ... }, [...])
 
