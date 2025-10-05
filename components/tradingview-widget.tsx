@@ -100,32 +100,6 @@ function TradingViewWidget({
 
   return (
     <div className="relative h-full w-full">
-      {/* Overlay toggle in the chart’s top-right to save vertical space */}
-      {inlineToggle && (
-        <div className="absolute top-2 right-2 z-10 pointer-events-none">
-          <div className="pointer-events-auto flex items-center gap-1 rounded-xl bg-black/50 px-1.5 py-1 text-xs backdrop-blur">
-            <button
-              aria-label="BTCUSD"
-              onClick={() => handleSelect("BTCUSD")}
-              className={`rounded-lg px-2 py-1 transition ${
-                rawLabel === "BTCUSD" ? "bg-white/15" : "hover:bg-white/10"
-              }`}
-            >
-              USD
-            </button>
-            <button
-              aria-label="BTCEUR"
-              onClick={() => handleSelect("BTCEUR")}
-              className={`rounded-lg px-2 py-1 transition ${
-                rawLabel === "BTCEUR" ? "bg-white/15" : "hover:bg-white/10"
-              }`}
-            >
-              EUR
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* TradingView widget container */}
       <div ref={containerRef} className="h-full w-full" />
 
