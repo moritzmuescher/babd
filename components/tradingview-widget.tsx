@@ -3,79 +3,83 @@
 import React, { useEffect, useRef, memo } from "react"
 
 /**
- * TradingView Advanced Chart (BTCUSD)
- * Loads the official TradingView advanced chart widget.
- * NOTE: Uses a client-side script injection – safe for Next.js "use client" components.
+ * TradingView Advanced Chart widget
+ * Re-initializes cleanly whenever the `symbol` prop changes.
  */
 function TradingViewWidget({ symbol = "BTCUSD" }: { symbol?: string }) {
-  const container = useRef<HTMLDivElement | null>(null)
+  const containerRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
-    if (!container.current) return
+    const container = containerRef.current
+    if (!container) return
 
-    // cleanup previous widget on re-init
-    container.current.innerHTML = ""
+    // Clean up any previous widget/script
+    container.innerHTML = ""
 
-    // Clean any previous widget if re-mounted
-    container.current.innerHTML = ""
+    // TradingView requires a child div with this class name
+    const widgetDiv = document.createElement("div")
+    widgetDiv.className = "tradingview-widget-container__widget"
+    widgetDiv.style.height = "100%"
+    widgetDiv.style.width = "100%"
 
+    // Optional: attribution/footer container
+    const attribution = document.createElement("div")
+    attribution.className = "tradingview-widget-copyright"
+    attribution.style.marginTop = "8px"
+    attribution.style.fontSize = "12px"
+
+    // Script tag with JSON config inside
     const script = document.createElement("script")
-    script.src = "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js"
     script.type = "text/javascript"
     script.async = true
-    // You asked for ticker BTCUSD. We pick a widely-supported exchange symbol.
-    // You can change it to e.g. "BITSTAMP:BTCUSD" or "COINBASE:BTCUSD".
-    script.innerHTML = `{
-      "allow_symbol_change": true,
-      "calendar": false,
-      "details": false,
-      "hide_side_toolbar": true,
-      "hide_top_toolbar": false,
-      "hide_legend": false,
-      "hide_volume": false,
-      "hotlist": false,
-      "interval": "D",
-      "locale": "en",
-      "save_image": true,
-      "style": "1",
-      "symbol": "BITSTAMP:BTCUSD",
-      "theme": "dark",
-      "timezone": "Etc/UTC",
-      "backgroundColor": "#0F0F0F",
-      "gridColor": "rgba(242, 242, 242, 0.06)",
-      "watchlist": [],
-      "withdateranges": false,
-      "compareSymbols": [],
-      "studies": [],
-      "autosize": true
-    }`
+    script.src = "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js"
 
-    container.current.appendChild(script)
+    const config = {
+      autosize: true,
+      symbol, // <-- uses current prop
+      interval: "60",
+      timezone: "Etc/UTC",
+      theme: "dark",
+      style: "1",
+      locale: "en",
+      backgroundColor: "rgba(0, 0, 0, 0)",
+      gridColor: "rgba(240, 185, 11, 0.1)",
+      hide_top_toolbar: false,
+      hide_legend: false,
+      allow_symbol_change: false,
+      withdateranges: true,
+      studies: [],
+      // No container_id here; TradingView attaches to the sibling "widget" div
+    }
 
+    script.innerHTML = JSON.stringify(config)
+
+    container.appendChild(widgetDiv)
+    container.appendChild(script)
+
+    // (Optional) update attribution text to match current symbol
+    attribution.innerHTML = `
+      <a href="https://www.tradingview.com/symbols/${encodeURIComponent(
+        symbol
+      )}/" rel="noopener nofollow" target="_blank" class="underline">
+        ${symbol} chart
+      </a>
+      <span class="ml-1">by TradingView</span>
+    `
+    container.appendChild(attribution)
+
+    // Cleanup when symbol changes or component unmounts
     return () => {
-      // Best-effort cleanup
-      if (container.current) {
-        container.current.innerHTML = ""
-      }
+      container.innerHTML = ""
     }
   }, [symbol])
 
   return (
-    <div className="tradingview-widget-container h-full w-full" ref={container as React.RefObject<HTMLDivElement>}>
-      <div className="tradingview-widget-container__widget h-full w-full" />
-      <div className="tradingview-widget-copyright text-xs text-muted-foreground px-2 py-1">
-        <a
-          href={`https://www.tradingview.com/symbols/${symbol}/`}
-          rel="noopener nofollow"
-          target="_blank"
-          className="underline"
-        >
-          BTCUSD chart
-        </a>
-        <span className="ml-1">by TradingView</span>
-      </div>
+    <div className="tradingview-widget-container" style={{ height: "100%", width: "100%" }}>
+      <div ref={containerRef} style={{ height: "100%", width: "100%" }} />
     </div>
   )
 }
 
 export default memo(TradingViewWidget)
+
