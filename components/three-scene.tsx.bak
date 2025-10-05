@@ -320,4 +320,3 @@ float intensity = d * d;
 
   return <div ref={containerRef} className="absolute inset-0" />
 }
-

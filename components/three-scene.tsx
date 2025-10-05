@@ -12,7 +12,7 @@ export function ThreeScene() {
 
     const initThree = async () => {
       const THREE = await import("three")
-      const { OrbitControls } = await import("three/examples/jsm/controls/OrbitControls.js")
+      const { OrbitControls } = await import("three/addons/controls/OrbitControls.js")
 
       // Basic setup
       scene = new THREE.Scene()
@@ -73,7 +73,7 @@ export function ThreeScene() {
         blending: THREE.NormalBlending,
         alphaTest: 0.5,
         depthWrite: false,
-  })
+      })
       const stars = new THREE.Points(starGeometry, starMaterial)
       scene.add(stars)
 
@@ -116,7 +116,6 @@ export function ThreeScene() {
         blending: THREE.NormalBlending,
         alphaTest: 0.5,
         depthWrite: true,
-        
       })
 
       const initialYaw = 0.18
@@ -144,8 +143,8 @@ export function ThreeScene() {
           varying vec3 vNormal;
           void main() {
             vec3 n = normalize(vNormal);
-float d = max(0.0, 0.7 - n.z);
-float intensity = d * d;
+            float d = max(0.0, 0.7 - n.z);
+            float intensity = d * d;
             vec3 glow = vec3(1.0, 0.4, 0.0) * intensity;
             gl_FragColor = vec4(glow, intensity * 0.4);
           }
@@ -153,19 +152,16 @@ float intensity = d * d;
         side: THREE.BackSide,
         blending: THREE.AdditiveBlending,
         transparent: true,
-  side: THREE.BackSide,
-  transparent: true,
-  blending: THREE.AdditiveBlending,
-  depthWrite: false,
-  depthTest: true
-})
+        depthWrite: false,
+        depthTest: true,
+      })
       const glowSphere = new THREE.Mesh(glowGeometry, glowMaterial)
       scene.add(glowSphere)
       glowSphere.rotation.set(initialPitch, initialYaw, 0)
-      // Reusable objects for smooth axis-based rotation (avoid allocations per frame)
-      const _tmpAxis = new THREE.Vector3();
-      const _tmpQuat = new THREE.Quaternion();
 
+      // Reusable objects for smooth axis-based rotation (avoid allocations per frame)
+      const _tmpAxis = new THREE.Vector3()
+      const _tmpQuat = new THREE.Quaternion()
 
       // Text particles
       const textCanvas = document.createElement("canvas")
@@ -244,7 +240,7 @@ float intensity = d * d;
         blending: THREE.NormalBlending,
         alphaTest: 0.5,
         depthWrite: true,
-  })
+      })
 
       const textPoints = new THREE.Points(textGeometry, pointsMaterial)
 
@@ -265,26 +261,24 @@ float intensity = d * d;
       function animate() {
         requestAnimationFrame(animate)
 
-        
-        const t = performance.now() * 0.001;
+        const t = performance.now() * 0.001
 
         // Planet motion: rotate around a slowly changing axis (smooth precession)
-// This makes the dots sometimes go slightly up or down instead of only left-to-right.
-const precessAx = 0.25 * Math.sin(t * 0.25);
-const precessAz = 0.25 * Math.cos(t * 0.2);
-_tmpAxis.set(precessAx, 1.0, precessAz).normalize();
-const deltaAngle = 0.0015; // base angular speed
-_tmpQuat.setFromAxisAngle(_tmpAxis, deltaAngle);
-planet.quaternion.multiply(_tmpQuat);
+        // This makes the dots sometimes go slightly up or down instead of only left-to-right.
+        const precessAx = 0.25 * Math.sin(t * 0.25)
+        const precessAz = 0.25 * Math.cos(t * 0.2)
+        _tmpAxis.set(precessAx, 1.0, precessAz).normalize()
+        const deltaAngle = 0.0015 // base angular speed
+        _tmpQuat.setFromAxisAngle(_tmpAxis, deltaAngle)
+        planet.quaternion.multiply(_tmpQuat)
 
-// Keep a subtle drift on the text for liveliness, but smaller than planet
-textGroup.rotation.y = initialYaw + 0.015 * Math.sin(t * 0.6 + 1.2);
-textGroup.rotation.x = initialPitch + 0.012 * Math.cos(t * 0.8);
+        // Keep a subtle drift on the text for liveliness, but smaller than planet
+        textGroup.rotation.y = initialYaw + 0.015 * Math.sin(t * 0.6 + 1.2)
+        textGroup.rotation.x = initialPitch + 0.012 * Math.cos(t * 0.8)
 
-// Keep the glow sphere aligned with the planet
+        // Keep the glow sphere aligned with the planet
+        glowSphere.quaternion.copy(planet.quaternion)
 
-        glowSphere.quaternion.copy(planet.quaternion);
-    
         const starPositions = starGeometry.attributes.position
         for (let i = 0; i < starPositions.count; i++) {
           let z = starPositions.getZ(i)
@@ -330,4 +324,3 @@ textGroup.rotation.x = initialPitch + 0.012 * Math.cos(t * 0.8);
 
   return <div ref={containerRef} className="absolute inset-0" />
 }
-

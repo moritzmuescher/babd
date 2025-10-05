@@ -8,6 +8,7 @@ import { SearchModal } from "@/components/search-modal"
 import { DonationQR } from "@/components/donation-qr"
 import { SocialLink } from "@/components/social-link"
 import { SearchBar } from "@/components/search-bar"
+import { NetworkStats } from "@/components/network-stats"
 
 export default function Home() {
   const [isSearchOpen, setIsSearchOpen] = useState(false)
@@ -40,7 +41,9 @@ export default function Home() {
       {/* 3D Background */}
       <ThreeScene />
 
-      {/* Social Link */}
+      <NetworkStats />
+
+      {/* Social Link - Now positioned below donation QR on the right */}
       <SocialLink />
 
       {/* Stats Panels - Pass currentBlockHeight */}
