@@ -145,7 +145,7 @@ export function StatsPanel({ blockHeight }: StatsPanelProps) {
             </div>
           </div>
           <div className="h-[calc(80vh-72px)] w-full">
-            <TradingViewWidget symbol={chartSymbol} />
+            <TradingViewWidget key={chartSymbol} symbol={chartSymbol} />
           </div>
         </DialogContent>
       </Dialog>

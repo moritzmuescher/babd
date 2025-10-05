@@ -1,81 +1,103 @@
-"use client"
+"use client";
 
-import React, { useEffect, useRef, memo } from "react"
+import React, { useEffect, useRef, memo } from "react";
 
-/**
- * TradingView Advanced Chart (BTCUSD)
- * Loads the official TradingView advanced chart widget.
- * NOTE: Uses a client-side script injection – safe for Next.js "use client" components.
- */
-function TradingViewWidget({ symbol = "BTCUSD" }: { symbol?: string }) {
-  const container = useRef<HTMLDivElement | null>(null)
+type Props = { symbol?: "BTCUSD" | "BTCEUR" | string };
+
+declare global {
+  interface Window {
+    TradingView?: any;
+  }
+}
+
+function TradingViewWidget({ symbol = "BTCUSD" }: Props) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const scriptRequestedRef = useRef(false);
+  const containerIdRef = useRef(`tv_${Math.random().toString(36).slice(2)}`);
+
+  // Always use Bitstamp for these pairs
+  const mappedSymbol =
+    symbol.toUpperCase().includes(":")
+      ? symbol.toUpperCase()
+      : `BITSTAMP:${symbol.toUpperCase()}`;
 
   useEffect(() => {
-    if (!container.current) return
+    if (!containerRef.current) return;
 
-    // cleanup previous widget on re-init
-    container.current.innerHTML = ""
+    // Ensure container has a stable id
+    containerRef.current.id = containerIdRef.current;
 
-    // Clean any previous widget if re-mounted
-    container.current.innerHTML = ""
+    const createWidget = () => {
+      if (!window.TradingView) return;
 
-    const script = document.createElement("script")
-    script.src = "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js"
-    script.type = "text/javascript"
-    script.async = true
-    // You asked for ticker BTCUSD. We pick a widely-supported exchange symbol.
-    // You can change it to e.g. "BITSTAMP:BTCUSD" or "COINBASE:BTCUSD".
-    script.innerHTML = `{
-      "allow_symbol_change": true,
-      "calendar": false,
-      "details": false,
-      "hide_side_toolbar": true,
-      "hide_top_toolbar": false,
-      "hide_legend": false,
-      "hide_volume": false,
-      "hotlist": false,
-      "interval": "D",
-      "locale": "en",
-      "save_image": true,
-      "style": "1",
-      "symbol": "BITSTAMP:BTCUSD",
-      "theme": "dark",
-      "timezone": "Etc/UTC",
-      "backgroundColor": "#0F0F0F",
-      "gridColor": "rgba(242, 242, 242, 0.06)",
-      "watchlist": [],
-      "withdateranges": false,
-      "compareSymbols": [],
-      "studies": [],
-      "autosize": true
-    }`
+      // Remove any previous iframe/content before creating a new one
+      containerRef.current!.innerHTML = "";
 
-    container.current.appendChild(script)
+      // Instantiate a fresh Advanced Chart widget
+      // eslint-disable-next-line no-new
+      new window.TradingView.widget({
+        container_id: containerIdRef.current,
+        symbol: mappedSymbol,                      // <— BITSTAMP pair
+        interval: "60",
+        autosize: true,
+        theme: "dark",
+        style: "1",
+        locale: "en",
+        timezone: "Etc/UTC",
+        allow_symbol_change: false,
+        hide_side_toolbar: false,
+        studies: [],
+        disabled_features: ["use_localstorage_for_settings"],
+        enabled_features: [],
+      });
+    };
 
-    return () => {
-      // Best-effort cleanup
-      if (container.current) {
-        container.current.innerHTML = ""
-      }
+    if (window.TradingView) {
+      createWidget();
+    } else if (!scriptRequestedRef.current) {
+      // Load tv.js once
+      scriptRequestedRef.current = true;
+      const script = document.createElement("script");
+      script.src = "https://s3.tradingview.com/tv.js";
+      script.async = true;
+      script.onload = () => createWidget();
+      document.head.appendChild(script);
+    } else {
+      // If script was requested earlier but TV isn't ready yet, poll briefly
+      const id = window.setInterval(() => {
+        if (window.TradingView) {
+          window.clearInterval(id);
+          createWidget();
+        }
+      }, 50);
+      return () => window.clearInterval(id);
     }
-  }, [symbol])
+
+    // Cleanup on unmount
+    return () => {
+      if (containerRef.current) containerRef.current.innerHTML = "";
+    };
+  }, [mappedSymbol]); // <— Rebuild when the symbol changes
+
+  const label = mappedSymbol.replace("BITSTAMP:", "");
 
   return (
-    <div className="tradingview-widget-container h-full w-full" ref={container as React.RefObject<HTMLDivElement>}>
-      <div className="tradingview-widget-container__widget h-full w-full" />
-      <div className="tradingview-widget-copyright text-xs text-muted-foreground px-2 py-1">
+    <div className="h-full w-full">
+      <div className="h-[calc(100%-24px)] w-full" ref={containerRef} />
+      <div className="h-6 flex items-center justify-end text-xs text-orange-400/80">
         <a
-          href={`https://www.tradingview.com/symbols/${symbol}/`}
-          rel="noopener nofollow"
+          href={`https://www.tradingview.com/symbols/${label}/`}
           target="_blank"
+          rel="noopener nofollow"
           className="underline"
         >
-          BTCUSD chart
+          {label} chart
         </a>
         <span className="ml-1">by TradingView</span>
       </div>
     </div>
-  )
+  );
 }
 
-export default memo(TradingViewWidget)
+export default memo(TradingViewWidget);
+
