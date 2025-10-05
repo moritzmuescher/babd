@@ -320,7 +320,7 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
 
   return (
     <>
-      <div className="absolute top-40 md:top-44 left-0 right-0 w-full z-10">
+      <div className="absolute top-20 md:top-32 left-0 right-0 w-full z-10">
         <Card className="bg-transparent border-transparent shadow-none relative">
           {/* Left Fade Overlay (Desktop Only) */}
           <div className="absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-black/50 to-transparent z-20 hidden md:block pointer-events-none" />

@@ -59,7 +59,7 @@ export function StatsPanel({ blockHeight }: StatsPanelProps) {
   return (
     <>
       {/* Block Height - Center Top */}
-      <div className="absolute top-2 left-1/2 transform -translate-x-1/2 z-10 hidden md:block">
+      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10 hidden md:block">
         <Card className="bg-black/50 border-orange-500/25 backdrop-blur-sm">
           <div className="p-4 text-center">
             <div className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-orange-400 to-yellow-400 bg-clip-text text-transparent">
@@ -99,7 +99,7 @@ export function StatsPanel({ blockHeight }: StatsPanelProps) {
       </div>
 
       {/* Mempool Size - Bottom Left */}
-      <div className="absolute bottom-4 left-4 z-10">
+      <div className="absolute bottom-20 md:bottom-4 left-4 z-10">
         <Card className="bg-black/50 border-orange-500/25 backdrop-blur-sm">
           <div className="p-3 relative">
             
@@ -112,7 +112,7 @@ export function StatsPanel({ blockHeight }: StatsPanelProps) {
       </div>
 
       {/* Unconfirmed - Bottom Right */}
-      <div className="absolute bottom-4 right-4 z-10">
+      <div className="absolute bottom-20 md:bottom-4 right-4 z-10">
         <Card className="bg-black/50 border-orange-500/25 backdrop-blur-sm">
           <div className="p-3 text-right">
             <div className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-yellow-400 bg-clip-text text-transparent">
