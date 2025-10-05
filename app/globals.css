@@ -138,7 +138,7 @@
     rgba(249, 115, 22, 0.8),
     rgba(251, 191, 36, 0.8)
   );
-  background-size: 400% 400%;
+  background-size: 200% 200%;
   animation: borderGlow 8s ease-in-out infinite;
   border-radius: 0.75rem;
   padding: 2px;

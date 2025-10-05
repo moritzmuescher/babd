@@ -128,7 +128,7 @@ export function StatsPanel({ blockHeight }: StatsPanelProps) {
       {/* Chart Modal (TradingView) */}
       <Dialog open={isChartOpen} onOpenChange={setIsChartOpen}>
         <DialogContent className="max-w-[95vw] w-[95vw] h-[80vh] p-0 bg-black text-white border border-orange-500/25">
-          <DialogHeader className="pt-2 pb-0 px-0">
+          <DialogHeader className="pt-2 pb-0 px-2">
             <DialogTitle classname="pt-0 pb-0">
           {/* Symbol toggle */}
           <div className="px-0 pb-0">
