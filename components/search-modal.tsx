@@ -1,10 +1,11 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import React, { useEffect, useMemo, useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, ExternalLink } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Loader2, ExternalLink, Share2, Check } from "lucide-react"
 
 interface SearchModalProps {
   isOpen: boolean
@@ -12,181 +13,210 @@ interface SearchModalProps {
   query: string
 }
 
+type TxResult = any
+type AddressResult = any
+type UtxoResult = any[]
+
+function isLikelyTxid(q: string) {
+  return /^[0-9a-fA-F]{64}$/.test(q.trim())
+}
+
+function isLikelyAddress(q: string) {
+  const s = q.trim()
+  // P2PKH/P2SH (Base58) or Bech32 mainnet
+  const base58 = /^[13][a-km-zA-HJ-NP-Z1-9]{25,40}$/
+  const bech32 = /^bc1[ac-hj-np-z02-9]{11,71}$/i
+  return base58.test(s) || bech32.test(s)
+}
+
 export function SearchModal({ isOpen, onClose, query }: SearchModalProps) {
   const [loading, setLoading] = useState(false)
-  const [result, setResult] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
+  const [txResult, setTxResult] = useState<TxResult | null>(null)
+  const [addrResult, setAddrResult] = useState<AddressResult | null>(null)
+  const [utxos, setUtxos] = useState<UtxoResult | null>(null)
+  const [copied, setCopied] = useState(false)
+
+  const deepLink = useMemo(() => {
+    if (!query) return ""
+    if (typeof window === "undefined") return `/${encodeURIComponent(query)}`
+    return `${window.location.origin}/${encodeURIComponent(query)}`
+  }, [query])
 
   useEffect(() => {
-    if (isOpen && query) {
-      searchQuery(query)
+    let abort = false
+    async function run() {
+      if (!isOpen || !query) return
+      setLoading(true)
+      setError(null)
+      setTxResult(null)
+      setAddrResult(null)
+      setUtxos(null)
+      try {
+        const q = query.trim()
+        if (isLikelyTxid(q)) {
+          const res = await fetch(`https://mempool.space/api/tx/${q}`)
+          if (!res.ok) throw new Error("TX not found")
+          const data = await res.json()
+          if (!abort) setTxResult(data)
+        } else if (isLikelyAddress(q)) {
+          const [addrRes, utxoRes] = await Promise.all([
+            fetch(`https://mempool.space/api/address/${q}`),
+            fetch(`https://mempool.space/api/address/${q}/utxo`),
+          ])
+          if (!addrRes.ok) throw new Error("Address not found")
+          const addrData = await addrRes.json()
+          const utxoData = utxoRes.ok ? await utxoRes.json() : []
+          if (!abort) {
+            setAddrResult(addrData)
+            setUtxos(Array.isArray(utxoData) ? utxoData : [])
+          }
+        } else {
+          throw new Error("Please enter a valid TxID or Bitcoin address.")
+        }
+      } catch (e: any) {
+        if (!abort) setError(e?.message || "Error fetching data. Please try again.")
+      } finally {
+        if (!abort) setLoading(false)
+      }
+    }
+    run()
+    return () => {
+      abort = true
     }
   }, [isOpen, query])
 
-  const searchQuery = async (searchQuery: string) => {
-    setLoading(true)
-    setError(null)
-    setResult(null)
-
-    const isTxId = /^[0-9a-fA-F]{64}$/.test(searchQuery)
-    const isAddress =
-      /^(1|3)[1-9A-HJ-NP-Za-km-z]{33}$/.test(searchQuery) ||
-      /^bc1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{39,59}$/.test(searchQuery)
-
-    if (!isTxId && !isAddress) {
-      setError("Invalid TxID or Bitcoin Address")
-      setLoading(false)
-      return
-    }
-
+  async function shareOrCopy() {
+    const url = deepLink
     try {
-      if (isTxId) {
-        const txData = await (await fetch(`https://mempool.space/api/tx/${searchQuery}`)).json()
-        setResult({ type: "transaction", data: txData })
-      } else if (isAddress) {
-        const [addrData, utxoData] = await Promise.all([
-          fetch(`https://mempool.space/api/address/${searchQuery}`).then((r) => r.json()),
-          fetch(`https://mempool.space/api/address/${searchQuery}/utxo`).then((r) => r.json()),
-        ])
-        setResult({ type: "address", data: addrData, utxos: utxoData })
+      if (navigator.share) {
+        await navigator.share({ title: "Babd Timechain Explorer", text: query, url })
+        return
       }
-    } catch (err) {
-      setError("Error fetching data. Please try again.")
-    } finally {
-      setLoading(false)
+    } catch {
+      // fall through to copy
+    }
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    } catch {
+      // ignore
     }
   }
 
-  const renderTransactionResult = (txData: any) => (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-orange-400">Transaction Details</h3>
-        <a
-          href={`https://mempool.space/tx/${query}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-400 hover:text-blue-300"
-        >
-          <ExternalLink className="w-4 h-4" />
-        </a>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="bg-black/30 border-orange-500/25 p-4">
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-gray-400">Status:</span>
-              <Badge className={txData.status.confirmed ? "bg-green-500" : "bg-yellow-500"}>
-                {txData.status.confirmed ? `Confirmed (Block ${txData.status.block_height})` : "Unconfirmed"}
-              </Badge>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-400">Fee:</span>
-              <span className="text-white">{txData.fee.toLocaleString()} sat</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-400">Size:</span>
-              <span className="text-white">{txData.size} bytes</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-400">vSize:</span>
-              <span className="text-white">{txData.vsize} vBytes</span>
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="bg-black/30 border-orange-500/25 p-4">
-          <h4 className="text-orange-400 font-semibold mb-3">Inputs ({txData.vin.length})</h4>
-          <div className="space-y-2 max-h-40 overflow-y-auto">
-            {txData.vin.map((vin: any, i: number) => (
-              <div key={i} className="text-sm">
-                <div className="text-gray-400">Input {i + 1}:</div>
-                <div className="text-white font-mono text-xs break-all">{vin.prevout.scriptpubkey_address}</div>
-                <div className="text-yellow-400">{vin.prevout.value.toLocaleString()} sat</div>
-              </div>
-            ))}
-          </div>
-        </Card>
-
-        <Card className="bg-black/30 border-orange-500/25 p-4">
-          <h4 className="text-orange-400 font-semibold mb-3">Outputs ({txData.vout.length})</h4>
-          <div className="space-y-2 max-h-40 overflow-y-auto">
-            {txData.vout.map((vout: any, i: number) => (
-              <div key={i} className="text-sm">
-                <div className="text-gray-400">Output {i + 1}:</div>
-                <div className="text-white font-mono text-xs break-all">{vout.scriptpubkey_address}</div>
-                <div className="text-yellow-400">{vout.value.toLocaleString()} sat</div>
-              </div>
-            ))}
-          </div>
-        </Card>
+  const header = (
+    <div className="flex items-center justify-between gap-3">
+      <DialogTitle className="truncate">Search result</DialogTitle>
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-muted-foreground hidden sm:block truncate max-w-[40ch]">{query}</span>
+        <Button size="sm" variant="outline" onClick={shareOrCopy}>
+          {copied ? <Check className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
+          <span className="ml-2">{copied ? "Copied" : "Share"}</span>
+        </Button>
       </div>
     </div>
   )
 
-  const renderAddressResult = (addrData: any, utxos: any[]) => {
-    const balance = addrData.chain_stats.funded_txo_sum - addrData.chain_stats.spent_txo_sum
+  function Row({ label, value }: { label: string; value: React.ReactNode }) {
+    return (
+      <div className="flex items-start gap-3 text-sm">
+        <div className="min-w-28 text-muted-foreground">{label}</div>
+        <div className="flex-1 break-all">{value}</div>
+      </div>
+    )
+  }
 
+  function External({ href, children }: { href: string; children: React.ReactNode }) {
+    return (
+      <a className="inline-flex items-center gap-1 underline hover:no-underline" href={href} target="_blank" rel="noreferrer">
+        {children}
+        <ExternalLink className="w-4 h-4" />
+      </a>
+    )
+  }
+
+  function renderTx(data: any) {
+    const txid = data?.txid || data?.id || query
     return (
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-orange-400">Address Details</h3>
-          <a
-            href={`https://mempool.space/address/${query}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-400 hover:text-blue-300"
-          >
-            <ExternalLink className="w-4 h-4" />
-          </a>
-        </div>
-
         <Card className="bg-black/30 border-orange-500/25 p-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-gray-400">Balance:</span>
-                <span className="text-green-400 font-semibold">{balance.toLocaleString()} sat</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Received:</span>
-                <span className="text-white">{addrData.chain_stats.funded_txo_sum.toLocaleString()} sat</span>
-              </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Badge>Transaction</Badge>
+              <span className="font-mono text-xs break-all">{txid}</span>
             </div>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-gray-400">Spent:</span>
-                <span className="text-white">{addrData.chain_stats.spent_txo_sum.toLocaleString()} sat</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Transactions:</span>
-                <span className="text-white">{addrData.chain_stats.tx_count.toLocaleString()}</span>
-              </div>
-            </div>
+            <External href={`https://mempool.space/tx/${txid}`}>Open in mempool.space</External>
+          </div>
+          <div className="mt-3 space-y-2">
+            <Row label="Size" value={`${data?.size ?? data?.vsize ?? "—"} vB`} />
+            <Row label="Weight" value={`${data?.weight ?? "—"} WU`} />
+            <Row label="Fee" value={`${data?.fee?.toLocaleString?.() ?? data?.fee ?? "—"} sat`} />
+            <Row label="Inputs" value={data?.vin?.length ?? 0} />
+            <Row label="Outputs" value={data?.vout?.length ?? 0} />
           </div>
         </Card>
 
         <Card className="bg-black/30 border-orange-500/25 p-4">
-          <h4 className="text-orange-400 font-semibold mb-3">UTXOs ({utxos.length})</h4>
-          <div className="space-y-2 max-h-60 overflow-y-auto">
-            {utxos.map((utxo, i) => (
-              <div key={i} className="border-b border-gray-700 pb-2 last:border-b-0">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="text-sm text-gray-400">UTXO {i + 1}:</div>
-                    <div className="text-xs font-mono text-white break-all">
-                      {utxo.txid}:{utxo.vout}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-yellow-400 font-semibold">{utxo.value.toLocaleString()} sat</div>
-                    <Badge className={utxo.status.confirmed ? "bg-green-500" : "bg-yellow-500"}>
-                      {utxo.status.confirmed ? `Block ${utxo.status.block_height}` : "Unconfirmed"}
-                    </Badge>
-                  </div>
-                </div>
+          <h4 className="text-orange-400 font-semibold mb-2">Inputs</h4>
+          <div className="space-y-2 max-h-40 overflow-y-auto">
+            {(data?.vin ?? []).map((vin: any, i: number) => (
+              <div key={i} className="text-sm">
+                <div className="text-gray-400">Input {i + 1}:</div>
+                <div className="font-mono text-xs break-all">{vin?.prevout?.scriptpubkey_address ?? "—"}</div>
+                <div className="text-yellow-400">{vin?.prevout?.value?.toLocaleString?.() ?? vin?.prevout?.value ?? 0} sat</div>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        <Card className="bg-black/30 border-orange-500/25 p-4">
+          <h4 className="text-orange-400 font-semibold mb-2">Outputs</h4>
+          <div className="space-y-2 max-h-40 overflow-y-auto">
+            {(data?.vout ?? []).map((vout: any, i: number) => (
+              <div key={i} className="text-sm">
+                <div className="text-gray-400">Output {i + 1}:</div>
+                <div className="font-mono text-xs break-all">{vout?.scriptpubkey_address ?? "—"}</div>
+                <div className="text-green-400">{vout?.value?.toLocaleString?.() ?? vout?.value ?? 0} sat</div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+    )
+  }
+
+  function renderAddress(addr: any, utxos: any[]) {
+    const address = addr?.address ?? query
+    return (
+      <div className="space-y-4">
+        <Card className="bg-black/30 border-orange-500/25 p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Badge>Address</Badge>
+              <span className="font-mono text-xs break-all">{address}</span>
+            </div>
+            <External href={`https://mempool.space/address/${address}`}>Open in mempool.space</External>
+          </div>
+          <div className="mt-3 space-y-2">
+            <Row label="Funded TXOs" value={addr?.chain_stats?.funded_txo_count ?? "—"} />
+            <Row label="Spent TXOs" value={addr?.chain_stats?.spent_txo_count ?? "—"} />
+            <Row label="Total Received" value={`${addr?.chain_stats?.funded_txo_sum?.toLocaleString?.() ?? addr?.chain_stats?.funded_txo_sum ?? 0} sat`} />
+            <Row label="Total Spent" value={`${addr?.chain_stats?.spent_txo_sum?.toLocaleString?.() ?? addr?.chain_stats?.spent_txo_sum ?? 0} sat`} />
+            <Row label="Balance" value={`${(addr?.chain_stats?.funded_txo_sum ?? 0) - (addr?.chain_stats?.spent_txo_sum ?? 0)} sat`} />
+          </div>
+        </Card>
+
+        <Card className="bg-black/30 border-orange-500/25 p-4">
+          <h4 className="text-orange-400 font-semibold mb-2">UTXOs ({utxos?.length ?? 0})</h4>
+          <div className="space-y-2 max-h-48 overflow-y-auto">
+            {(utxos ?? []).map((u: any, i: number) => (
+              <div key={i} className="text-sm">
+                <div className="text-gray-400">TXID:</div>
+                <div className="font-mono text-xs break-all">{u?.txid}</div>
+                <div>Vout: {u?.vout}</div>
+                <div className="text-green-400">Value: {u?.value?.toLocaleString?.() ?? u?.value ?? 0} sat</div>
+                <div>Confirmed: {u?.status?.confirmed ? "Yes" : "No"}</div>
               </div>
             ))}
           </div>
@@ -196,27 +226,21 @@ export function SearchModal({ isOpen, onClose, query }: SearchModalProps) {
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-black/90 border-orange-500/25 text-white max-w-4xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-orange-400">Search Results</DialogTitle>
-        </DialogHeader>
+    <Dialog open={isOpen} onOpenChange={(v) => (!v ? onClose() : null)}>
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>{header}</DialogHeader>
 
-        <div className="mt-4">
-          <div className="mb-4 p-2 bg-gray-800/50 rounded font-mono text-sm break-all">{query}</div>
+        {loading && (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-6 h-6 animate-spin" />
+            <span className="ml-2 text-muted-foreground">Searching…</span>
+          </div>
+        )}
 
-          {loading && (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-8 h-8 animate-spin text-orange-400" />
-              <span className="ml-2 text-gray-400">Searching...</span>
-            </div>
-          )}
+        {!loading && error && <div className="text-red-400 text-center py-4">{error}</div>}
 
-          {error && <div className="text-red-400 text-center py-4">{error}</div>}
-
-          {result && result.type === "transaction" && renderTransactionResult(result.data)}
-          {result && result.type === "address" && renderAddressResult(result.data, result.utxos)}
-        </div>
+        {!loading && !error && txResult && renderTx(txResult)}
+        {!loading && !error && addrResult && renderAddress(addrResult, utxos || [])}
       </DialogContent>
     </Dialog>
   )

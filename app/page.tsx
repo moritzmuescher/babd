@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import React, { useCallback, useEffect, useMemo, useState } from "react"
 import { ThreeScene } from "@/components/three-scene"
 import { StatsPanel } from "@/components/stats-panel"
 import { BlockExplorer } from "@/components/block-explorer"
@@ -10,56 +10,108 @@ import { SocialLink } from "@/components/social-link"
 import { SearchBar } from "@/components/search-bar"
 import { NetworkStats } from "@/components/network-stats"
 
-export default function Home() {
+type HomeProps = {
+  /** When rendered via /[slug], we pass that slug in to auto-search & prefill the input. */
+  initialQuery?: string
+}
+
+export default function Home({ initialQuery }: HomeProps) {
   const [isSearchOpen, setIsSearchOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState("")
+  const [searchQuery, setSearchQuery] = useState(initialQuery ?? "")
   const [currentBlockHeight, setCurrentBlockHeight] = useState(0)
 
-  const handleSearch = (query: string) => {
-    setSearchQuery(query)
+  // Keep URL as /<query> when searching, for easy sharing.
+  const openSearchFor = useCallback((q: string) => {
+    const clean = (q || "").trim()
+    if (!clean) return
+    setSearchQuery(clean)
     setIsSearchOpen(true)
-  }
-
-  const fetchCurrentBlockHeight = useCallback(async () => {
-    try {
-      const heightRes = await fetch("https://mempool.space/api/blocks/tip/height")
-      const blockHeight = await heightRes.text()
-      setCurrentBlockHeight(Number.parseInt(blockHeight, 10))
-    } catch (error) {
-      console.error("Error fetching current block height:", error)
+    // Update the URL without leaving the page. Dynamic route is also provided for hard reloads.
+    if (typeof window !== "undefined") {
+      const next = `/${encodeURIComponent(clean)}`
+      if (window.location.pathname !== next) {
+        window.history.pushState({}, "", next)
+      }
     }
   }, [])
 
+  const handleCloseModal = useCallback(() => {
+    setIsSearchOpen(false)
+    // Restore the base URL
+    if (typeof window !== "undefined") {
+      if (window.location.pathname !== "/") {
+        window.history.pushState({}, "", "/")
+      }
+    }
+  }, [])
+
+  // If we land directly on /<slug>, open the search automatically.
   useEffect(() => {
-    fetchCurrentBlockHeight()
-    const interval = setInterval(fetchCurrentBlockHeight, 60000)
-    return () => clearInterval(interval)
-  }, [fetchCurrentBlockHeight])
+    // Prefer the provided prop from the dynamic route;
+    // but also fall back to reading the pathname in case the user added this to another route.
+    const pathPart = typeof window !== "undefined"
+      ? window.location.pathname.replace(/^\/+|\/+$/g, "")
+      : ""
+    const value = (initialQuery && initialQuery.trim().length > 0) ? initialQuery : pathPart
+    if (value && value !== "favicon.ico" && !isSearchOpen) {
+      setSearchQuery(value)
+      setTimeout(() => openSearchFor(value), 0)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Keep the SearchBar's input in sync if initialQuery changes (navigating between deep links)
+  useEffect(() => {
+    if (initialQuery && initialQuery !== searchQuery) {
+      setSearchQuery(initialQuery)
+    }
+  }, [initialQuery])
+
+  // Fetch the current block height periodically so the explorer can align its cursor.
+  useEffect(() => {
+    let cancelled = false
+    async function loadTip() {
+      try {
+        const res = await fetch("https://mempool.space/api/blocks/tip/height")
+        if (!res.ok) return
+        const txt = await res.text()
+        const n = parseInt(txt, 10)
+        if (!cancelled && Number.isFinite(n)) setCurrentBlockHeight(n)
+      } catch {}
+    }
+    loadTip()
+    const id = setInterval(loadTip, 60_000)
+    return () => {
+      cancelled = true
+      clearInterval(id)
+    }
+  }, [])
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-black">
-      {/* 3D Background */}
+    <div className="min-h-screen w-full relative overflow-hidden bg-black">
+      {/* 3D Scene */}
       <ThreeScene />
 
-      <NetworkStats />
-
-      {/* Social Link - Now positioned below donation QR on the right */}
+      {/* Social Links */}
       <SocialLink />
 
-      {/* Stats Panels - Pass currentBlockHeight */}
-      <StatsPanel blockHeight={currentBlockHeight} />
+      {/* Stats (price, mempool, etc.) */}
+      <StatsPanel />
+
+      {/* Difficulty & Halving */}
+      <NetworkStats />
 
       {/* Block Explorer - Pass currentBlockHeight */}
       <BlockExplorer currentHeight={currentBlockHeight} />
 
-      {/* Search Bar */}
-      <SearchBar onSearch={handleSearch} />
+      {/* Search Bar (prefilled when deep linking) */}
+      <SearchBar onSearch={openSearchFor} initialQuery={searchQuery} />
 
       {/* Donation QR */}
       <DonationQR />
 
       {/* Search Modal */}
-      <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} query={searchQuery} />
+      <SearchModal isOpen={isSearchOpen} onClose={handleCloseModal} query={searchQuery} />
     </div>
   )
 }

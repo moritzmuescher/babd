@@ -1,51 +1,50 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
+import React, { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search } from "lucide-react"
 
 interface SearchBarProps {
   onSearch: (query: string) => void
+  /** Optional: prefill the search input (used for deep links) */
+  initialQuery?: string
 }
 
-export function SearchBar({ onSearch }: SearchBarProps) {
-  const [query, setQuery] = useState("")
+export function SearchBar({ onSearch, initialQuery }: SearchBarProps) {
+  const [query, setQuery] = useState(initialQuery ?? "")
+
+  useEffect(() => {
+    // Keep input in sync if initialQuery changes (e.g., navigating between deep links)
+    if (typeof initialQuery === "string" && initialQuery !== query) {
+      setQuery(initialQuery)
+    }
+  }, [initialQuery])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (query.trim()) {
-      onSearch(query.trim())
+    const cleaned = (query || "").trim()
+    if (cleaned.length > 0) {
+      onSearch(cleaned)
     }
   }
 
   return (
-    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-10 w-full max-w-2xl px-2">
-      <div className="search-bar-container">
-        <div className="search-bar-glow">
-          <div className="search-bar-inner">
-            <form onSubmit={handleSubmit} className="flex p-2 space-x-2">
-              <Input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Lookup TxID or Bitcoin Address..."
-                className="flex-1 bg-black/30 border-orange-500/40 text-white placeholder-gray-300 focus:border-orange-400 search-input-glow transition-all duration-300 text-sm font-medium px-3 py-2"
-                autoComplete="off"
-                data-1p-ignore
-              />
-              <Button
-                type="submit"
-                className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-black font-semibold px-4 py-2 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-orange-500/25"
-              >
-                <Search className="w-4 h-4 mr-2" />
-                Search
-              </Button>
-            </form>
-          </div>
-        </div>
+    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 w-full max-w-2xl px-2">
+      <div className="backdrop-blur-xl bg-black/30 border border-white/10 shadow-lg rounded-2xl">
+        <form onSubmit={handleSubmit} className="flex items-center gap-2 p-3">
+          <Input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Paste a TxID or Bitcoin address…"
+            className="flex-1"
+          />
+          <Button type="submit">
+            <Search className="w-4 h-4 mr-2" />
+            Search
+          </Button>
+        </form>
       </div>
     </div>
   )
