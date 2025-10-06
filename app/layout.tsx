@@ -3,8 +3,6 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 
-import { ThemeProvider } from "@/components/theme-provider"
-
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
@@ -22,20 +20,14 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en">
       <head>
-        <meta name="theme-color" content="#000000" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <link rel="icon" href="/images/logo2.png" type="image/png" />
       </head>
-      <body className={inter.className}>
-        <ThemeProvider forcedTheme="dark">{children}</ThemeProvider>
-      </body>
+      <body className={inter.className}>{children}</body>
     </html>
   )
 }
-
 
 
 export const viewport = {

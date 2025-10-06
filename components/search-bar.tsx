@@ -28,7 +28,7 @@ export function SearchBar({ onSearch }: SearchBarProps) {
           <div className="search-bar-inner">
             <form onSubmit={handleSubmit} className="flex p-2 space-x-2">
               <Input
-                type="search"
+                type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Lookup TxID or Bitcoin Address..."
