@@ -16,9 +16,9 @@ export function ThreeScene() {
 
       // Basic setup
       scene = new THREE.Scene()
-      camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 3000)
+      camera = new THREE.PerspectiveCamera(75, containerRef.current!.clientWidth / containerRef.current!.clientHeight, 0.1, 3000)
       renderer = new THREE.WebGLRenderer({ antialias: true })
-      renderer.setSize(window.innerWidth, window.innerHeight)
+      renderer.setSize(containerRef.current!.clientWidth, containerRef.current!.clientHeight)
       renderer.setClearColor(0x000000)
 
       if (containerRef.current) {
@@ -32,9 +32,7 @@ export function ThreeScene() {
       controls.maxDistance = 500
       controls.minDistance = 0.1
 
-      // Set different initial camera position for mobile vs desktop
-      const isMobile = window.innerWidth < 768
-      camera.position.z = 15
+
 
       // Create circle texture
       const canvas = document.createElement("canvas")
@@ -294,24 +292,26 @@ export function ThreeScene() {
       }
       animate()
 
+      // Set camera Z based on initial FOV and container height
+      const setCameraZ = () => {
+        const fovInRadians = (camera.fov * Math.PI) / 180
+        const height = containerRef.current!.clientHeight
+        const newZ = height / (2 * Math.tan(fovInRadians / 2))
+        camera.position.z = newZ
+      }
+
       // Handle resize
       const handleResize = () => {
-        const width = window.innerWidth
-        const height = window.innerHeight
+        if (!containerRef.current) return
+        const width = containerRef.current.clientWidth
+        const height = containerRef.current.clientHeight
+
+        renderer.setSize(width, height)
         camera.aspect = width / height
         camera.updateProjectionMatrix()
-        renderer.setSize(width, height)
-
-        // Adjust camera position on resize if switching between mobile/desktop
-        const isMobileNow = width < 768
-        const currentZ = camera.position.z
-        const targetZ = isMobileNow ? 15 : 10
-
-        // Only adjust if there's a significant difference to avoid constant adjustments
-        if (Math.abs(currentZ - targetZ) > 2) {
-          camera.position.z = targetZ
-        }
       }
+
+      setCameraZ()
       window.addEventListener("resize", handleResize)
 
       return () => {
