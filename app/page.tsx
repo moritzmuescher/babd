@@ -2,18 +2,20 @@
 
 import React, { useCallback, useEffect, useState } from "react"
 import dynamic from "next/dynamic"
-import { ThreeScene } from "@/components/three-scene"
-import { StatsPanel } from "@/components/stats-panel"
-import { BlockExplorer } from "@/components/block-explorer"
-import { DonationQR } from "@/components/donation-qr"
-import { SocialLink } from "@/components/social-link"
 import { SearchBar } from "@/components/search-bar"
-import { NetworkStats } from "@/components/network-stats"
 
-const SearchModal = dynamic(
-  () => import("@/components/search-modal").then((m) => m.SearchModal),
-  { ssr: false }
-)
+// Opt out of static pre-render to avoid build-time execution of client widgets
+export const dynamic = "force-dynamic"
+export const revalidate = 0
+export const fetchCache = "force-no-store"
+
+const ThreeScene = dynamic(() => import("@/components/three-scene").then(m => m.ThreeScene), { ssr: false })
+const StatsPanel = dynamic(() => import("@/components/stats-panel").then(m => m.StatsPanel), { ssr: false })
+const BlockExplorer = dynamic(() => import("@/components/block-explorer").then(m => m.BlockExplorer), { ssr: false })
+const DonationQR = dynamic(() => import("@/components/donation-qr").then(m => m.DonationQR), { ssr: false })
+const SocialLink = dynamic(() => import("@/components/social-link").then(m => m.SocialLink), { ssr: false })
+const NetworkStats = dynamic(() => import("@/components/network-stats").then(m => m.NetworkStats), { ssr: false })
+const SearchModal = dynamic(() => import("@/components/search-modal").then(m => m.SearchModal), { ssr: false })
 
 type HomeProps = {
   /** When rendered via /[slug], we pass that slug in to auto-search & prefill the input. */
@@ -31,7 +33,6 @@ export default function Home({ initialQuery }: HomeProps) {
     if (!clean) return
     setSearchQuery(clean)
     setIsSearchOpen(true)
-    // Update the URL without leaving the page. Dynamic route is also provided for hard reloads.
     if (typeof window !== "undefined") {
       const next = `/${encodeURIComponent(clean)}`
       if (window.location.pathname !== next) {
@@ -42,7 +43,6 @@ export default function Home({ initialQuery }: HomeProps) {
 
   const handleCloseModal = useCallback(() => {
     setIsSearchOpen(false)
-    // Restore the base URL
     if (typeof window !== "undefined") {
       if (window.location.pathname !== "/") {
         window.history.pushState({}, "", "/")
@@ -63,7 +63,7 @@ export default function Home({ initialQuery }: HomeProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Fetch the current block height periodically so the explorer can align its cursor.
+  // Pull the current block height (client-side only)
   useEffect(() => {
     let cancelled = false
     async function loadTip() {
@@ -85,28 +85,13 @@ export default function Home({ initialQuery }: HomeProps) {
 
   return (
     <div className="min-h-screen w-full relative overflow-hidden bg-black">
-      {/* 3D Scene */}
       <ThreeScene />
-
-      {/* Social Links */}
       <SocialLink />
-
-      {/* Stats (price, mempool, etc.) */}
       <StatsPanel />
-
-      {/* Difficulty & Halving */}
       <NetworkStats />
-
-      {/* Block Explorer - Pass currentBlockHeight */}
       <BlockExplorer currentHeight={currentBlockHeight} />
-
-      {/* Search Bar (prefilled when deep linking) */}
       <SearchBar onSearch={openSearchFor} initialQuery={searchQuery} />
-
-      {/* Donation QR */}
       <DonationQR />
-
-      {/* Search Modal */}
       <SearchModal isOpen={isSearchOpen} onClose={handleCloseModal} query={searchQuery} />
     </div>
   )
