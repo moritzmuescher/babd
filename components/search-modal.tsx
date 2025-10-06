@@ -29,6 +29,16 @@ function isLikelyAddress(q: string) {
   return base58.test(s) || bech32.test(s)
 }
 
+function fmt(n: any): string {
+  if (typeof n === "number" && Number.isFinite(n)) return n.toLocaleString()
+  if (typeof n === "string") {
+    const num = Number(n)
+    if (Number.isFinite(num)) return num.toLocaleString()
+    return n
+  }
+  return "—"
+}
+
 export function SearchModal({ isOpen, onClose, query }: SearchModalProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -149,11 +159,11 @@ export function SearchModal({ isOpen, onClose, query }: SearchModalProps) {
             <External href={`https://mempool.space/tx/${txid}`}>Open in mempool.space</External>
           </div>
           <div className="mt-3 space-y-2">
-            <Row label="Size" value={`${data?.size ?? data?.vsize ?? "—"} vB`} />
-            <Row label="Weight" value={`${data?.weight ?? "—"} WU`} />
-            <Row label="Fee" value={`${data?.fee?.toLocaleString?.() ?? data?.fee ?? "—"} sat`} />
-            <Row label="Inputs" value={data?.vin?.length ?? 0} />
-            <Row label="Outputs" value={data?.vout?.length ?? 0} />
+            <Row label="Size" value={`${fmt(data?.size ?? data?.vsize) } vB`} />
+            <Row label="Weight" value={`${fmt(data?.weight)} WU`} />
+            <Row label="Fee" value={`${fmt(data?.fee)} sat`} />
+            <Row label="Inputs" value={fmt(data?.vin?.length ?? 0)} />
+            <Row label="Outputs" value={fmt(data?.vout?.length ?? 0)} />
           </div>
         </Card>
 
@@ -164,7 +174,7 @@ export function SearchModal({ isOpen, onClose, query }: SearchModalProps) {
               <div key={i} className="text-sm">
                 <div className="text-gray-400">Input {i + 1}:</div>
                 <div className="font-mono text-xs break-all">{vin?.prevout?.scriptpubkey_address ?? "—"}</div>
-                <div className="text-yellow-400">{vin?.prevout?.value?.toLocaleString?.() ?? vin?.prevout?.value ?? 0} sat</div>
+                <div className="text-yellow-400">{fmt(vin?.prevout?.value)} sat</div>
               </div>
             ))}
           </div>
@@ -177,7 +187,7 @@ export function SearchModal({ isOpen, onClose, query }: SearchModalProps) {
               <div key={i} className="text-sm">
                 <div className="text-gray-400">Output {i + 1}:</div>
                 <div className="font-mono text-xs break-all">{vout?.scriptpubkey_address ?? "—"}</div>
-                <div className="text-green-400">{vout?.value?.toLocaleString?.() ?? vout?.value ?? 0} sat</div>
+                <div className="text-green-400">{fmt(vout?.value)} sat</div>
               </div>
             ))}
           </div>
@@ -188,6 +198,12 @@ export function SearchModal({ isOpen, onClose, query }: SearchModalProps) {
 
   function renderAddress(addr: any, utxos: any[]) {
     const address = addr?.address ?? query
+    const funded = addr?.chain_stats?.funded_txo_sum
+    const spent = addr?.chain_stats?.spent_txo_sum
+    const balance =
+      (typeof funded === "number" ? funded : Number(funded)) -
+      (typeof spent === "number" ? spent : Number(spent))
+
     return (
       <div className="space-y-4">
         <Card className="bg-black/30 border-orange-500/25 p-4">
@@ -199,23 +215,23 @@ export function SearchModal({ isOpen, onClose, query }: SearchModalProps) {
             <External href={`https://mempool.space/address/${address}`}>Open in mempool.space</External>
           </div>
           <div className="mt-3 space-y-2">
-            <Row label="Funded TXOs" value={addr?.chain_stats?.funded_txo_count ?? "—"} />
-            <Row label="Spent TXOs" value={addr?.chain_stats?.spent_txo_count ?? "—"} />
-            <Row label="Total Received" value={`${addr?.chain_stats?.funded_txo_sum?.toLocaleString?.() ?? addr?.chain_stats?.funded_txo_sum ?? 0} sat`} />
-            <Row label="Total Spent" value={`${addr?.chain_stats?.spent_txo_sum?.toLocaleString?.() ?? addr?.chain_stats?.spent_txo_sum ?? 0} sat`} />
-            <Row label="Balance" value={`${(addr?.chain_stats?.funded_txo_sum ?? 0) - (addr?.chain_stats?.spent_txo_sum ?? 0)} sat`} />
+            <Row label="Funded TXOs" value={fmt(addr?.chain_stats?.funded_txo_count)} />
+            <Row label="Spent TXOs" value={fmt(addr?.chain_stats?.spent_txo_count)} />
+            <Row label="Total Received" value={`${fmt(addr?.chain_stats?.funded_txo_sum)} sat`} />
+            <Row label="Total Spent" value={`${fmt(addr?.chain_stats?.spent_txo_sum)} sat`} />
+            <Row label="Balance" value={`${fmt(balance)} sat`} />
           </div>
         </Card>
 
         <Card className="bg-black/30 border-orange-500/25 p-4">
-          <h4 className="text-orange-400 font-semibold mb-2">UTXOs ({utxos?.length ?? 0})</h4>
+          <h4 className="text-orange-400 font-semibold mb-2">UTXOs ({fmt(utxos?.length ?? 0)})</h4>
           <div className="space-y-2 max-h-48 overflow-y-auto">
             {(utxos ?? []).map((u: any, i: number) => (
               <div key={i} className="text-sm">
                 <div className="text-gray-400">TXID:</div>
                 <div className="font-mono text-xs break-all">{u?.txid}</div>
-                <div>Vout: {u?.vout}</div>
-                <div className="text-green-400">Value: {u?.value?.toLocaleString?.() ?? u?.value ?? 0} sat</div>
+                <div>Vout: {fmt(u?.vout)}</div>
+                <div className="text-green-400">Value: {fmt(u?.value)} sat</div>
                 <div>Confirmed: {u?.status?.confirmed ? "Yes" : "No"}</div>
               </div>
             ))}

@@ -1,14 +1,19 @@
 "use client"
 
-import React, { useCallback, useEffect, useMemo, useState } from "react"
+import React, { useCallback, useEffect, useState } from "react"
+import dynamic from "next/dynamic"
 import { ThreeScene } from "@/components/three-scene"
 import { StatsPanel } from "@/components/stats-panel"
 import { BlockExplorer } from "@/components/block-explorer"
-import { SearchModal } from "@/components/search-modal"
 import { DonationQR } from "@/components/donation-qr"
 import { SocialLink } from "@/components/social-link"
 import { SearchBar } from "@/components/search-bar"
 import { NetworkStats } from "@/components/network-stats"
+
+const SearchModal = dynamic(
+  () => import("@/components/search-modal").then((m) => m.SearchModal),
+  { ssr: false }
+)
 
 type HomeProps = {
   /** When rendered via /[slug], we pass that slug in to auto-search & prefill the input. */
@@ -47,8 +52,6 @@ export default function Home({ initialQuery }: HomeProps) {
 
   // If we land directly on /<slug>, open the search automatically.
   useEffect(() => {
-    // Prefer the provided prop from the dynamic route;
-    // but also fall back to reading the pathname in case the user added this to another route.
     const pathPart = typeof window !== "undefined"
       ? window.location.pathname.replace(/^\/+|\/+$/g, "")
       : ""
@@ -59,13 +62,6 @@ export default function Home({ initialQuery }: HomeProps) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-
-  // Keep the SearchBar's input in sync if initialQuery changes (navigating between deep links)
-  useEffect(() => {
-    if (initialQuery && initialQuery !== searchQuery) {
-      setSearchQuery(initialQuery)
-    }
-  }, [initialQuery])
 
   // Fetch the current block height periodically so the explorer can align its cursor.
   useEffect(() => {
