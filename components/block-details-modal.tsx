@@ -142,7 +142,7 @@ export function BlockDetailsModal({ isOpen, onClose, blockHash }: BlockDetailsMo
                       variant="outline"
                       size="sm"
                       onClick={() => copyToClipboard(blockDetails.id, "hash")}
-                      className="border-orange-500/50 text-orange-400 hover:bg-orange-500/20"
+                      className="border-orange-500/50 text-orange-400 hover:bg-orange-500/20 bg-transparent"
                     >
                       {copiedField === "hash" ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                     </Button>

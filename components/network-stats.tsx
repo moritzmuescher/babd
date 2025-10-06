@@ -1,86 +1,205 @@
 "use client"
 
-import React, { useEffect, useMemo, useState } from "react"
+import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
-import { fmt } from "@/lib/format"
+import { Separator } from "@/components/ui/separator"
 
-type DiffAdj = {
-  progressPercent?: number
-  estimatedRetargetDate?: string
-  remainingBlocks?: number
-  difficultyChange?: number
+interface DifficultyData {
+  progressPercent: number
+  difficultyChange: number
+  previousChange: number
+  averageBlockTime: number
+  estimatedRetarget: string
+  blocksIntoEpoch: number
 }
 
-async function fetchJSON<T=any>(url: string): Promise<T | null> {
-  try {
-    const res = await fetch(url, { cache: "no-store" })
-    if (!res.ok) return null
-    return await res.json()
-  } catch { return null }
+interface HalvingData {
+  progressPercent: number
+  blocksRemaining: number
+  estimatedDate: string
+  newSubsidy: number
 }
 
 export function NetworkStats() {
-  const [diff, setDiff] = useState<DiffAdj | null>(null)
-  const [height, setHeight] = useState<number | null>(null)
+  const [difficultyData, setDifficultyData] = useState<DifficultyData | null>(null)
+  const [halvingData, setHalvingData] = useState<HalvingData | null>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    let stop = false
-    async function load() {
-      const [d, h] = await Promise.all([
-        fetchJSON<DiffAdj>("https://mempool.space/api/v1/difficulty-adjustment"),
-        (async () => {
-          try {
-            const res = await fetch("https://mempool.space/api/blocks/tip/height", { cache: "no-store" })
-            if (!res.ok) return null
-            const txt = await res.text()
-            const n = parseInt(txt, 10)
-            return Number.isFinite(n) ? n : null
-          } catch { return null }
-        })(),
-      ])
-      if (!stop) {
-        if (d) setDiff(d)
-        if (typeof h === "number") setHeight(h)
+    const fetchData = async () => {
+      try {
+        // Fetch difficulty data
+        const diffResponse = await fetch("https://mempool.space/api/v1/difficulty-adjustment")
+        const diffData = await diffResponse.json()
+
+        const blocksIntoEpoch = (diffData.progressPercent * 2016) / 100
+        const retargetDate = new Date(diffData.estimatedRetargetDate)
+        const now = new Date()
+        const msUntil = retargetDate.getTime() - now.getTime()
+        const daysUntil = Math.floor(msUntil / (1000 * 60 * 60 * 24))
+
+        const timeString = retargetDate.toLocaleString("en-US", {
+          month: "long",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+        })
+
+        setDifficultyData({
+          progressPercent: diffData.progressPercent,
+          difficultyChange: diffData.difficultyChange,
+          previousChange: diffData.previousRetarget || 0,
+          averageBlockTime: diffData.timeAvg / 60000,
+          estimatedRetarget: `In ~${daysUntil} days (${timeString})`,
+          blocksIntoEpoch: Math.round(blocksIntoEpoch),
+        })
+
+        // Fetch halving data
+        const heightRes = await fetch("https://mempool.space/api/blocks/tip/height")
+        const currentHeight = Number.parseInt(await heightRes.text(), 10)
+
+        const halvingInterval = 210000
+        const currentHalvingEpoch = Math.floor(currentHeight / halvingInterval)
+        const nextHalvingBlock = (currentHalvingEpoch + 1) * halvingInterval
+        const blocksRemaining = nextHalvingBlock - currentHeight
+        const blocksSinceLastHalving = currentHeight - currentHalvingEpoch * halvingInterval
+        const progressPercent = (blocksSinceLastHalving / halvingInterval) * 100
+
+        const currentSubsidy = 50 / Math.pow(2, currentHalvingEpoch)
+        const newSubsidy = currentSubsidy / 2
+
+        const minutesRemaining = blocksRemaining * 10
+        const estimatedDate = new Date(Date.now() + minutesRemaining * 60 * 1000)
+        const yearsUntil = Math.floor((estimatedDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24 * 365))
+        const daysUntil2 = Math.floor(((estimatedDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) % 365)
+        const dateString = estimatedDate.toLocaleString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        })
+
+        setHalvingData({
+          progressPercent,
+          blocksRemaining,
+          estimatedDate: `${dateString} (In ~${yearsUntil} years, ${daysUntil2} days)`,
+          newSubsidy,
+        })
+
+        setLoading(false)
+      } catch (error) {
+        console.error("Error fetching network stats:", error)
+        setLoading(false)
       }
     }
-    load()
-    const id = setInterval(load, 60_000)
-    return () => { stop = true; clearInterval(id) }
+
+    fetchData()
+    const interval = setInterval(fetchData, 60000)
+    return () => clearInterval(interval)
   }, [])
 
-  const halvingInfo = useMemo(() => {
-    if (!height) return { nextHeight: "—", blocksLeft: "—" }
-    const HALVING_INTERVAL = 210_000
-    const next = Math.ceil((height + 1) / HALVING_INTERVAL) * HALVING_INTERVAL
-    const left = next - height
-    return { nextHeight: fmt(next), blocksLeft: fmt(left) }
-  }, [height])
+  if (loading || !difficultyData || !halvingData) {
+    return (
+      <div className="absolute left-4 top-64 md:top-80 z-10 max-w-xs">
+        <Card className="bg-black/50 border-orange-500/25 backdrop-blur-sm p-4">
+          <div className="text-gray-400 text-xs">Loading...</div>
+        </Card>
+      </div>
+    )
+  }
+
+  const baseProgress = (difficultyData.blocksIntoEpoch / 2016) * 100
+  const isAhead = difficultyData.difficultyChange > 0
+  const extensionPercent = Math.abs(difficultyData.difficultyChange) * 0.5
 
   return (
-    <div className="fixed top-[90px] right-4 left-4 md:left-auto md:w-[380px] z-10">
-      <Card className="bg-black/30 border-white/10 p-4 rounded-2xl space-y-3">
-        <div className="text-sm opacity-70">Difficulty Adjustment</div>
-        <div className="text-lg font-semibold">
-          Progress: {fmt(diff?.progressPercent)}%
-        </div>
-        <div className="text-sm">
-          Remaining blocks: <span className="font-medium">{fmt(diff?.remainingBlocks)}</span>
-        </div>
-        <div className="text-sm">
-          Est. retarget: <span className="font-medium">{diff?.estimatedRetargetDate ?? "—"}</span>
-        </div>
-        <div className="text-sm">
-          Est. change: <span className="font-medium">{fmt(diff?.difficultyChange)}%</span>
+    <div className="absolute left-4 top-64 md:top-80 z-10 max-w-xs">
+      <Card className="bg-black/50 border-orange-500/25 backdrop-blur-sm p-4">
+        {/* Difficulty Adjustment Section */}
+        <div className="mb-4">
+          <div className="text-orange-400 text-sm font-semibold mb-3">Difficulty Adjustment</div>
+
+          {/* Progress Bar */}
+          <div className="relative mb-4">
+            <div className="w-full bg-gray-800 rounded-full h-3 overflow-hidden">
+              <div
+                className="h-full bg-blue-500 transition-all duration-500"
+                style={{ width: `${Math.min(baseProgress, 100)}%` }}
+              />
+              {baseProgress < 100 && (
+                <div
+                  className={`h-3 ${isAhead ? "bg-green-500" : "bg-red-500"} transition-all duration-500 inline-block`}
+                  style={{
+                    width: `${Math.min(extensionPercent, 100 - baseProgress)}%`,
+                  }}
+                />
+              )}
+            </div>
+            <div className="text-xs text-gray-400 mt-1">{difficultyData.blocksIntoEpoch} / 2016 blocks</div>
+          </div>
+
+          {/* Stats */}
+          <div className="space-y-2 text-xs">
+            <div className="flex justify-between items-center">
+              <span className="text-gray-400">Average block time</span>
+              <span className="text-white font-medium">~{difficultyData.averageBlockTime.toFixed(1)} minutes</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-400">Difficulty change</span>
+              <span
+                className={`font-medium ${difficultyData.difficultyChange > 0 ? "text-green-400" : "text-red-400"}`}
+              >
+                {difficultyData.difficultyChange > 0 ? "+" : ""}
+                {difficultyData.difficultyChange.toFixed(2)}%
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-400">Previous</span>
+              <span className={`font-medium ${difficultyData.previousChange > 0 ? "text-green-400" : "text-red-400"}`}>
+                {difficultyData.previousChange > 0 ? "+" : ""}
+                {difficultyData.previousChange.toFixed(2)}%
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-400">Next retarget</span>
+              <span className="text-white font-medium text-right">{difficultyData.estimatedRetarget}</span>
+            </div>
+          </div>
         </div>
 
-        <div className="h-px bg-white/10 my-2" />
+        {/* Separator */}
+        <Separator className="my-4 bg-orange-500/25" />
 
-        <div className="text-sm opacity-70">Halving Countdown</div>
-        <div className="text-sm">
-          Next halving height: <span className="font-medium">{halvingInfo.nextHeight}</span>
-        </div>
-        <div className="text-sm">
-          Blocks left: <span className="font-medium">{halvingInfo.blocksLeft}</span>
+        {/* Halving Countdown Section */}
+        <div>
+          <div className="text-orange-400 text-sm font-semibold mb-3">Halving Countdown</div>
+
+          {/* Progress Bar */}
+          <div className="relative mb-4">
+            <div className="w-full bg-gray-800 rounded-full h-3 overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-orange-500 to-yellow-500 transition-all duration-500"
+                style={{ width: `${halvingData.progressPercent}%` }}
+              />
+            </div>
+            <div className="text-xs text-gray-400 mt-1">{halvingData.progressPercent.toFixed(2)}% complete</div>
+          </div>
+
+          {/* Stats */}
+          <div className="space-y-2 text-xs">
+            <div className="flex justify-between items-center">
+              <span className="text-gray-400">New subsidy</span>
+              <span className="text-white font-medium">{halvingData.newSubsidy.toFixed(3)} BTC</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-400">Blocks remaining</span>
+              <span className="text-white font-medium">{halvingData.blocksRemaining.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-400">Estimated date</span>
+              <span className="text-white font-medium text-right">{halvingData.estimatedDate}</span>
+            </div>
+          </div>
         </div>
       </Card>
     </div>

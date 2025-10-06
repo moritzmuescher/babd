@@ -1,189 +1,155 @@
 "use client"
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { fmt, fmtMBfromVsize } from "@/lib/format"
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
-import { BarChart3, Activity, Layers3, ChevronDown } from "lucide-react"
+import TradingViewWidget from "@/components/tradingview-widget"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
-type Ticker = {
-  last: string
-  open: string
-  high: string
-  low: string
-  volume: string
-  vwap?: string
-  timestamp?: string
+interface BitcoinStats {
+  price: number
+  mempoolSize: number
+  highPriority: number
+  unconfirmed: number
 }
 
-async function fetchJSON<T=any>(url: string): Promise<T | null> {
-  try {
-    const res = await fetch(url, { cache: "no-store" })
-    if (!res.ok) return null
-    return await res.json()
-  } catch {
-    return null
-  }
+interface StatsPanelProps {
+  blockHeight: number
 }
 
-export function StatsPanel() {
-  const [height, setHeight] = useState<number | null>(null)
-  const [mempool, setMempool] = useState<{count?: number; vsize?: number} | null>(null)
-  const [unit, setUnit] = useState<"USD" | "EUR">("USD")
-  const [usd, setUsd] = useState<Ticker | null>(null)
-  const [eur, setEur] = useState<Ticker | null>(null)
-  const [showChart, setShowChart] = useState(false)
+export function StatsPanel({ blockHeight }: StatsPanelProps) {
+  const [isChartOpen, setIsChartOpen] = useState(false)
+  const [chartSymbol, setChartSymbol] = useState<'BTCUSD' | 'BTCEUR'>('BTCUSD')
+  const [stats, setStats] = useState<BitcoinStats>({
+    price: 0,
+    mempoolSize: 0,
+    highPriority: 0,
+    unconfirmed: 0,
+  })
 
-  // Poll core stats
   useEffect(() => {
-    let stop = false
-    async function load() {
-      const [hTxt, mp] = await Promise.all([
-        (async () => {
-          try {
-            const res = await fetch("https://mempool.space/api/blocks/tip/height", { cache: "no-store" })
-            if (!res.ok) return null
-            const txt = await res.text()
-            const n = parseInt(txt, 10)
-            return Number.isFinite(n) ? n : null
-          } catch { return null }
-        })(),
-        fetchJSON("https://mempool.space/api/mempool")
-      ])
-      if (!stop) {
-        if (typeof hTxt === "number") setHeight(hTxt)
-        if (mp) setMempool(mp as any)
+    const fetchStats = async () => {
+      try {
+        const [priceRes, mempoolRes, feesRes] = await Promise.all([
+          fetch("https://mempool.space/api/v1/prices"),
+          fetch("https://mempool.space/api/mempool"),
+          fetch("https://mempool.space/api/v1/fees/recommended"),
+        ])
+
+        const priceData = await priceRes.json()
+        const mempoolData = await mempoolRes.json()
+        const feesData = await feesRes.json()
+
+        setStats({
+          price: priceData.USD,
+          mempoolSize: mempoolData.vsize / 1000000,
+          highPriority: feesData.fastestFee,
+          unconfirmed: mempoolData.count,
+        })
+      } catch (error) {
+        console.error("Error fetching stats:", error)
       }
     }
-    load()
-    const id = setInterval(load, 30_000)
-    return () => { stop = true; clearInterval(id) }
+
+    fetchStats()
+    const interval = setInterval(fetchStats, 60000)
+    return () => clearInterval(interval)
   }, [])
-
-  // Poll tickers
-  useEffect(() => {
-    let stop = False = False
-    async function load() {
-      const [usdT, eurT] = await Promise.all([
-        fetchJSON<Ticker>("https://www.bitstamp.net/api/v2/ticker/btcusd/"),
-        fetchJSON<Ticker>("https://www.bitstamp.net/api/v2/ticker/btceur/")
-      ])
-      if (!stop) {
-        if (usdT) setUsd(usdT)
-        if (eurT) setEur(eurT)
-      }
-    }
-    load()
-    const id = setInterval(load, 30_000)
-    return () => { stop = True = True; clearInterval(id) }
-  }, [])
-
-  const price = useMemo(() => {
-    const t = unit === "USD" ? usd : eur
-    const last = t?.last
-    if (!last) return "—"
-    const num = Number(last)
-    if (!Number.isFinite(num)) return last
-    return num.toLocaleString(undefined, { maximumFractionDigits: 0 })
-  }, [unit, usd, eur])
-
-  const title = useMemo(() => (unit === "USD" ? "BTCUSD — Advanced Chart" : "BTCEUR — Advanced Chart"), [unit])
-
-  const toggleChart = useCallback(() => setShowChart((s) => !s), [])
 
   return (
-    <div className="fixed top-4 left-1/2 -translate-x-1/2 w-full max-w-5xl px-4 z-20">
-      <Card className="bg-black/30 border-white/10 p-3 rounded-2xl">
-        <div className="flex flex-wrap items-center gap-3 justify-between">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2">
-              <Activity className="w-4 h-4 opacity-80" />
-              <div className="text-sm opacity-70">Price</div>
-              <div className="font-semibold">
-                {unit === "USD" ? "$" : "€"} {price}
-              </div>
+    <>
+      {/* Block Height - Center Top */}
+      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10 hidden md:block">
+        <Card className="bg-black/50 border-orange-500/25 backdrop-blur-sm">
+          <div className="p-4 text-center">
+            <div className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-orange-400 to-yellow-400 bg-clip-text text-transparent">
+              {blockHeight.toLocaleString()}
             </div>
-            <div className="flex items-center gap-2">
-              <Layers3 className="w-4 h-4 opacity-80" />
-              <div className="text-sm opacity-70">Mempool</div>
-              <div className="font-semibold">{fmt(mempool?.count)} tx • {fmtMBfromVsize(mempool?.vsize)}</div>
-            </div>
-            <div className="flex items-center gap-2">
-              <BarChart3 className="w-4 h-4 opacity-80" />
-              <div className="text-sm opacity-70">Height</div>
-              <div className="font-semibold">{fmt(height)}</div>
-            </div>
+            <div className="text-orange-400 text-sm mt-1">Block Height</div>
           </div>
+        </Card>
+      </div>
 
-          <div className="flex items-center gap-2 ml-auto">
-            {/* Old switch button inline with title */}
-            <div className="text-sm opacity-70">{title}</div>
-            <Button
-              size="sm"
-              variant="outline"
-              className="ml-2"
-              onClick={() => setUnit((u) => (u === "USD" ? "EUR" : "USD"))}
-              aria-label="Toggle USD/EUR"
-              >
-              {unit}
-            </Button>
-
-            <Button size="sm" className="ml-2" onClick={toggleChart}>
-              Chart
-            </Button>
+      {/* Price - Top Left */}
+      <div className="absolute top-4 left-4 z-10">
+        <Card className="bg-black/50 border-orange-500/25 backdrop-blur-sm">
+          <div className="p-3 relative">
+            <div className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-yellow-400 bg-clip-text text-transparent">
+              ${stats.price.toLocaleString()}
+            </div>
+            <div className="text-orange-400 text-sm flex items-center gap-2"><span>Price</span><Button onClick={() => setIsChartOpen(true)} size="sm" variant="ghost" className="border border-orange-500/25 px-2 py-0.5 h-7 text-orange-400 bg-orange-500/30 hover:text-orange-200 hover:bg-orange-500/20">Chart</Button></div>
           </div>
+        </Card>
+        <div className="mt-2">
+          
         </div>
 
-        {showChart && (
-          <div className="mt-3">
-            <div id="tradingview-widget" className="w-full h-[520px]">
-              {/* TradingView embed */}
-              <TradingViewEmbed symbol={unit === "USD" ? "BITSTAMP:BTCUSD" : "BITSTAMP:BTCEUR"} interval={unit === "USD" ? "D" : "60"} />
+      </div>
+
+      {/* High Priority - Top Right */}
+      <div className="absolute top-4 right-4 z-10">
+        <Card className="bg-black/50 border-orange-500/25 backdrop-blur-sm">
+          <div className="p-3 text-right">
+            <div className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-yellow-400 bg-clip-text text-transparent">
+              {stats.highPriority} sat/vB
+            </div>
+            <div className="text-orange-400 text-sm">High Priority</div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Mempool Size - Bottom Left */}
+      <div className="absolute bottom-20 md:bottom-4 left-4 z-10">
+        <Card className="bg-black/50 border-orange-500/25 backdrop-blur-sm">
+          <div className="p-3 relative">
+            
+            <div className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-yellow-400 bg-clip-text text-transparent">
+              {stats.mempoolSize.toFixed(2)} MB
+            </div>
+            <div className="text-orange-400 text-sm">Mempool Size</div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Unconfirmed - Bottom Right */}
+      <div className="absolute bottom-20 md:bottom-4 right-4 z-10">
+        <Card className="bg-black/50 border-orange-500/25 backdrop-blur-sm">
+          <div className="p-3 text-right">
+            <div className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-yellow-400 bg-clip-text text-transparent">
+              {stats.unconfirmed.toLocaleString()}
+            </div>
+            <div className="text-orange-400 text-sm">Unconfirmed TX</div>
+          </div>
+        </Card>
+      </div>
+    
+      {/* Chart Modal */}
+
+      {/* Chart Modal (TradingView) */}
+      <Dialog open={isChartOpen} onOpenChange={setIsChartOpen}>
+        <DialogContent className="max-w-[95vw] w-[95vw] h-[80vh] p-0 bg-black text-white border border-orange-500/25">
+          <DialogHeader className="pt-2 pb-0 px-2">
+            <DialogTitle classname="pt-0 pb-0">
+          {/* Symbol toggle */}
+          <div className="px-0 pb-0">
+            <div className="inline-flex rounded-md border border-orange-500/25 overflow-hidden">
+              <button
+                className={`px-3 py-1 text-sm ${chartSymbol === "BTCUSD" ? "bg-orange-500/20 text-orange-200" : "text-orange-400 hover:bg-orange-500/10"}`}
+                onClick={() => setChartSymbol("BTCUSD")}
+              >USD</button>
+              <button
+                className={`px-3 py-1 text-sm border-l border-orange-500/25 ${chartSymbol === "BTCEUR" ? "bg-orange-500/20 text-orange-200" : "text-orange-400 hover:bg-orange-500/10"}`}
+                onClick={() => setChartSymbol("BTCEUR")}
+              >EUR</button>
             </div>
           </div>
-        )}
-      </Card>
-    </div>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="h-[calc(80vh-28px)] w-full">
+            <TradingViewWidget key={chartSymbol} symbol={chartSymbol} />
+          </div>
+        </DialogContent>
+      </Dialog>
+</>
   )
-}
-
-// Lightweight TradingView widget wrapper – avoids SSR and re-renders on symbol change
-function TradingViewEmbed({ symbol, interval }: { symbol: string; interval: "60" | "D" }) {
-  const containerRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!containerRef.current) return
-    const script = document.createElement("script")
-    script.src = "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js"
-    script.type = "text/javascript"
-    script.async = true
-    const config = {
-      autosize: true,
-      symbol,
-      interval,
-      timezone: "Etc/UTC",
-      theme: "dark",
-      style: "1",
-      locale: "en",
-      hide_side_toolbar: false,
-      allow_symbol_change: false,
-      withdateranges: true,
-      calendar: false,
-      hide_volume: false,
-      studies: [],
-      copyrightStyles: { parentLink: false },
-    }
-    script.innerHTML = JSON.stringify(config)
-    const wrapper = document.createElement("div")
-    wrapper.className = "tradingview-widget-container__widget w-full h-full"
-    containerRef.current.innerHTML = ""
-    containerRef.current.appendChild(wrapper)
-    containerRef.current.appendChild(script)
-    return () => {
-      if (containerRef.current) containerRef.current.innerHTML = ""
-    }
-  }, [symbol, interval])
-
-  return <div ref={containerRef} className="w-full h-full" />
 }

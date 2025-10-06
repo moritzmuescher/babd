@@ -1,98 +1,65 @@
 "use client"
 
-import React, { useCallback, useEffect, useState } from "react"
-import dynamic from "next/dynamic"
+import { useState, useEffect, useCallback } from "react"
+import { ThreeScene } from "@/components/three-scene"
+import { StatsPanel } from "@/components/stats-panel"
+import { BlockExplorer } from "@/components/block-explorer"
+import { SearchModal } from "@/components/search-modal"
+import { DonationQR } from "@/components/donation-qr"
+import { SocialLink } from "@/components/social-link"
 import { SearchBar } from "@/components/search-bar"
+import { NetworkStats } from "@/components/network-stats"
 
-// Opt out of static pre-render to avoid build-time execution of client widgets
-export const dynamic = "force-dynamic"
-export const revalidate = 0
-export const fetchCache = "force-no-store"
-
-const ThreeScene = dynamic(() => import("@/components/three-scene").then(m => m.ThreeScene), { ssr: false })
-const StatsPanel = dynamic(() => import("@/components/stats-panel").then(m => m.StatsPanel), { ssr: false })
-const BlockExplorer = dynamic(() => import("@/components/block-explorer").then(m => m.BlockExplorer), { ssr: false })
-const DonationQR = dynamic(() => import("@/components/donation-qr").then(m => m.DonationQR), { ssr: false })
-const SocialLink = dynamic(() => import("@/components/social-link").then(m => m.SocialLink), { ssr: false })
-const NetworkStats = dynamic(() => import("@/components/network-stats").then(m => m.NetworkStats), { ssr: false })
-const SearchModal = dynamic(() => import("@/components/search-modal").then(m => m.SearchModal), { ssr: false })
-
-type HomeProps = {
-  /** When rendered via /[slug], we pass that slug in to auto-search & prefill the input. */
-  initialQuery?: string
-}
-
-export default function Home({ initialQuery }: HomeProps) {
+export default function Home() {
   const [isSearchOpen, setIsSearchOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState(initialQuery ?? "")
+  const [searchQuery, setSearchQuery] = useState("")
   const [currentBlockHeight, setCurrentBlockHeight] = useState(0)
 
-  // Keep URL as /<query> when searching, for easy sharing.
-  const openSearchFor = useCallback((q: string) => {
-    const clean = (q || "").trim()
-    if (!clean) return
-    setSearchQuery(clean)
+  const handleSearch = (query: string) => {
+    setSearchQuery(query)
     setIsSearchOpen(true)
-    if (typeof window !== "undefined") {
-      const next = `/${encodeURIComponent(clean)}`
-      if (window.location.pathname !== next) {
-        window.history.pushState({}, "", next)
-      }
+  }
+
+  const fetchCurrentBlockHeight = useCallback(async () => {
+    try {
+      const heightRes = await fetch("https://mempool.space/api/blocks/tip/height")
+      const blockHeight = await heightRes.text()
+      setCurrentBlockHeight(Number.parseInt(blockHeight, 10))
+    } catch (error) {
+      console.error("Error fetching current block height:", error)
     }
   }, [])
 
-  const handleCloseModal = useCallback(() => {
-    setIsSearchOpen(false)
-    if (typeof window !== "undefined") {
-      if (window.location.pathname !== "/") {
-        window.history.pushState({}, "", "/")
-      }
-    }
-  }, [])
-
-  // If we land directly on /<slug>, open the search automatically.
   useEffect(() => {
-    const pathPart = typeof window !== "undefined"
-      ? window.location.pathname.replace(/^\/+|\/+$/g, "")
-      : ""
-    const value = (initialQuery && initialQuery.trim().length > 0) ? initialQuery : pathPart
-    if (value && value !== "favicon.ico" && !isSearchOpen) {
-      setSearchQuery(value)
-      setTimeout(() => openSearchFor(value), 0)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  // Pull the current block height (client-side only)
-  useEffect(() => {
-    let cancelled = false
-    async function loadTip() {
-      try {
-        const res = await fetch("https://mempool.space/api/blocks/tip/height")
-        if (!res.ok) return
-        const txt = await res.text()
-        const n = parseInt(txt, 10)
-        if (!cancelled && Number.isFinite(n)) setCurrentBlockHeight(n)
-      } catch {}
-    }
-    loadTip()
-    const id = setInterval(loadTip, 60_000)
-    return () => {
-      cancelled = true
-      clearInterval(id)
-    }
-  }, [])
+    fetchCurrentBlockHeight()
+    const interval = setInterval(fetchCurrentBlockHeight, 60000)
+    return () => clearInterval(interval)
+  }, [fetchCurrentBlockHeight])
 
   return (
-    <div className="min-h-screen w-full relative overflow-hidden bg-black">
+    <div className="relative w-full h-screen overflow-hidden bg-black">
+      {/* 3D Background */}
       <ThreeScene />
-      <SocialLink />
-      <StatsPanel />
+
       <NetworkStats />
+
+      {/* Social Link - Now positioned below donation QR on the right */}
+      <SocialLink />
+
+      {/* Stats Panels - Pass currentBlockHeight */}
+      <StatsPanel blockHeight={currentBlockHeight} />
+
+      {/* Block Explorer - Pass currentBlockHeight */}
       <BlockExplorer currentHeight={currentBlockHeight} />
-      <SearchBar onSearch={openSearchFor} initialQuery={searchQuery} />
+
+      {/* Search Bar */}
+      <SearchBar onSearch={handleSearch} />
+
+      {/* Donation QR */}
       <DonationQR />
-      <SearchModal isOpen={isSearchOpen} onClose={handleCloseModal} query={searchQuery} />
+
+      {/* Search Modal */}
+      <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} query={searchQuery} />
     </div>
   )
 }
