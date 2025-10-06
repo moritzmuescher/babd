@@ -63,7 +63,7 @@ export function StatsPanel({ blockHeight }: StatsPanelProps) {
         <Card className="bg-black/50 border-orange-500/25 backdrop-blur-sm">
           <div className="p-4 text-center">
             <div className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-orange-400 to-yellow-400 bg-clip-text text-transparent">
-              {blockHeight.toLocaleString()}
+              {blockHeight.toLocaleString("en-US")}
             </div>
             <div className="text-orange-400 text-sm mt-1">Block Height</div>
           </div>
@@ -75,7 +75,7 @@ export function StatsPanel({ blockHeight }: StatsPanelProps) {
         <Card className="bg-black/50 border-orange-500/25 backdrop-blur-sm">
           <div className="p-3 relative">
             <div className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-yellow-400 bg-clip-text text-transparent">
-              ${stats.price.toLocaleString()}
+              ${stats.price.toLocaleString("en-US")}
             </div>
             <div className="text-orange-400 text-sm flex items-center gap-2"><span>Price</span><Button onClick={() => setIsChartOpen(true)} size="sm" variant="ghost" className="border border-orange-500/25 px-2 py-0.5 h-7 text-orange-400 bg-orange-500/30 hover:text-orange-200 hover:bg-orange-500/20">Chart</Button></div>
           </div>
@@ -116,7 +116,7 @@ export function StatsPanel({ blockHeight }: StatsPanelProps) {
         <Card className="bg-black/50 border-orange-500/25 backdrop-blur-sm">
           <div className="p-3 text-right">
             <div className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-yellow-400 bg-clip-text text-transparent">
-              {stats.unconfirmed.toLocaleString()}
+              {stats.unconfirmed.toLocaleString("en-US")}
             </div>
             <div className="text-orange-400 text-sm">Unconfirmed TX</div>
           </div>

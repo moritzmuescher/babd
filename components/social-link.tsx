@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card"
 
 export function SocialLink() {
   return (
-    <div className="absolute right-4 top-[34rem] md:top-[33rem] z-10">
+    <div className="absolute right-4 top-[39rem] md:top-[38rem] z-10">
       <Card className="bg-black/50 border-orange-500/25 backdrop-blur-sm">
         <a
           href="https://x.com/babdcs"

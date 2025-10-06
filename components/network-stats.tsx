@@ -193,7 +193,7 @@ export function NetworkStats() {
             </div>
             <div className="flex justify-between items-center">
               <span className="text-gray-400">Blocks remaining</span>
-              <span className="text-white font-medium">{halvingData.blocksRemaining.toLocaleString()}</span>
+              <span className="text-white font-medium">{halvingData.blocksRemaining.toLocaleString("en-US")}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-gray-400">Estimated date</span>
