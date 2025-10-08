@@ -38,7 +38,7 @@ export function SearchBar({ onSearch }: SearchBarProps) {
               />
               <Button
                 type="submit"
-                className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-black font-semibold px-4 py-2 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-orange-500/25"
+                className="bg-orange-500 hover:bg-orange-600 text-black font-semibold px-4 py-2 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-orange-500/25"
               >
                 <Search className="w-4 h-4 mr-2" />
                 Search
