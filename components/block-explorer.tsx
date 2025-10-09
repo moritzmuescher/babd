@@ -17,6 +17,10 @@ interface Block {
   weight: number
   extras?: {
     totalFees: number
+    pool: {
+      id: number
+      name: string
+    }
   }
 }
 
@@ -154,6 +158,7 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
                 return { ...block, weight: 0 } // Return with default weight on failure
               }
               const blockDetail = await blockDetailRes.json()
+              console.log(blockDetail)
               // Ensure weight is a number, default to 0 if not
               const weight = typeof blockDetail.weight === "number" ? blockDetail.weight : 0
               if (typeof blockDetail.weight !== "number") {
