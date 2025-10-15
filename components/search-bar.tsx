@@ -1,23 +1,20 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search } from "lucide-react"
 
-interface SearchBarProps {
-  onSearch: (query: string) => void
-}
-
-export function SearchBar({ onSearch }: SearchBarProps) {
+export function SearchBar() {
   const [query, setQuery] = useState("")
+  const router = useRouter()
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (query.trim()) {
-      onSearch(query.trim())
+      router.push(`/${query.trim()}`)
     }
   }
 

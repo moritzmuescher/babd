@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useRouter } from "next/navigation"
 import { ThreeScene } from "@/components/three-scene"
 import { StatsPanel } from "@/components/stats-panel"
 import { BlockExplorer } from "@/components/block-explorer"
@@ -10,15 +11,21 @@ import { SocialLink } from "@/components/social-link"
 import { SearchBar } from "@/components/search-bar"
 import { NetworkStats } from "@/components/network-stats"
 
-export default function Home() {
-  const [isSearchOpen, setIsSearchOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState("")
+export default function Home({ initialQuery }: { initialQuery?: string }) {
+  const [isSearchOpen, setIsSearchOpen] = useState(!!initialQuery)
+  const [searchQuery, setSearchQuery] = useState(initialQuery || "")
   const [currentBlockHeight, setCurrentBlockHeight] = useState(0)
+  const router = useRouter()
 
-  const handleSearch = (query: string) => {
-    setSearchQuery(query)
-    setIsSearchOpen(true)
-  }
+  useEffect(() => {
+    if (initialQuery) {
+      setSearchQuery(initialQuery)
+      setIsSearchOpen(true)
+    } else {
+      setSearchQuery("")
+      setIsSearchOpen(false)
+    }
+  }, [initialQuery])
 
   const fetchCurrentBlockHeight = useCallback(async () => {
     try {
@@ -53,13 +60,13 @@ export default function Home() {
       <BlockExplorer currentHeight={currentBlockHeight} />
 
       {/* Search Bar */}
-      <SearchBar onSearch={handleSearch} />
+      <SearchBar />
 
       {/* Donation QR */}
       <DonationQR />
 
       {/* Search Modal */}
-      <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} query={searchQuery} />
+      <SearchModal isOpen={isSearchOpen} onClose={() => router.push("/")} query={searchQuery} />
     </div>
   )
 }
