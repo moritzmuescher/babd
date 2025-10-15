@@ -77,7 +77,7 @@ export function StatsPanel({ blockHeight }: StatsPanelProps) {
             <div className="text-2xl font-bold text-orange-400">
               ${stats.price.toLocaleString("en-US")}
             </div>
-            <div className="text-orange-400 text-sm flex items-center gap-2"><span>Price</span><Button onClick={() => setIsChartOpen(true)} size="sm" variant="ghost" className="border border-orange-500/25 px-2 py-0.5 h-7 text-orange-400 bg-orange-500/30 hover:text-orange-200 hover:bg-orange-500/20">Chart</Button></div>
+            <div className="text-orange-400 text-sm flex items-center gap-2"><span>Price</span><Button onClick={() => setIsChartOpen(true)} size="sm" variant="ghost" className="px-3 py-1 text-sm text-orange-400 hover:bg-orange-500/10">Chart</Button></div>
           </div>
         </Card>
         <div className="mt-2">
@@ -129,21 +129,20 @@ export function StatsPanel({ blockHeight }: StatsPanelProps) {
       <Dialog open={isChartOpen} onOpenChange={setIsChartOpen}>
         <DialogContent className="max-w-[95vw] w-[95vw] h-[80vh] p-0 bg-black text-white border border-orange-500/25">
           <DialogHeader className="pt-2 pb-0 px-2">
-            <DialogTitle classname="pt-0 pb-0">
-          {/* Symbol toggle */}
-          <div className="px-0 pb-0">
-            <div className="inline-flex rounded-md border border-orange-500/25 overflow-hidden">
-              <button
-                className={`px-3 py-1 text-sm ${chartSymbol === "BTCUSD" ? "bg-orange-500/20 text-orange-200" : "text-orange-400 hover:bg-orange-500/10"}`}
-                onClick={() => setChartSymbol("BTCUSD")}
-              >USD</button>
-              <button
-                className={`px-3 py-1 text-sm border-l border-orange-500/25 ${chartSymbol === "BTCEUR" ? "bg-orange-500/20 text-orange-200" : "text-orange-400 hover:bg-orange-500/10"}`}
-                onClick={() => setChartSymbol("BTCEUR")}
-              >EUR</button>
+            <DialogTitle className="text-orange-400">Bitcoin Price Chart</DialogTitle>
+            {/* Symbol toggle */}
+            <div className="px-0 pb-0">
+              <div className="inline-flex rounded-md border border-orange-500/25 overflow-hidden">
+                <button
+                  className={`px-3 py-1 text-sm ${chartSymbol === "BTCUSD" ? "bg-orange-500/20 text-orange-200" : "text-orange-400 hover:bg-orange-500/10"}`}
+                  onClick={() => setChartSymbol("BTCUSD")}
+                >USD</button>
+                <button
+                  className={`px-3 py-1 text-sm border-l border-orange-500/25 ${chartSymbol === "BTCEUR" ? "bg-orange-500/20 text-orange-200" : "text-orange-400 hover:bg-orange-500/10"}`}
+                  onClick={() => setChartSymbol("BTCEUR")}
+                >EUR</button>
+              </div>
             </div>
-          </div>
-            </DialogTitle>
           </DialogHeader>
           <div className="h-[calc(80vh-28px)] w-full">
             <TradingViewWidget key={chartSymbol} symbol={chartSymbol} />

@@ -59,25 +59,22 @@ export function DonationQR() {
     <div className="absolute right-4 top-64 md:top-80 z-10">
       <Card className="bg-black/30 border-orange-500/25 backdrop-blur-md p-2 md:p-4 text-center">
         <div className="flex items-center justify-center space-x-2 mb-2">
-          <div className="flex items-center justify-center space-x-1 rounded-md bg-neutral-700 p-1">
+          <div className="flex items-center justify-center rounded-md bg-neutral-700 p-1">
             <Button
               onClick={() => setQrType("onchain")}
-              className={`px-2 py-1 text-xs h-auto ${qrType === "onchain" ? "bg-orange-500 text-white" : "bg-transparent text-neutral-400 hover:bg-neutral-600"}`}
-              variant="ghost"
+              className={`px-3 py-1 text-sm ${qrType === "onchain" ? "bg-orange-500/20 text-orange-200" : "text-orange-400 hover:bg-orange-500/10"}`}
             >
               On-Chain
             </Button>
             <Button
               onClick={() => setQrType("bolt11")}
-              className={`px-2 py-1 text-xs h-auto ${qrType === "bolt11" ? "bg-orange-500 text-white" : "bg-transparent text-neutral-400 hover:bg-neutral-600"}`}
-              variant="ghost"
+              className={`px-3 py-1 text-sm border-l border-orange-500/25 ${qrType === "bolt11" ? "bg-orange-500/20 text-orange-200" : "text-orange-400 hover:bg-orange-500/10"}`}
             >
               Bolt11
             </Button>
             <Button
               onClick={() => setQrType("bolt12")}
-              className={`px-2 py-1 text-xs h-auto ${qrType === "bolt12" ? "bg-orange-500 text-white" : "bg-transparent text-neutral-400 hover:bg-neutral-600"}`}
-              variant="ghost"
+              className={`px-3 py-1 text-sm border-l border-orange-500/25 ${qrType === "bolt12" ? "bg-orange-500/20 text-orange-200" : "text-orange-400 hover:bg-orange-500/10"}`}
             >
               Bolt12
             </Button>
@@ -91,9 +88,7 @@ export function DonationQR() {
         />
         <Button
           onClick={handleCopy}
-          variant="outline"
-          size="sm"
-          className="border-orange-500/50 text-orange-400 hover:bg-orange-500/20 bg-transparent"
+          className="px-3 py-1 text-sm text-orange-400 hover:bg-orange-500/10"
         >
           {copied ? (
             <Check className="w-4 h-4 mr-2" />
