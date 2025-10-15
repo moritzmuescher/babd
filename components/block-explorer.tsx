@@ -177,24 +177,7 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
         // Removed setOldestFetchedBlockHeight
         // setOldestFetchedBlockHeight(blocksWithWeight[blocksWithWeight.length - 1]?.height || null)
 
-        // Initial centering logic - runs only once per new height
-        // Reset isInitialCenteringDone if height changes to re-center
-        if (isInitialCenteringDone.current === false || blocksWithWeight[0]?.height !== height) {
-          const timer = setTimeout(() => {
-            if (scrollRef.current) {
-              const currentBlockElement = scrollRef.current.querySelector(".current-block")
-              if (currentBlockElement) {
-                const containerWidth = scrollRef.current.clientWidth
-                const elementLeft = (currentBlockElement as HTMLElement).offsetLeft
-                const elementWidth = (currentBlockElement as HTMLElement).offsetWidth
-                scrollRef.current.scrollLeft = elementLeft - containerWidth / 2 + elementWidth / 2
-                isInitialCenteringDone.current = true // Mark as done for this height
-                // Removed handleScroll() call
-              }
-            }
-          }, 100)
-          return () => clearTimeout(timer)
-        }
+        // The centering logic has been moved to a separate useEffect hook
       } catch (error) {
         console.error("Error fetching blocks for current height:", error)
       }
@@ -223,29 +206,21 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
   useEffect(() => {
     if (currentHeight > 0) {
       fetchBlocksForCurrentHeight(currentHeight)
-      isInitialCenteringDone.current = false // Reset centering flag when height changes
     }
   }, [currentHeight, fetchBlocksForCurrentHeight])
 
-  
-  // Center current block at left cap
+  // Center the view on the current block
   useEffect(() => {
-    const root = scrollRef.current
-    if (!root) return
-    const projected = projectedGroupRef.current
-    const currentEl = root.querySelector(".current-block") as HTMLElement | null
-    if (!projected || !currentEl) return
-    const containerWidth = root.clientWidth
-    const projectedWidth = projected.scrollWidth
-    const innerRect = (blocksGroupRef.current || projected).getBoundingClientRect()
-    const currentRect = currentEl.getBoundingClientRect()
-    const currentOffset = currentRect.left - innerRect.left
-    const desired = containerWidth / 2
-    let pad = Math.round(desired - (projectedWidth + currentOffset + currentEl.offsetWidth / 2))
-    if (pad < 0) pad = 0
-    setLeftPadPx(pad)
-    root.scrollLeft = 0
-  }, [projectedBlocks, currentHeight])
+    if (scrollRef.current) {
+      const currentBlockElement = scrollRef.current.querySelector(".current-block")
+      if (currentBlockElement) {
+        const containerWidth = scrollRef.current.clientWidth
+        const elementLeft = (currentBlockElement as HTMLElement).offsetLeft
+        const elementWidth = (currentBlockElement as HTMLElement).offsetWidth
+        scrollRef.current.scrollLeft = elementLeft - containerWidth / 2 + elementWidth / 2
+      }
+    }
+  }, [blocks, projectedBlocks, currentHeight])
 // Removed dedicated useEffect for scroll listener
   // useEffect(() => { ... }, [...])
 
@@ -452,10 +427,10 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
                         <div className="text-xl font-bold text-blue-400 mb-1">{block.height}</div>
                         <div className="text-xs text-white space-y-1">
                           <div>{(block.size / 1000000).toFixed(2)} MB</div>
+                          <div>{block.tx_count.toLocaleString()} TX</div>
                           <div className="text-gray-400">
                             {block.weight ? `${(block.weight / 1000000).toFixed(2)} MWU` : "-- MWU"}
                           </div>
-                          <div>{block.tx_count.toLocaleString()} TX</div>
                         </div>
                       </div>
                       <Badge className="mt-2 bg-blue-500 text-white text-xs self-center">
