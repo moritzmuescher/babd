@@ -76,7 +76,7 @@ export function DonationQR() {
             </Button>
             <Button
               onClick={() => setQrType("bolt12")}
-              className={`px-2 py-1 text-xs h-auto ${qrType === "bolt12" ? "bg-orange-500 text-white" : "bg-transparent text-neutral-400 hover:bg-neutral-600"}`}
+              className={`px-2 py-1 text-xs h-auto ${qrType === "bolt12" ? "bg-orange-500 text-white hover:bg-orange-500" : "bg-transparent text-neutral-400 hover:bg-neutral-600"}`}
               variant="ghost"
             >
               Bolt12
