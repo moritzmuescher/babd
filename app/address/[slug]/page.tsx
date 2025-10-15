@@ -1,5 +1,5 @@
 import React from "react"
-import Home from "../page"
+import Home from "../../page"
 
 export default function DeepLinkPage({ params }: { params: { slug: string } }) {
   const initialQuery = decodeURIComponent(params.slug)

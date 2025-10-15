@@ -13,8 +13,16 @@ export function SearchBar() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (query.trim()) {
-      router.push(`/${query.trim()}`)
+    const trimmedQuery = query.trim()
+    if (trimmedQuery) {
+      if (/^[0-9a-fA-F]{64}$/.test(trimmedQuery)) {
+        router.push(`/tx/${trimmedQuery}`)
+      } else if (/^(1|3|bc1)/.test(trimmedQuery)) {
+        router.push(`/address/${trimmedQuery}`)
+      } else {
+        // Fallback for other queries, or show an error
+        router.push(`/${trimmedQuery}`)
+      }
     }
   }
 
