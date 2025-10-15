@@ -60,7 +60,7 @@ export function StatsPanel({ blockHeight }: StatsPanelProps) {
     <>
       {/* Block Height - Center Top */}
       <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10 hidden md:block">
-        <Card className="bg-black/50 border-orange-500/25 backdrop-blur-sm">
+        <Card className="bg-black/30 border-orange-500/25 backdrop-blur-md">
           <div className="p-4 text-center">
             <div className="text-5xl md:text-6xl font-bold text-orange-400">
               {blockHeight.toLocaleString("en-US")}
@@ -72,7 +72,7 @@ export function StatsPanel({ blockHeight }: StatsPanelProps) {
 
       {/* Price - Top Left */}
       <div className="absolute top-4 left-4 z-10">
-        <Card className="bg-black/50 border-orange-500/25 backdrop-blur-sm">
+        <Card className="bg-black/30 border-orange-500/25 backdrop-blur-md">
           <div className="p-3 relative">
             <div className="text-2xl font-bold text-orange-400">
               ${stats.price.toLocaleString("en-US")}
@@ -88,7 +88,7 @@ export function StatsPanel({ blockHeight }: StatsPanelProps) {
 
       {/* High Priority - Top Right */}
       <div className="absolute top-4 right-4 z-10">
-        <Card className="bg-black/50 border-orange-500/25 backdrop-blur-sm">
+        <Card className="bg-black/30 border-orange-500/25 backdrop-blur-md">
           <div className="p-3 text-right">
             <div className="text-2xl font-bold text-orange-400">
               {stats.highPriority} sat/vB
@@ -100,7 +100,7 @@ export function StatsPanel({ blockHeight }: StatsPanelProps) {
 
       {/* Mempool Size - Bottom Left */}
       <div className="absolute bottom-20 md:bottom-4 left-4 z-10">
-        <Card className="bg-black/50 border-orange-500/25 backdrop-blur-sm">
+        <Card className="bg-black/30 border-orange-500/25 backdrop-blur-md">
           <div className="p-3 relative">
             
             <div className="text-2xl font-bold text-orange-400">
@@ -113,7 +113,7 @@ export function StatsPanel({ blockHeight }: StatsPanelProps) {
 
       {/* Unconfirmed - Bottom Right */}
       <div className="absolute bottom-20 md:bottom-4 right-4 z-10">
-        <Card className="bg-black/50 border-orange-500/25 backdrop-blur-sm">
+        <Card className="bg-black/30 border-orange-500/25 backdrop-blur-md">
           <div className="p-3 text-right">
             <div className="text-2xl font-bold text-orange-400">
               {stats.unconfirmed.toLocaleString("en-US")}

@@ -101,7 +101,7 @@ export function NetworkStats() {
   if (loading || !difficultyData || !halvingData) {
     return (
       <div className="absolute left-4 top-64 md:top-80 z-10 max-w-xs">
-        <Card className="bg-black/50 border-orange-500/25 backdrop-blur-sm p-4">
+        <Card className="bg-black/30 border-orange-500/25 backdrop-blur-md p-4">
           <div className="text-gray-400 text-xs">Loading...</div>
         </Card>
       </div>
@@ -114,7 +114,7 @@ export function NetworkStats() {
 
   return (
     <div className="absolute left-4 top-64 md:top-80 z-10 max-w-xs">
-      <Card className="bg-black/50 border-orange-500/25 backdrop-blur-sm p-4">
+      <Card className="bg-black/30 border-orange-500/25 backdrop-blur-md p-4">
         {/* Difficulty Adjustment Section */}
         <div className="mb-4">
           <div className="text-orange-400 text-sm font-semibold mb-3">Difficulty Adjustment</div>
