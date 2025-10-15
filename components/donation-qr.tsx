@@ -4,8 +4,7 @@ import { useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Copy, Check } from "lucide-react"
-import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
+
 
 export function DonationQR() {
   const [copied, setCopied] = useState(false)
@@ -30,13 +29,22 @@ export function DonationQR() {
     <div className="absolute right-4 top-64 md:top-80 z-10">
       <Card className="bg-black/50 border-orange-500/25 backdrop-blur-sm p-2 md:p-4 text-center">
         <div className="flex items-center justify-center space-x-2 mb-2">
-          <Label htmlFor="qr-type-switch">Bolt11</Label>
-          <Switch
-            id="qr-type-switch"
-            checked={qrType === "bolt12"}
-            onCheckedChange={() => setQrType(qrType === "bolt11" ? "bolt12" : "bolt11")}
-          />
-          <Label htmlFor="qr-type-switch">Bolt12</Label>
+          <div className="flex items-center justify-center space-x-1 rounded-md bg-neutral-700 p-1">
+            <Button
+              onClick={() => setQrType("bolt11")}
+              className={`px-2 py-1 text-xs h-auto ${qrType === "bolt11" ? "bg-orange-500 text-white" : "bg-transparent text-neutral-400 hover:bg-neutral-600"}`}
+              variant="ghost"
+            >
+              Bolt11
+            </Button>
+            <Button
+              onClick={() => setQrType("bolt12")}
+              className={`px-2 py-1 text-xs h-auto ${qrType === "bolt12" ? "bg-orange-500 text-white" : "bg-transparent text-neutral-400 hover:bg-neutral-600"}`}
+              variant="ghost"
+            >
+              Bolt12
+            </Button>
+          </div>
         </div>
         <img
           src={qrType === "bolt11" ? "/images/LNURL2png.png" : "/images/bolt12.jpeg"}
