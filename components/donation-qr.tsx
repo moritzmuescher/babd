@@ -63,8 +63,8 @@ export function DonationQR() {
   }
 
   return (
-    <div className="absolute right-4 top-64 md:top-80 z-10">
-      <Card className="bg-black/30 border-orange-500/25 backdrop-blur-md p-2 md:p-4 text-center">
+    <div className="absolute right-4 top-64 md:top-80 z-10 hidden md:block">
+      <Card className="bg-black/30 border-orange-500/25 backdrop-blur-md p-2 text-center">
         <div className="flex items-center justify-center space-x-2 mb-2">
           <div className="flex items-center justify-center space-x-1 rounded-md bg-neutral-700 p-1">
             <Button
@@ -90,7 +90,7 @@ export function DonationQR() {
             </Button>
           </div>
         </div>
-        <div className="relative hidden md:block">
+        <div className="relative">
           <img
             src={getImageSrc()}
             alt="QR Code"
@@ -107,7 +107,7 @@ export function DonationQR() {
           )}
         </div>
         <Separator className="my-4 bg-orange-500/25" />
-        <div className="relative hidden md:block">
+        <div className="relative">
           <img
             src="/images/nostr-npub.png"
             alt="Nostr QR Code"
