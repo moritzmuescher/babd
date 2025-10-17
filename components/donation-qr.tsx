@@ -115,7 +115,7 @@ export function DonationQR() {
           )}
           {getButtonText()}
         </Button>
-        <Separator className="my-3" />
+        <Separator className="my-4 bg-orange-500/25" />
         <img
           src="/images/nostr-npub.png"
           alt="Nostr QR Code"
