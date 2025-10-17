@@ -7,11 +7,13 @@ import { Copy, Check } from "lucide-react"
 
 export function DonationQR() {
   const [copied, setCopied] = useState(false)
+  const [npubCopied, setNpubCopied] = useState(false)
   const [qrType, setQrType] = useState("bolt11")
 
   const bolt11Url = "LNURL1DP68GURN8GHJ7AMPD3KX2AR0VEEKZAR0WD5XJTNRDAKJ7TNHV4KXCTTTDEHHWM30D3H82UNVWQHKYCTZVSCX0SZD"
   const bolt12Url = "lno1zrxq8pjw7qjlm68mtp7e3yvxee4y5xrgjhhyf2fxhlphpckrvevh50u0qwvek6f5a0csxksx84erhkpejk8cw54qsdw6ntqu3vltl2temgw4wqsz0vdmcgk7drw7easeyh2xn3szcf9ahatkewelcgve8t6c8d6w8cxsqvap7kmauqgph47ve2sgvk9wu77kuukur4t77td6k6edl8kmtqzpvu4hlqmscmenckuxq8xsfdqk5wqqst03qdgff4g7dd74s0lzy6337836e76zcpkzz2s2j8spgxscdnx9cnn42qqstr20s3znchwexwy2mlyxt6wvg5"
   const onChainAddress = "bc1p3yaknvcfxkqp5mvp2kxk24qlr6zzfh537zwuf7s2fggyty7hcclqd2dz65"
+  const npub = "npub1d3h6cxpz9y9f20c5rg08hgadjtns4stmyqw75q8spssdp46r635q33wvj0"
 
   const getUrl = () => {
     switch (qrType) {
@@ -33,6 +35,16 @@ export function DonationQR() {
       setTimeout(() => setCopied(false), 2000)
     } catch (err) {
       console.error("Failed to copy:", err)
+    }
+  }
+
+  const handleNpubCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(npub)
+      setNpubCopied(true)
+      setTimeout(() => setNpubCopied(false), 2000)
+    } catch (err) {
+      console.error("Failed to copy npub:", err)
     }
   }
 
@@ -101,6 +113,25 @@ export function DonationQR() {
             <Copy className="w-4 h-4 mr-2" />
           )}
           {getButtonText()}
+        </Button>
+        <img
+          src="/images/nostr-npub.png"
+          alt="Nostr QR Code"
+          className="w-48 h-48 rounded-lg mt-3 mb-3 cursor-pointer hover:opacity-80 transition-opacity hidden md:block"
+          onClick={handleNpubCopy}
+        />
+        <Button
+          onClick={handleNpubCopy}
+          variant="outline"
+          size="sm"
+          className="border-orange-500/50 text-orange-400 hover:bg-orange-500/20 bg-transparent"
+        >
+          {npubCopied ? (
+            <Check className="w-4 h-4 mr-2" />
+          ) : (
+            <Copy className="w-4 h-4 mr-2" />
+          )}
+          Copy npub
         </Button>
       </Card>
     </div>
