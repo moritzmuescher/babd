@@ -18,6 +18,7 @@ interface HalvingData {
   blocksRemaining: number
   estimatedDate: string
   newSubsidy: number
+  currentSubsidy: number
 }
 
 export function NetworkStats() {
@@ -84,6 +85,7 @@ export function NetworkStats() {
           blocksRemaining,
           estimatedDate: `${dateString} (In ~${yearsUntil} years, ${daysUntil2} days)`,
           newSubsidy,
+          currentSubsidy,
         })
 
         setLoading(false)
@@ -189,7 +191,11 @@ export function NetworkStats() {
           <div className="space-y-2 text-xs">
             <div className="flex justify-between items-center">
               <span className="text-gray-400">New subsidy</span>
-              <span className="text-white font-medium">{halvingData.newSubsidy.toFixed(3)} BTC</span>
+              <span className="text-white font-medium">
+                {halvingData.currentSubsidy === 3.125
+                  ? "1.5625 BTC"
+                  : `${halvingData.newSubsidy.toFixed(3)} BTC`}
+              </span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-gray-400">Blocks remaining</span>
