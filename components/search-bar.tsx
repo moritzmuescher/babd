@@ -44,7 +44,7 @@ export function SearchBar() {
               />
               <Button
                 type="submit"
-                className="bg-orange-500 hover:bg-orange-600 text-black font-semibold px-4 py-2 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-orange-500/25"
+                className="hidden md:inline-flex bg-orange-500 hover:bg-orange-600 text-black font-semibold px-4 py-2 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-orange-500/25"
               >
                 <Search className="w-4 h-4 mr-2" />
                 Search
