@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Copy, Check } from "lucide-react"
+import { Separator } from "@/components/ui/separator"
 
 export function DonationQR() {
   const [copied, setCopied] = useState(false)
@@ -114,6 +115,7 @@ export function DonationQR() {
           )}
           {getButtonText()}
         </Button>
+        <Separator className="my-3" />
         <img
           src="/images/nostr-npub.png"
           alt="Nostr QR Code"
