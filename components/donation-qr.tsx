@@ -49,12 +49,6 @@ export function DonationQR() {
     }
   }
 
-  const getButtonText = () => {
-    if (copied) return "Copied!"
-    if (qrType === "onchain") return "Copy On-Chain URL"
-    return "Copy LN URL"
-  }
-
   const getImageSrc = () => {
     switch (qrType) {
       case "bolt11":
@@ -96,45 +90,33 @@ export function DonationQR() {
             </Button>
           </div>
         </div>
-        <img
-          src={getImageSrc()}
-          alt="QR Code"
-          className="w-48 h-48 rounded-lg mb-3 cursor-pointer hover:opacity-80 transition-opacity hidden md:block"
-          onClick={handleCopy}
-        />
-        <Button
-          onClick={handleCopy}
-          variant="outline"
-          size="sm"
-          className="border-orange-500/50 text-orange-400 hover:bg-orange-500/20 bg-transparent"
-        >
-          {copied ? (
-            <Check className="w-4 h-4 mr-2" />
-          ) : (
-            <Copy className="w-4 h-4 mr-2" />
+        <div className="relative hidden md:block">
+          <img
+            src={getImageSrc()}
+            alt="QR Code"
+            className="w-48 h-48 rounded-lg mb-3 cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={handleCopy}
+          />
+          {copied && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg">
+              <Check className="w-16 h-16 text-white" />
+            </div>
           )}
-          {getButtonText()}
-        </Button>
+        </div>
         <Separator className="my-4 bg-orange-500/25" />
-        <img
-          src="/images/nostr-npub.png"
-          alt="Nostr QR Code"
-          className="w-48 h-48 rounded-lg mt-3 mb-3 cursor-pointer hover:opacity-80 transition-opacity hidden md:block"
-          onClick={handleNpubCopy}
-        />
-        <Button
-          onClick={handleNpubCopy}
-          variant="outline"
-          size="sm"
-          className="border-orange-500/50 text-orange-400 hover:bg-orange-500/20 bg-transparent"
-        >
-          {npubCopied ? (
-            <Check className="w-4 h-4 mr-2" />
-          ) : (
-            <Copy className="w-4 h-4 mr-2" />
+        <div className="relative hidden md:block">
+          <img
+            src="/images/nostr-npub.png"
+            alt="Nostr QR Code"
+            className="w-48 h-48 rounded-lg mt-3 mb-3 cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={handleNpubCopy}
+          />
+          {npubCopied && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg">
+              <Check className="w-16 h-16 text-white" />
+            </div>
           )}
-          Copy npub
-        </Button>
+        </div>
       </Card>
     </div>
   )
