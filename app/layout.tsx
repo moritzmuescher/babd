@@ -20,11 +20,12 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <head>
+        <meta name="theme-color" content="#000000" />
         <link rel="icon" href="/images/logo2.png" type="image/png" />
       </head>
-      <body className={inter.className}>{children}</body>
+      <body className={`${inter.className} bg-black`}>{children}</body>
     </html>
   )
 }
