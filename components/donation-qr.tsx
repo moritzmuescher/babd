@@ -98,8 +98,11 @@ export function DonationQR() {
             onClick={handleCopy}
           />
           {copied && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg">
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 rounded-lg">
               <Copy className="w-16 h-16 text-white" />
+              <div className="text-white text-sm mt-2">
+                {qrType === "onchain" ? "Copied On-Chain address" : "Copied LN URL"}
+              </div>
             </div>
           )}
         </div>
@@ -112,8 +115,9 @@ export function DonationQR() {
             onClick={handleNpubCopy}
           />
           {npubCopied && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg">
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 rounded-lg">
               <Copy className="w-16 h-16 text-white" />
+              <div className="text-white text-sm mt-2">Copied npub</div>
             </div>
           )}
         </div>
