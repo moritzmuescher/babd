@@ -190,6 +190,10 @@ export function NetworkStats() {
           {/* Stats */}
           <div className="space-y-2 text-xs">
             <div className="flex justify-between items-center">
+              <span className="text-gray-400">Current subsidy</span>
+              <span className="text-white font-medium">{halvingData.currentSubsidy.toFixed(4)} BTC</span>
+            </div>
+            <div className="flex justify-between items-center">
               <span className="text-gray-400">New subsidy</span>
               <span className="text-white font-medium">
                 {halvingData.currentSubsidy === 3.125
