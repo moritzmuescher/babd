@@ -99,7 +99,7 @@ export function DonationQR() {
           />
           {copied && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg">
-              <Check className="w-16 h-16 text-white" />
+              <Copy className="w-16 h-16 text-white" />
             </div>
           )}
         </div>
@@ -113,7 +113,7 @@ export function DonationQR() {
           />
           {npubCopied && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg">
-              <Check className="w-16 h-16 text-white" />
+              <Copy className="w-16 h-16 text-white" />
             </div>
           )}
         </div>
