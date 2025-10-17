@@ -90,7 +90,7 @@ export function DonationQR() {
             </Button>
           </div>
         </div>
-        <div className="relative">
+        <div className="relative hidden md:block">
           <img
             src={getImageSrc()}
             alt="QR Code"
@@ -107,7 +107,7 @@ export function DonationQR() {
           )}
         </div>
         <Separator className="my-4 bg-orange-500/25" />
-        <div className="relative">
+        <div className="relative hidden md:block">
           <img
             src="/images/nostr-npub.png"
             alt="Nostr QR Code"
