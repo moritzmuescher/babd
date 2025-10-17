@@ -220,7 +220,7 @@ export function NetworkStats() {
   }
 
   return (
-    <div className="absolute left-0 top-56 z-10 w-full px-4">
+    <div className="absolute left-0 top-64 z-10 w-full px-4">
       <Card className="bg-black/30 border-orange-500/25 backdrop-blur-md p-2">
         <div className="grid grid-cols-1 gap-4">
           {/* Difficulty Adjustment Section */}
