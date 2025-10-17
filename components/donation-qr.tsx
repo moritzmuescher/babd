@@ -69,21 +69,21 @@ export function DonationQR() {
           <div className="flex items-center justify-center space-x-1 rounded-md bg-neutral-700 p-1">
             <Button
               onClick={() => setQrType("onchain")}
-              className={`px-2 py-1 text-xs h-auto ${qrType === "onchain" ? "bg-orange-500 text-white hover:bg-orange-500" : "bg-transparent text-neutral-400"}`}
+              className={`px-2 py-1 text-xs h-auto ${qrType === "onchain" ? "bg-orange-500 text-white hover:bg-orange-500" : "bg-transparent text-neutral-400 hover:bg-neutral-600"}`}
               variant="ghost"
             >
               On-Chain
             </Button>
             <Button
               onClick={() => setQrType("bolt11")}
-              className={`px-2 py-1 text-xs h-auto ${qrType === "bolt11" ? "bg-orange-500 text-white hover:bg-orange-500" : "bg-transparent text-neutral-400"}`}
+              className={`px-2 py-1 text-xs h-auto ${qrType === "bolt11" ? "bg-orange-500 text-white hover:bg-orange-500" : "bg-transparent text-neutral-400 hover:bg-neutral-600"}`}
               variant="ghost"
             >
               Bolt11
             </Button>
             <Button
               onClick={() => setQrType("bolt12")}
-              className={`px-2 py-1 text-xs h-auto ${qrType === "bolt12" ? "bg-orange-500 text-white hover:bg-orange-500" : "bg-transparent text-neutral-400"}`}
+              className={`px-2 py-1 text-xs h-auto ${qrType === "bolt12" ? "bg-orange-500 text-white hover:bg-orange-500" : "bg-transparent text-neutral-400 hover:bg-neutral-600"}`}
               variant="ghost"
             >
               Bolt12
