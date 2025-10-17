@@ -63,7 +63,7 @@ export function DonationQR() {
   }
 
   return (
-    <div className="absolute right-4 top-64 md:top-80 z-10">
+    <div className="absolute right-4 top-64 md:top-80 z-10 hidden md:block">
       <Card className="bg-black/30 border-orange-500/25 backdrop-blur-md p-2 md:p-4 text-center">
         <div className="flex items-center justify-center space-x-2 mb-2 hidden md:block">
           <div className="flex items-center justify-center space-x-1 rounded-md bg-neutral-700 p-1">

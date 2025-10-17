@@ -115,7 +115,7 @@ export function NetworkStats() {
   const extensionPercent = Math.abs(difficultyData.difficultyChange) * 0.5
 
   return (
-    <div className="absolute left-0 top-48 z-10 w-full px-4">
+    <div className="absolute left-0 top-64 z-10 w-full px-4">
       <Card className="bg-black/30 border-orange-500/25 backdrop-blur-md p-2">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Difficulty Adjustment Section */}
