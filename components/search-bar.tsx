@@ -34,9 +34,10 @@ export function SearchBar() {
             <form onSubmit={handleSubmit} className="flex p-2 space-x-2">
               <Input
                 type="search"
+                enterKeyHint="search"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search by TxID or other identifier..."
+                placeholder="Lookup TxID or Bitcoin Address..."
                 className="flex-1 bg-black/30 border-orange-500/40 text-white placeholder-gray-300 focus:border-orange-400 search-input-glow transition-all duration-300 text-sm font-medium px-3 py-2"
                 autoComplete="off"
                 data-1p-ignore
