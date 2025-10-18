@@ -11,7 +11,28 @@ export const metadata: Metadata = {
   icons: {
     icon: "/images/logo2.png",
   },
-    generator: 'v0.dev'
+  generator: 'v0.dev',
+  openGraph: {
+    title: 'Babd Timechain Explorer',
+    description: 'Bitcoin blockchain explorer with 3D visualization',
+    url: 'https://babd.space',
+    images: [
+      {
+        url: 'https://babd.space/images/preview.png',
+        width: 1200,
+        height: 630,
+        alt: 'Babd Timechain Explorer',
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Babd Timechain Explorer',
+    description: 'Bitcoin blockchain explorer with 3D visualization',
+    images: ['https://babd.space/images/preview.png'],
+  },
 }
 
 export default function RootLayout({
