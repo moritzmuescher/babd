@@ -436,7 +436,7 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
                           </div>
                         </div>
                       </div>
-                      <Badge className="mt-2 bg-blue-500 text-white text-xs self-center">
+                      <Badge className="mt-2 bg-blue-500 text-white text-xs self-center hover:bg-blue-500">
                         {formatTimeAgo(block.timestamp)}
                       </Badge>
                     </div>
