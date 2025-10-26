@@ -205,22 +205,25 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
   // Effect to re-fetch blocks whenever currentHeight prop changes
   useEffect(() => {
     if (currentHeight > 0) {
+      isInitialCenteringDone.current = false
       fetchBlocksForCurrentHeight(currentHeight)
     }
   }, [currentHeight, fetchBlocksForCurrentHeight])
 
   // Center the view on the current block
   useEffect(() => {
-    if (scrollRef.current) {
+    if (scrollRef.current && !isInitialCenteringDone.current) {
       const currentBlockElement = scrollRef.current.querySelector(".current-block")
       if (currentBlockElement) {
         const containerWidth = scrollRef.current.clientWidth
         const elementLeft = (currentBlockElement as HTMLElement).offsetLeft
         const elementWidth = (currentBlockElement as HTMLElement).offsetWidth
-        scrollRef.current.scrollLeft = elementLeft - containerWidth / 2 + elementWidth / 2
+        scrollRef.current.scrollLeft =
+          elementLeft - containerWidth / 2 + elementWidth / 2
+        isInitialCenteringDone.current = true
       }
     }
-  }, [blocks, projectedBlocks, currentHeight])
+  }, [blocks, projectedBlocks])
 // Removed dedicated useEffect for scroll listener
   // useEffect(() => { ... }, [...])
 
