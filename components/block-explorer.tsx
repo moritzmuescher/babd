@@ -415,7 +415,7 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
                     onClick={() => handleBlockClick(block)}
                     className={`relative flex-shrink-0 p-3 rounded-lg border text-center min-w-[100px] cursor-pointer overflow-hidden hover:scale-105 transition-all duration-200 ${block.height === currentHeight // Use prop here
                         ? "border-blue-400 bg-black/50 shadow-lg shadow-blue-500/30 current-block hover:shadow-blue-500/50"
-                        : "border-blue-500/30 bg-black/50 hover:border-blue-400/50 hover:bg-black/50"
+                        : "border-blue-500/30 bg-black/50 hover:border-blue-400/50"
                       }`}
                     title={`Click to view details for block ${block.height}`}
                   >
