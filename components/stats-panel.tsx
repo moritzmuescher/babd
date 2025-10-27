@@ -52,7 +52,7 @@ export function StatsPanel({ blockHeight }: StatsPanelProps) {
     }
 
     fetchStats()
-    const interval = setInterval(fetchStats, 60000)
+    const interval = setInterval(fetchStats, 20000)
     return () => clearInterval(interval)
   }, [])
 
