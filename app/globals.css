@@ -155,18 +155,3 @@
   box-shadow: 0 0 15px rgba(249, 115, 22, 0.4);
   border-color: rgba(249, 115, 22, 0.8);
 }
-
-/* Custom terminal caret simulation */
-@keyframes blink-caret {
-  from, to {
-    box-shadow: 0.25em 0 0 0 transparent;
-  }
-  50% {
-    box-shadow: 0.25em 0 0 0 hsl(var(--primary-foreground));
-  }
-}
-
-.terminal-caret:focus {
-  caret-color: transparent;
-  animation: blink-caret 1.2s step-end infinite;
-}

@@ -39,7 +39,7 @@ export function SearchBar() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Input TxID or Address and press <Enter>"
-                className="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none text-white placeholder-gray-400 transition-all duration-300 text-base font-mono px-2 py-2 terminal-caret"
+                className="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none text-white placeholder-gray-400 transition-all duration-300 text-base font-mono px-2 py-2 caret-orange-400"
                 autoComplete="off"
                 data-1p-ignore
               />
