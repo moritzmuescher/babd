@@ -31,24 +31,18 @@ export function SearchBar() {
       <div className="search-bar-container">
         <div className="search-bar-glow">
           <div className="search-bar-inner">
-            <form onSubmit={handleSubmit} className="flex p-2 space-x-2">
+            <form onSubmit={handleSubmit} className="flex items-center p-1">
+              <span className="text-orange-400 text-lg font-mono pl-3 pr-2 select-none">&gt;</span>
               <Input
                 type="search"
                 enterKeyHint="search"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Lookup TxID or Bitcoin Address..."
-                className="flex-1 bg-black/30 border-orange-500/40 text-white placeholder-gray-300 focus:border-orange-400 search-input-glow transition-all duration-300 text-sm font-medium px-3 py-2"
+                placeholder="Input TxID or Address and press <Enter>"
+                className="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none text-white placeholder-gray-400 search-input-glow transition-all duration-300 text-base font-mono px-2 py-2"
                 autoComplete="off"
                 data-1p-ignore
               />
-              <Button
-                type="submit"
-                className="hidden md:inline-flex bg-orange-500 hover:bg-orange-600 text-black font-semibold px-4 py-2 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-orange-500/25"
-              >
-                <Search className="w-4 h-4 mr-2" />
-                Search
-              </Button>
             </form>
           </div>
         </div>
