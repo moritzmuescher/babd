@@ -248,28 +248,33 @@ export function ThreeScene() {
       const _tmpQuat = new THREE.Quaternion()
 
       // =============================
-      // Magnetic bend toward cursor
+      // Magnetic bend toward cursor (robust for on-surface & near-miss)
       // =============================
       const basePositions = positions.slice(0) // immutable reference state in local space
 
       const raycaster = new THREE.Raycaster()
       const ndc = new THREE.Vector2()
 
-      // Invisible collider that follows planet (slightly larger so it's easy to hit)
-      const collider = new THREE.Mesh(
-        new THREE.SphereGeometry(sphereRadius * 1.05, 32, 32),
-        new THREE.MeshBasicMaterial({ visible: false })
-      )
-      planet.add(collider)
-
       // Tunables for the effect
-      const influenceRadius = 1.6 // how wide the dimple is (in local units)
+      const influenceRadius = 1.6 // how wide the dimple is (local units)
       const strength = 0.45 // pull amount toward the cursor
-      let deformAlpha = 0 // smoothed 0..1 activation
+      const hoverReach = 3.0 // how far OUTSIDE the sphere the cursor can be and still affect it (world units)
+      const maxOutward = 1.2 // how far beyond the sphere surface the magnet target can sit when near-miss (world units)
 
-      const magnetLocal = new THREE.Vector3(0, 0, sphereRadius) // smoothed local target
+      let deformAlpha = 0 // smoothed 0..1 activation
+      const magnetLocal = new THREE.Vector3(0, 0, sphereRadius)
       const magnetLocalTarget = new THREE.Vector3(0, 0, sphereRadius)
       let magnetActive = false
+
+      // Reusable vectors to avoid allocations
+      const vCenterW = new THREE.Vector3()
+      const vO = new THREE.Vector3()
+      const vD = new THREE.Vector3()
+      const vOC = new THREE.Vector3()
+      const vClosest = new THREE.Vector3()
+      const vDir = new THREE.Vector3()
+      const vHit = new THREE.Vector3()
+      const vN = new THREE.Vector3()
 
       function onPointerMove(e: PointerEvent) {
         const rect = renderer.domElement.getBoundingClientRect()
@@ -277,19 +282,49 @@ export function ThreeScene() {
         ndc.y = -((e.clientY - rect.top) / rect.height) * 2 + 1
         raycaster.setFromCamera(ndc, camera)
 
-        // Intersect against the collider in world space
-        const hits = raycaster.intersectObject(collider, true)
-        if (hits.length) {
+        // WORLD-space sphere
+        vCenterW.setFromMatrixPosition(planet.matrixWorld)
+
+        // 1) Exact ray-sphere intersection (front-most). Works when cursor is over the planet silhouette.
+        const sphere = new THREE.Sphere(vCenterW, sphereRadius)
+        const hit = raycaster.ray.intersectSphere(sphere, vHit)
+        if (hit) {
+          // Use point ON the sphere under the cursor (no outward offset so nearby particles move toward the cursor)
+          vN.copy(vHit).sub(vCenterW).normalize()
+          const targetW = vHit // already on surface
+          magnetLocalTarget.copy(planet.worldToLocal(targetW.clone()))
           magnetActive = true
-          // convert world → planet local
-          magnetLocalTarget.copy(planet.worldToLocal(hits[0].point.clone()))
+          return
+        }
+
+        // 2) Near-miss: project to closest approach and bias outward beyond the surface
+        vO.copy(raycaster.ray.origin)
+        vD.copy(raycaster.ray.direction)
+        vOC.subVectors(vCenterW, vO)
+        const t = Math.max(vOC.dot(vD), 0) // along-ray parameter of closest point (clamped ahead of camera)
+        vClosest.copy(vO).addScaledVector(vD, t)
+        const d = vClosest.distanceTo(vCenterW)
+
+        if (d <= sphereRadius + hoverReach) {
+          magnetActive = true
+          vDir.subVectors(vClosest, vCenterW)
+          const len = vDir.length()
+          if (len > 1e-6) {
+            vDir.multiplyScalar(1 / len)
+          } else {
+            // Fallback: aim at camera-facing normal if degenerate
+            vDir.set(0, 0, 1).applyQuaternion(planet.getWorldQuaternion(new THREE.Quaternion()))
+            vDir.normalize()
+          }
+          const proximity = THREE.MathUtils.clamp((sphereRadius + hoverReach - d) / hoverReach, 0, 1)
+          const outward = maxOutward * proximity
+          const targetW = vCenterW.clone().addScaledVector(vDir, sphereRadius + outward)
+          magnetLocalTarget.copy(planet.worldToLocal(targetW.clone()))
         } else {
           magnetActive = false
         }
       }
-      function onPointerLeave() {
-        magnetActive = false
-      }
+      function onPointerLeave() { magnetActive = false }
 
       renderer.domElement.addEventListener("pointermove", onPointerMove)
       renderer.domElement.addEventListener("pointerleave", onPointerLeave)
