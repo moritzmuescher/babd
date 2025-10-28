@@ -1,5 +1,4 @@
 "use client"
-
 import { useEffect, useRef } from "react"
 
 export function ThreeScene() {
@@ -9,6 +8,7 @@ export function ThreeScene() {
     if (typeof window === "undefined") return
 
     let scene: any, camera: any, renderer: any, controls: any
+    let frameId: number | null = null
 
     const initThree = async () => {
       const THREE = await import("three")
@@ -32,11 +32,10 @@ export function ThreeScene() {
       controls.maxDistance = 500
       controls.minDistance = 0.1
 
-      // Set different initial camera position for mobile vs desktop
-      const isMobile = window.innerWidth < 768
+      // Camera
       camera.position.z = 15
 
-      // Create circle texture
+      // --- UTIL: Circle texture for point sprites ---
       const canvas = document.createElement("canvas")
       canvas.width = 32
       canvas.height = 32
@@ -54,9 +53,9 @@ export function ThreeScene() {
       circleTexture.premultiplyAlpha = true
       circleTexture.needsUpdate = true
 
-      // Starfield
+      // --- Starfield ---
       const starGeometry = new THREE.BufferGeometry()
-      const starVertices = []
+      const starVertices: number[] = []
       for (let i = 0; i < 10000; i++) {
         starVertices.push(
           THREE.MathUtils.randFloatSpread(2000),
@@ -77,12 +76,13 @@ export function ThreeScene() {
       const stars = new THREE.Points(starGeometry, starMaterial)
       scene.add(stars)
 
-      // Planet
+      // --- Planet (point cloud) ---
       const numParticles = 5000
       const sphereRadius = 5
       const planetGeometry = new THREE.BufferGeometry()
       const positions = new Float32Array(numParticles * 3)
       const colors = new Float32Array(numParticles * 3)
+
       const goldenRatio = (1 + Math.sqrt(5)) / 2
       const angleIncrement = Math.PI * 2 * goldenRatio
 
@@ -90,24 +90,25 @@ export function ThreeScene() {
         const t = i / numParticles
         const inclination = Math.acos(1 - 2 * t)
         const azimuth = angleIncrement * i
-
         const x = sphereRadius * Math.sin(inclination) * Math.cos(azimuth)
         const y = sphereRadius * Math.sin(inclination) * Math.sin(azimuth)
         const z = sphereRadius * Math.cos(inclination)
 
-        positions[i * 3] = x
-        positions[i * 3 + 1] = y
-        positions[i * 3 + 2] = z
+        const ix = i * 3
+        positions[ix] = x
+        positions[ix + 1] = y
+        positions[ix + 2] = z
 
         const intensity = (z / sphereRadius + 1) / 2
         const color = 1.0 - (1 - intensity) * 0.5
-        colors[i * 3] = color
-        colors[i * 3 + 1] = color * 0.4
-        colors[i * 3 + 2] = 0
+        colors[ix] = color
+        colors[ix + 1] = color * 0.4
+        colors[ix + 2] = 0
       }
 
       planetGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3))
       planetGeometry.setAttribute("color", new THREE.BufferAttribute(colors, 3))
+
       const planetMaterial = new THREE.PointsMaterial({
         size: 0.1,
         vertexColors: true,
@@ -125,12 +126,10 @@ export function ThreeScene() {
       scene.add(planet)
       planet.rotation.set(initialPitch, initialYaw, 0)
 
-      // Add glow sphere around planet
+      // --- GLOW sphere ---
       const glowGeometry = new THREE.SphereGeometry(sphereRadius * 1.2, 32, 32)
       const glowMaterial = new THREE.ShaderMaterial({
-        uniforms: {
-          time: { value: 0 },
-        },
+        uniforms: { time: { value: 0 } },
         vertexShader: `
           varying vec3 vNormal;
           void main() {
@@ -159,11 +158,7 @@ export function ThreeScene() {
       scene.add(glowSphere)
       glowSphere.rotation.set(initialPitch, initialYaw, 0)
 
-      // Reusable objects for smooth axis-based rotation (avoid allocations per frame)
-      const _tmpAxis = new THREE.Vector3()
-      const _tmpQuat = new THREE.Quaternion()
-
-      // Text particles
+      // --- Text group (points + wireframe) ---
       const textCanvas = document.createElement("canvas")
       textCanvas.width = 512
       textCanvas.height = 128
@@ -173,12 +168,11 @@ export function ThreeScene() {
       const text = "₿abd"
       const metrics = textCtx.measureText(text)
       textCtx.fillText(text, (textCanvas.width - metrics.width) / 2, 100)
+
       const imageData = textCtx.getImageData(0, 0, textCanvas.width, textCanvas.height).data
-
-      const points = []
-      const lineIndices = []
-      const pointMap = new Map()
-
+      const pointsArr: number[] = []
+      const lineIndices: number[] = []
+      const pointMap = new Map<string, number>()
       const scale = 0.02
       const sampling = 4
       const depthLayers = 2
@@ -189,8 +183,8 @@ export function ThreeScene() {
         for (let y = 0; y < textCanvas.height; y += sampling) {
           for (let x = 0; x < textCanvas.width; x += sampling) {
             if (imageData[(y * textCanvas.width + x) * 4 + 3] > 128) {
-              const index = points.length / 3
-              points.push((x - textCanvas.width / 2) * scale, (textCanvas.height / 2 - y) * scale, pz)
+              const index = pointsArr.length / 3
+              pointsArr.push((x - textCanvas.width / 2) * scale, (textCanvas.height / 2 - y) * scale, pz)
               pointMap.set(`${x},${y},${d}`, index)
             }
           }
@@ -202,25 +196,22 @@ export function ThreeScene() {
           for (let x = 0; x < textCanvas.width; x += sampling) {
             const currentKey = `${x},${y},${d}`
             if (pointMap.has(currentKey)) {
-              const currentIndex = pointMap.get(currentKey)
-
+              const currentIndex = pointMap.get(currentKey) as number
               const neighbors = [
                 `${x + sampling},${y},${d}`,
                 `${x},${y + sampling},${d}`,
                 `${x + sampling},${y + sampling},${d}`,
                 `${x - sampling},${y + sampling},${d}`,
               ]
-
               for (const neighborKey of neighbors) {
                 if (pointMap.has(neighborKey)) {
-                  lineIndices.push(currentIndex, pointMap.get(neighborKey))
+                  lineIndices.push(currentIndex, pointMap.get(neighborKey) as number)
                 }
               }
-
               if (d < depthLayers - 1) {
                 const nextLayerKey = `${x},${y},${d + 1}`
                 if (pointMap.has(nextLayerKey)) {
-                  lineIndices.push(currentIndex, pointMap.get(nextLayerKey))
+                  lineIndices.push(currentIndex, pointMap.get(nextLayerKey) as number)
                 }
               }
             }
@@ -229,7 +220,7 @@ export function ThreeScene() {
       }
 
       const textGeometry = new THREE.BufferGeometry()
-      textGeometry.setAttribute("position", new THREE.Float32BufferAttribute(points, 3))
+      textGeometry.setAttribute("position", new THREE.Float32BufferAttribute(pointsArr, 3))
       textGeometry.setIndex(lineIndices)
 
       const pointsMaterial = new THREE.PointsMaterial({
@@ -241,14 +232,9 @@ export function ThreeScene() {
         alphaTest: 0.5,
         depthWrite: true,
       })
-
       const textPoints = new THREE.Points(textGeometry, pointsMaterial)
 
-      const lineMaterial = new THREE.LineBasicMaterial({
-        color: 0xff9900,
-        transparent: true,
-        opacity: 1.0,
-      })
+      const lineMaterial = new THREE.LineBasicMaterial({ color: 0xff9900, transparent: true, opacity: 1.0 })
       const textLines = new THREE.LineSegments(textGeometry, lineMaterial)
 
       const textGroup = new THREE.Group()
@@ -257,29 +243,116 @@ export function ThreeScene() {
       scene.add(textGroup)
       textGroup.rotation.set(initialPitch, initialYaw, 0)
 
-      // Animation loop
-      function animate() {
-        requestAnimationFrame(animate)
+      // --- Reusable objects ---
+      const _tmpAxis = new THREE.Vector3()
+      const _tmpQuat = new THREE.Quaternion()
 
+      // =============================
+      // Magnetic bend toward cursor
+      // =============================
+      const basePositions = positions.slice(0) // immutable reference state in local space
+
+      const raycaster = new THREE.Raycaster()
+      const ndc = new THREE.Vector2()
+
+      // Invisible collider that follows planet (slightly larger so it's easy to hit)
+      const collider = new THREE.Mesh(
+        new THREE.SphereGeometry(sphereRadius * 1.05, 32, 32),
+        new THREE.MeshBasicMaterial({ visible: false })
+      )
+      planet.add(collider)
+
+      // Tunables for the effect
+      const influenceRadius = 1.6 // how wide the dimple is (in local units)
+      const strength = 0.45 // pull amount toward the cursor
+      let deformAlpha = 0 // smoothed 0..1 activation
+
+      const magnetLocal = new THREE.Vector3(0, 0, sphereRadius) // smoothed local target
+      const magnetLocalTarget = new THREE.Vector3(0, 0, sphereRadius)
+      let magnetActive = false
+
+      function onPointerMove(e: PointerEvent) {
+        const rect = renderer.domElement.getBoundingClientRect()
+        ndc.x = ((e.clientX - rect.left) / rect.width) * 2 - 1
+        ndc.y = -((e.clientY - rect.top) / rect.height) * 2 + 1
+        raycaster.setFromCamera(ndc, camera)
+
+        // Intersect against the collider in world space
+        const hits = raycaster.intersectObject(collider, true)
+        if (hits.length) {
+          magnetActive = true
+          // convert world → planet local
+          magnetLocalTarget.copy(planet.worldToLocal(hits[0].point.clone()))
+        } else {
+          magnetActive = false
+        }
+      }
+      function onPointerLeave() {
+        magnetActive = false
+      }
+
+      renderer.domElement.addEventListener("pointermove", onPointerMove)
+      renderer.domElement.addEventListener("pointerleave", onPointerLeave)
+
+      // --- Animation loop ---
+      function animate() {
+        frameId = requestAnimationFrame(animate)
         const t = performance.now() * 0.001
 
-        // Planet motion: rotate around a slowly changing axis (smooth precession)
-        // This makes the dots sometimes go slightly up or down instead of only left-to-right.
+        // Planet precession (original rotation behavior)
         const precessAx = 0.25 * Math.sin(t * 0.25)
         const precessAz = 0.25 * Math.cos(t * 0.2)
         _tmpAxis.set(precessAx, 1.0, precessAz).normalize()
-        const deltaAngle = 0.0015 // base angular speed
+        const deltaAngle = 0.0015
         _tmpQuat.setFromAxisAngle(_tmpAxis, deltaAngle)
         planet.quaternion.multiply(_tmpQuat)
 
-        // Keep a subtle drift on the text for liveliness, but smaller than planet
+        // Text gentle drift
         textGroup.rotation.y = initialYaw + 0.015 * Math.sin(t * 0.6 + 1.2)
         textGroup.rotation.x = initialPitch + 0.012 * Math.cos(t * 0.8)
 
-        // Keep the glow sphere aligned with the planet
+        // Keep glow aligned with planet
         glowSphere.quaternion.copy(planet.quaternion)
 
-        const starPositions = starGeometry.attributes.position
+        // Smooth activation and magnet center
+        deformAlpha += ((magnetActive ? 1 : 0) - deformAlpha) * 0.12 // ease in/out
+        magnetLocal.lerp(magnetLocalTarget, 0.18)
+
+        // Deform planet vertices in LOCAL space toward magnetLocal
+        const posAttr = planetGeometry.getAttribute("position") as any
+        const arr = posAttr.array as Float32Array
+        const sigma = influenceRadius
+        const twoSigma2 = 2 * sigma * sigma
+
+        if (deformAlpha > 0.001) {
+          for (let i = 0; i < numParticles; i++) {
+            const ix = i * 3
+            const bx = basePositions[ix]
+            const by = basePositions[ix + 1]
+            const bz = basePositions[ix + 2]
+
+            const dx = magnetLocal.x - bx
+            const dy = magnetLocal.y - by
+            const dz = magnetLocal.z - bz
+            const dist2 = dx * dx + dy * dy + dz * dz
+
+            // Gaussian falloff around the cursor impact point
+            const w = Math.exp(-dist2 / twoSigma2)
+            const k = strength * w * deformAlpha
+
+            arr[ix] = bx + dx * k
+            arr[ix + 1] = by + dy * k
+            arr[ix + 2] = bz + dz * k
+          }
+          posAttr.needsUpdate = true
+        } else {
+          // relax back to base quickly when inactive
+          for (let i = 0; i < basePositions.length; i++) arr[i] = basePositions[i]
+          posAttr.needsUpdate = true
+        }
+
+        // Starfield gentle forward drift
+        const starPositions = starGeometry.attributes.position as any
         for (let i = 0; i < starPositions.count; i++) {
           let z = starPositions.getZ(i)
           z += 0.5
@@ -292,34 +365,37 @@ export function ThreeScene() {
         controls.update()
         glowMaterial.uniforms.time.value += 0.01
       }
-      animate()
 
-      // Handle resize
+      frameId = requestAnimationFrame(animate)
+
+      // Resize
       const handleResize = () => {
         const width = window.innerWidth
         const height = window.innerHeight
         camera.aspect = width / height
         camera.updateProjectionMatrix()
         renderer.setSize(width, height)
-
-        // Adjust camera position on resize if switching between mobile/desktop
-        //const isMobileNow = width < 768
-        //const currentZ = camera.position.z
-        //const targetZ = isMobileNow ? 15 : 15
-
-        // Only adjust if there's a significant difference to avoid constant adjustments
-        //if (Math.abs(currentZ - targetZ) > 2) {
-        //  camera.position.z = targetZ
-        //}
       }
       window.addEventListener("resize", handleResize)
 
+      // Cleanup
       return () => {
         window.removeEventListener("resize", handleResize)
+        renderer.domElement.removeEventListener("pointermove", onPointerMove)
+        renderer.domElement.removeEventListener("pointerleave", onPointerLeave)
+        if (frameId) cancelAnimationFrame(frameId)
+        renderer.dispose()
       }
     }
 
-    initThree()
+    let cleanup: (() => void) | undefined
+    initThree().then((fn) => {
+      if (typeof fn === "function") cleanup = fn
+    })
+
+    return () => {
+      if (cleanup) cleanup()
+    }
   }, [])
 
   return <div ref={containerRef} className="absolute inset-0" />
