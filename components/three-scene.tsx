@@ -259,12 +259,14 @@ export function ThreeScene() {
       const influenceRadius = 1.6 // how wide the dimple is (local units)
       const strength = 0.45 // pull amount toward the cursor
       const hoverReach = 3.0 // how far OUTSIDE the sphere the cursor can be and still affect it (world units)
-      const maxOutward = 1.2 // how far beyond the sphere surface the magnet target can sit when near-miss (world units)
+      const maxOutward = 0.6 // reduced: how far beyond the sphere surface the magnet target can sit when near-miss (world units)
+      const nearMissStrengthScale = 0.85 // reduced deformation strength when in near-miss mode
 
       let deformAlpha = 0 // smoothed 0..1 activation
       const magnetLocal = new THREE.Vector3(0, 0, sphereRadius)
       const magnetLocalTarget = new THREE.Vector3(0, 0, sphereRadius)
       let magnetActive = false
+      let magnetMode: 'none' | 'hit' | 'near' = 'none'
 
       // Reusable vectors to avoid allocations
       const vCenterW = new THREE.Vector3()
@@ -285,46 +287,45 @@ export function ThreeScene() {
         // WORLD-space sphere
         vCenterW.setFromMatrixPosition(planet.matrixWorld)
 
-        // 1) Exact ray-sphere intersection (front-most). Works when cursor is over the planet silhouette.
+        // 1) Exact ray-sphere intersection (front-most).
         const sphere = new THREE.Sphere(vCenterW, sphereRadius)
         const hit = raycaster.ray.intersectSphere(sphere, vHit)
         if (hit) {
-          // Use point ON the sphere under the cursor (no outward offset so nearby particles move toward the cursor)
           vN.copy(vHit).sub(vCenterW).normalize()
-          const targetW = vHit // already on surface
+          const targetW = vHit // on-surface point
           magnetLocalTarget.copy(planet.worldToLocal(targetW.clone()))
           magnetActive = true
+          magnetMode = 'hit'
           return
         }
 
-        // 2) Near-miss: project to closest approach and bias outward beyond the surface
+        // 2) Near-miss
         vO.copy(raycaster.ray.origin)
         vD.copy(raycaster.ray.direction)
         vOC.subVectors(vCenterW, vO)
-        const t = Math.max(vOC.dot(vD), 0) // along-ray parameter of closest point (clamped ahead of camera)
+        const t = Math.max(vOC.dot(vD), 0)
         vClosest.copy(vO).addScaledVector(vD, t)
         const d = vClosest.distanceTo(vCenterW)
 
         if (d <= sphereRadius + hoverReach) {
           magnetActive = true
+          magnetMode = 'near'
           vDir.subVectors(vClosest, vCenterW)
           const len = vDir.length()
-          if (len > 1e-6) {
-            vDir.multiplyScalar(1 / len)
-          } else {
-            // Fallback: aim at camera-facing normal if degenerate
-            vDir.set(0, 0, 1).applyQuaternion(planet.getWorldQuaternion(new THREE.Quaternion()))
-            vDir.normalize()
+          if (len > 1e-6) vDir.multiplyScalar(1 / len)
+          else {
+            vDir.set(0, 0, 1).applyQuaternion(planet.getWorldQuaternion(new THREE.Quaternion())).normalize()
           }
           const proximity = THREE.MathUtils.clamp((sphereRadius + hoverReach - d) / hoverReach, 0, 1)
-          const outward = maxOutward * proximity
+          const outward = maxOutward * proximity // softened outward bulge
           const targetW = vCenterW.clone().addScaledVector(vDir, sphereRadius + outward)
           magnetLocalTarget.copy(planet.worldToLocal(targetW.clone()))
         } else {
           magnetActive = false
+          magnetMode = 'none'
         }
       }
-      function onPointerLeave() { magnetActive = false }
+      function onPointerLeave() { magnetActive = false; magnetMode = 'none' }
 
       renderer.domElement.addEventListener("pointermove", onPointerMove)
       renderer.domElement.addEventListener("pointerleave", onPointerLeave)
@@ -358,6 +359,7 @@ export function ThreeScene() {
         const arr = posAttr.array as Float32Array
         const sigma = influenceRadius
         const twoSigma2 = 2 * sigma * sigma
+        const strengthEff = magnetMode === 'near' ? strength * nearMissStrengthScale : strength
 
         if (deformAlpha > 0.001) {
           for (let i = 0; i < numParticles; i++) {
@@ -373,7 +375,7 @@ export function ThreeScene() {
 
             // Gaussian falloff around the cursor impact point
             const w = Math.exp(-dist2 / twoSigma2)
-            const k = strength * w * deformAlpha
+            const k = strengthEff * w * deformAlpha
 
             arr[ix] = bx + dx * k
             arr[ix + 1] = by + dy * k
