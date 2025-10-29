@@ -253,22 +253,22 @@ export function ThreeScene() {
       const basePositions = positions.slice(0) // immutable reference state in local space
 
       const raycaster = new THREE.Raycaster()
-      const ndc = new THREE.Vector2()
+      const mouse = new THREE.Vector2(999, 999) // Start off-screen
 
       // Tunables for the effect
-      const influenceRadius = 1.6 // how wide the dimple is (local units)
-      const strength = 0.45 // pull amount toward the cursor
-      const hoverReach = 3.0 // how far OUTSIDE the sphere the cursor can be and still affect it (world units)
-      const maxOutward = 0.6 // reduced: how far beyond the sphere surface the magnet target can sit when near-miss (world units)
-      const nearMissStrengthScale = 0.85 // reduced deformation strength when in near-miss mode
+      const influenceRadius = 1.6
+      const strength = 0.45
+      const hoverReach = 3.0
+      const maxOutward = 0.6
+      const nearMissStrengthScale = 0.85
 
-      let deformAlpha = 0 // smoothed 0..1 activation
+      let deformAlpha = 0
       const magnetLocal = new THREE.Vector3(0, 0, sphereRadius)
       const magnetLocalTarget = new THREE.Vector3(0, 0, sphereRadius)
       let magnetActive = false
       let magnetMode: 'none' | 'hit' | 'near' = 'none'
 
-      // Reusable vectors to avoid allocations
+      // Reusable vectors
       const vCenterW = new THREE.Vector3()
       const vO = new THREE.Vector3()
       const vD = new THREE.Vector3()
@@ -280,65 +280,63 @@ export function ThreeScene() {
 
       function onPointerMove(e: PointerEvent) {
         const rect = renderer.domElement.getBoundingClientRect()
-        ndc.x = ((e.clientX - rect.left) / rect.width) * 2 - 1
-        ndc.y = -((e.clientY - rect.top) / rect.height) * 2 + 1
-        raycaster.setFromCamera(ndc, camera)
-
-        // WORLD-space sphere
-        vCenterW.setFromMatrixPosition(planet.matrixWorld)
-
-        // 1) Exact ray-sphere intersection (front-most).
-        const sphere = new THREE.Sphere(vCenterW, sphereRadius)
-        const hit = raycaster.ray.intersectSphere(sphere, vHit)
-        if (hit) {
-          vN.copy(vHit).sub(vCenterW).normalize()
-          const targetW = vHit // on-surface point
-          magnetLocalTarget.copy(planet.worldToLocal(targetW.clone()))
-          magnetActive = true
-          magnetMode = 'hit'
-          return
-        }
-
-        // 2) Near-miss
-        vO.copy(raycaster.ray.origin)
-        vD.copy(raycaster.ray.direction)
-        vOC.subVectors(vCenterW, vO)
-        const t = Math.max(vOC.dot(vD), 0)
-        vClosest.copy(vO).addScaledVector(vD, t)
-        const d = vClosest.distanceTo(vCenterW)
-
-        if (d <= sphereRadius + hoverReach) {
-          magnetActive = true
-          magnetMode = 'near'
-          vDir.subVectors(vClosest, vCenterW)
-          const len = vDir.length()
-          if (len > 1e-6) vDir.multiplyScalar(1 / len)
-          else {
-            vDir.set(0, 0, 1).applyQuaternion(planet.getWorldQuaternion(new THREE.Quaternion())).normalize()
-          }
-          const proximity = THREE.MathUtils.clamp((sphereRadius + hoverReach - d) / hoverReach, 0, 1)
-          const outward = maxOutward * proximity // softened outward bulge
-          const targetW = vCenterW.clone().addScaledVector(vDir, sphereRadius + outward)
-          magnetLocalTarget.copy(planet.worldToLocal(targetW.clone()))
-        } else {
-          magnetActive = false
-          magnetMode = 'none'
-        }
+        mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1
+        mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1
+        magnetActive = true // A move implies the cursor is over the component
       }
-      function onPointerLeave() { magnetActive = false; magnetMode = 'none' }
+
+      function onPointerLeave() {
+        magnetActive = false
+        magnetMode = 'none'
+        // Optional: Move mouse far away to prevent lingering effects
+        mouse.set(999, 999)
+      }
 
       renderer.domElement.addEventListener("pointermove", onPointerMove)
       renderer.domElement.addEventListener("pointerleave", onPointerLeave)
 
-      // --- Animation loop ---
-      function animate() {
-        frameId = requestAnimationFrame(animate)
-        const t = performance.now() * 0.001
-
-        // Planet precession (original rotation behavior)
-        const precessAx = 0.25 * Math.sin(t * 0.25)
-        const precessAz = 0.25 * Math.cos(t * 0.2)
-        _tmpAxis.set(precessAx, 1.0, precessAz).normalize()
+              // --- Animation loop ---
+            function animate() {
+              frameId = requestAnimationFrame(animate)
+              const t = performance.now() * 0.001
+      
+              // Update magnet logic every frame
+              if (magnetActive) {
+                raycaster.setFromCamera(mouse, camera)
+                vCenterW.setFromMatrixPosition(planet.matrixWorld)
+      
+                const sphere = new THREE.Sphere(vCenterW, sphereRadius)
+                const hit = raycaster.ray.intersectSphere(sphere, vHit)
+      
+                if (hit) {
+                  magnetMode = 'hit'
+                  magnetLocalTarget.copy(planet.worldToLocal(vHit.clone()))
+                } else {
+                  vO.copy(raycaster.ray.origin)
+                  vD.copy(raycaster.ray.direction)
+                  vOC.subVectors(vCenterW, vO)
+                  const tClosest = Math.max(vOC.dot(vD), 0)
+                  vClosest.copy(vO).addScaledVector(vD, tClosest)
+                  const d = vClosest.distanceTo(vCenterW)
+      
+                  if (d <= sphereRadius + hoverReach) {
+                    magnetMode = 'near'
+                    vDir.subVectors(vClosest, vCenterW).normalize()
+                    const proximity = THREE.MathUtils.clamp((sphereRadius + hoverReach - d) / hoverReach, 0, 1)
+                    const outward = maxOutward * proximity
+                    const targetW = vCenterW.clone().addScaledVector(vDir, sphereRadius + outward)
+                    magnetLocalTarget.copy(planet.worldToLocal(targetW.clone()))
+                  } else {
+                    magnetMode = 'none'
+                  }
+                }
+              } else {
+                magnetMode = 'none'
+              }
+      
+              // Planet precession (original rotation behavior)
+              const precessAx = 0.25 * Math.sin(t * 0.25)
+              const precessAz = 0.25 * Math.cos(t * 0.2)        _tmpAxis.set(precessAx, 1.0, precessAz).normalize()
         const deltaAngle = 0.0015
         _tmpQuat.setFromAxisAngle(_tmpAxis, deltaAngle)
         planet.quaternion.multiply(_tmpQuat)
