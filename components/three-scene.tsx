@@ -19,6 +19,7 @@ export function ThreeScene() {
       camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 3000)
       renderer = new THREE.WebGLRenderer({ antialias: true })
       renderer.setSize(window.innerWidth, window.innerHeight)
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio ?? 1, 2))
       renderer.setClearColor(0x000000)
 
       if (containerRef.current) {
@@ -248,25 +249,41 @@ export function ThreeScene() {
       const _tmpQuat = new THREE.Quaternion()
 
       // =============================
-      // Magnetic bend toward cursor (robust for on-surface & near-miss)
+      // Magnetic bend (continuous outside→surface)
+      // + Press-to-compress (SMOOTH)
       // =============================
-      const basePositions = positions.slice(0) // immutable reference state in local space
+      const basePositions = positions.slice(0) // immutable local-space base
 
       const raycaster = new THREE.Raycaster()
-      const mouse = new THREE.Vector2(999, 999) // Start off-screen
+      const ndc = new THREE.Vector2()
+      let pointerActive = false
 
-      // Tunables for the effect
+      // Tunables
       const influenceRadius = 1.6
       const strength = 0.45
-      const hoverReach = 3.0
-      const maxOutward = 0.6
-      const nearMissStrengthScale = 0.85
+      const hoverReach = 3.0        // how far outside still influences (world)
+      const maxOutward = 1.2        // max outward offset (world)
+      const tentSharpness = 1.0     // triangular peak sharpness
+
+      // Press-to-compress tunables
+      const compressionScaleActive = 0.72 // target radius while pressed
+      const compressionEasePress = 0.25   // approach rate toward compressed
+      const compressionEaseRelease = 0.18 // approach rate back to normal
+      const spinBoostTarget = 2.2         // ↓ reduced spin multiplier while pressed
+      const spinEase = 0.18               // easing for spin factor
 
       let deformAlpha = 0
       const magnetLocal = new THREE.Vector3(0, 0, sphereRadius)
-      const magnetLocalTarget = new THREE.Vector3(0, 0, sphereRadius)
+      const magnetWorldTarget = new THREE.Vector3()
       let magnetActive = false
-      let magnetMode: 'none' | 'hit' | 'near' = 'none'
+
+      // Smooth “outward intensity” that peaks outside and goes to ~0 at the surface
+      let outwardAlpha = 0
+
+      // Press-to-compress state
+      let compressionActive = false
+      let compressionFactor = 1.0       // animated radius scale (smooth)
+      let spinSpeedFactor = 1.0         // animated spin multiplier (smooth)
 
       // Reusable vectors
       const vCenterW = new THREE.Vector3()
@@ -276,104 +293,161 @@ export function ThreeScene() {
       const vClosest = new THREE.Vector3()
       const vDir = new THREE.Vector3()
       const vHit = new THREE.Vector3()
-      const vN = new THREE.Vector3()
+      const vSurface = new THREE.Vector3()
 
       function onPointerMove(e: PointerEvent) {
         const rect = renderer.domElement.getBoundingClientRect()
-        mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1
-        mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1
-        magnetActive = true // A move implies the cursor is over the component
+        ndc.x = ((e.clientX - rect.left) / rect.width) * 2 - 1
+        ndc.y = -((e.clientY - rect.top) / rect.height) * 2 + 1
+        pointerActive = true
+      }
+      function onPointerLeave() {
+        pointerActive = false
+        magnetActive = false
+        compressionActive = false
       }
 
-      function onPointerLeave() {
-        magnetActive = false
-        magnetMode = 'none'
-        // Optional: Move mouse far away to prevent lingering effects
-        mouse.set(999, 999)
+      // PRESS-TO-COMPRESS: enable only if clicking the sphere surface
+      function onPointerDown(e: PointerEvent) {
+        const rect = renderer.domElement.getBoundingClientRect()
+        ndc.x = ((e.clientX - rect.left) / rect.width) * 2 - 1
+        ndc.y = -((e.clientY - rect.top) / rect.height) * 2 + 1
+        raycaster.setFromCamera(ndc, camera)
+
+        vCenterW.setFromMatrixPosition(planet.matrixWorld)
+        const sphere = new THREE.Sphere(vCenterW, sphereRadius)
+        const hit = raycaster.ray.intersectSphere(sphere, vHit)
+        if (hit) {
+          compressionActive = true
+        }
+      }
+      function onPointerUp() {
+        compressionActive = false
       }
 
       renderer.domElement.addEventListener("pointermove", onPointerMove)
       renderer.domElement.addEventListener("pointerleave", onPointerLeave)
+      renderer.domElement.addEventListener("pointerdown", onPointerDown)
+      window.addEventListener("pointerup", onPointerUp)
 
-              // --- Animation loop ---
-            function animate() {
-              frameId = requestAnimationFrame(animate)
-              const t = performance.now() * 0.001
-      
-              // Update magnet logic every frame
-              if (magnetActive) {
-                raycaster.setFromCamera(mouse, camera)
-                vCenterW.setFromMatrixPosition(planet.matrixWorld)
-      
-                const sphere = new THREE.Sphere(vCenterW, sphereRadius)
-                const hit = raycaster.ray.intersectSphere(sphere, vHit)
-      
-                if (hit) {
-                  magnetMode = 'hit'
-                  magnetLocalTarget.copy(planet.worldToLocal(vHit.clone()))
-                } else {
-                  vO.copy(raycaster.ray.origin)
-                  vD.copy(raycaster.ray.direction)
-                  vOC.subVectors(vCenterW, vO)
-                  const tClosest = Math.max(vOC.dot(vD), 0)
-                  vClosest.copy(vO).addScaledVector(vD, tClosest)
-                  const d = vClosest.distanceTo(vCenterW)
-      
-                  if (d <= sphereRadius + hoverReach) {
-                    magnetMode = 'near'
-                    vDir.subVectors(vClosest, vCenterW).normalize()
-                    const proximity = THREE.MathUtils.clamp((sphereRadius + hoverReach - d) / hoverReach, 0, 1)
-                    const outward = maxOutward * proximity
-                    const targetW = vCenterW.clone().addScaledVector(vDir, sphereRadius + outward)
-                    magnetLocalTarget.copy(planet.worldToLocal(targetW.clone()))
-                  } else {
-                    magnetMode = 'none'
-                  }
-                }
-              } else {
-                magnetMode = 'none'
-              }
-      
-              // Planet precession (original rotation behavior)
-              const precessAx = 0.25 * Math.sin(t * 0.25)
-              const precessAz = 0.25 * Math.cos(t * 0.2)        _tmpAxis.set(precessAx, 1.0, precessAz).normalize()
-        const deltaAngle = 0.0015
+      // Triangular "tent" curve with peak at u=0.5, zero at u=0 and u=1
+      function tent01(u: number) {
+        const x = Math.max(0, Math.min(1, u))
+        const t = 1 - 2 * Math.abs(x - 0.5) // 0..1..0
+        return Math.pow(t, tentSharpness)
+      }
+
+      function updateMagnetFromRay() {
+        if (!pointerActive) {
+          magnetActive = false
+          outwardAlpha += (0 - outwardAlpha) * 0.15
+          return
+        }
+
+        raycaster.setFromCamera(ndc, camera)
+        vCenterW.setFromMatrixPosition(planet.matrixWorld)
+        const sphere = new THREE.Sphere(vCenterW, sphereRadius)
+
+        // Compute closest point on the ray to the sphere center
+        vO.copy(raycaster.ray.origin)
+        vD.copy(raycaster.ray.direction)
+        vOC.subVectors(vCenterW, vO)
+        const t = Math.max(vOC.dot(vD), 0)             // forward along the ray
+        vClosest.copy(vO).addScaledVector(vD, t)
+        let d = vClosest.distanceTo(vCenterW)          // distance from center at closest approach
+
+        // Detect if we actually hit the sphere
+        const hit = raycaster.ray.intersectSphere(sphere, vHit) ?? null
+
+        // Direction from center
+        if (hit) {
+          vDir.copy(vHit).sub(vCenterW).normalize()
+          vSurface.copy(vHit)
+          d = sphereRadius // enforce continuity
+        } else {
+          vDir.subVectors(vClosest, vCenterW)
+          const len = vDir.length()
+          if (len > 1e-6) vDir.multiplyScalar(1 / len)
+          else vDir.set(0, 0, 1).applyQuaternion(planet.getWorldQuaternion(new THREE.Quaternion())).normalize()
+          vSurface.copy(vCenterW).addScaledVector(vDir, sphereRadius)
+        }
+
+        const withinHover = d <= sphereRadius + hoverReach
+        magnetActive = withinHover || !!hit
+
+        const u = Math.max(0, Math.min(1, (d - sphereRadius) / hoverReach))
+        const targetOutward = tent01(u)
+        outwardAlpha += (targetOutward - outwardAlpha) * 0.25
+
+        const outward = maxOutward * outwardAlpha
+        magnetWorldTarget.copy(vSurface).addScaledVector(vDir, outward)
+      }
+
+      // --- Animation loop ---
+      function animate() {
+        frameId = requestAnimationFrame(animate)
+        const t = performance.now() * 0.001
+
+        // Update sticky target (continuous outside → surface)
+        updateMagnetFromRay()
+
+        // Ease compression factor toward target
+        const targetCompression = compressionActive ? compressionScaleActive : 1.0
+        const compEase = compressionActive ? compressionEasePress : compressionEaseRelease
+        compressionFactor += (targetCompression - compressionFactor) * compEase
+
+        // Ease spin speed toward target
+        const targetSpin = compressionActive ? spinBoostTarget : 1.0
+        spinSpeedFactor += (targetSpin - spinSpeedFactor) * spinEase
+
+        // Planet precession — boosted by smoothed spinSpeedFactor
+        const precessAx = 0.25 * Math.sin(t * 0.25)
+        const precessAz = 0.25 * Math.cos(t * 0.2)
+        _tmpAxis.set(precessAx, 1.0, precessAz).normalize()
+        const baseDelta = 0.0015
+        const deltaAngle = baseDelta * spinSpeedFactor
         _tmpQuat.setFromAxisAngle(_tmpAxis, deltaAngle)
         planet.quaternion.multiply(_tmpQuat)
 
-        // Text gentle drift
-        textGroup.rotation.y = initialYaw + 0.015 * Math.sin(t * 0.6 + 1.2)
-        textGroup.rotation.x = initialPitch + 0.012 * Math.cos(t * 0.8)
+        // Text gentle drift (slightly boosted too)
+        const driftBoost = 0.8 + 0.2 * spinSpeedFactor
+        textGroup.rotation.y = initialYaw + 0.015 * driftBoost * Math.sin(t * 0.6 + 1.2)
+        textGroup.rotation.x = initialPitch + 0.012 * driftBoost * Math.cos(t * 0.8)
 
-        // Keep glow aligned with planet
+        // Keep glow aligned with planet & scale with compression
         glowSphere.quaternion.copy(planet.quaternion)
+        glowSphere.scale.setScalar(compressionFactor)
 
-        // Smooth activation and magnet center
-        deformAlpha += ((magnetActive ? 1 : 0) - deformAlpha) * 0.12 // ease in/out
-        magnetLocal.lerp(magnetLocalTarget, 0.18)
+        // Smooth activation & magnet interpolation
+        deformAlpha += ((magnetActive ? 1 : 0) - deformAlpha) * 0.12
+        if (magnetActive) {
+          const targetLocal = planet.worldToLocal(magnetWorldTarget.clone())
+          magnetLocal.lerp(targetLocal, 0.18)
+        }
 
-        // Deform planet vertices in LOCAL space toward magnetLocal
-        const posAttr = planetGeometry.getAttribute("position") as any
+        // --- Deform + (SMOOTH) Compression ---
+        const posAttr = planetGeometry.getAttribute("position") as THREE.BufferAttribute
         const arr = posAttr.array as Float32Array
         const sigma = influenceRadius
         const twoSigma2 = 2 * sigma * sigma
-        const strengthEff = magnetMode === 'near' ? strength * nearMissStrengthScale : strength
 
-        if (deformAlpha > 0.001) {
+        if (deformAlpha > 0.001 || Math.abs(compressionFactor - 1.0) > 1e-4) {
           for (let i = 0; i < numParticles; i++) {
             const ix = i * 3
-            const bx = basePositions[ix]
-            const by = basePositions[ix + 1]
-            const bz = basePositions[ix + 2]
 
+            // Compressed base
+            const bx = basePositions[ix] * compressionFactor
+            const by = basePositions[ix + 1] * compressionFactor
+            const bz = basePositions[ix + 2] * compressionFactor
+
+            // Magnet displacement around compressed base
             const dx = magnetLocal.x - bx
             const dy = magnetLocal.y - by
             const dz = magnetLocal.z - bz
             const dist2 = dx * dx + dy * dy + dz * dz
 
-            // Gaussian falloff around the cursor impact point
             const w = Math.exp(-dist2 / twoSigma2)
-            const k = strengthEff * w * deformAlpha
+            const k = strength * w * deformAlpha
 
             arr[ix] = bx + dx * k
             arr[ix + 1] = by + dy * k
@@ -381,13 +455,13 @@ export function ThreeScene() {
           }
           posAttr.needsUpdate = true
         } else {
-          // relax back to base quickly when inactive
+          // Fully relaxed, write true base
           for (let i = 0; i < basePositions.length; i++) arr[i] = basePositions[i]
           posAttr.needsUpdate = true
         }
 
         // Starfield gentle forward drift
-        const starPositions = starGeometry.attributes.position as any
+        const starPositions = starGeometry.attributes.position as THREE.BufferAttribute
         for (let i = 0; i < starPositions.count; i++) {
           let z = starPositions.getZ(i)
           z += 0.5
@@ -398,7 +472,7 @@ export function ThreeScene() {
 
         renderer.render(scene, camera)
         controls.update()
-        glowMaterial.uniforms.time.value += 0.01
+        ;(glowMaterial.uniforms as any).time.value += 0.01
       }
 
       frameId = requestAnimationFrame(animate)
@@ -418,7 +492,21 @@ export function ThreeScene() {
         window.removeEventListener("resize", handleResize)
         renderer.domElement.removeEventListener("pointermove", onPointerMove)
         renderer.domElement.removeEventListener("pointerleave", onPointerLeave)
+        renderer.domElement.removeEventListener("pointerdown", onPointerDown)
+        window.removeEventListener("pointerup", onPointerUp)
         if (frameId) cancelAnimationFrame(frameId)
+        if (renderer.domElement && renderer.domElement.parentElement) {
+          renderer.domElement.parentElement.removeChild(renderer.domElement)
+        }
+        starGeometry.dispose()
+        starMaterial.dispose()
+        planetGeometry.dispose()
+        planetMaterial.dispose()
+        textGeometry.dispose()
+        pointsMaterial.dispose()
+        lineMaterial.dispose()
+        glowGeometry.dispose()
+        glowMaterial.dispose()
         renderer.dispose()
       }
     }
@@ -435,3 +523,4 @@ export function ThreeScene() {
 
   return <div ref={containerRef} className="absolute inset-0" />
 }
+
