@@ -120,6 +120,15 @@ export function DonationQR() {
               <div className="text-white text-sm mt-2">Copied npub</div>
             </div>
           )}
+          <a
+            href="https://x.com/babdcs"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-orange-500 hover:underline flex items-center justify-center"
+          >
+            <img src="/images/twitter.png" alt="X logo" className="h-6 w-6 mr-2" />
+            x.com/babdcs
+          </a>
         </div>
       </Card>
     </div>
