@@ -7,8 +7,9 @@ import { Badge } from "@/components/ui/badge"
 // import { Loader2 } from 'lucide-react'
 import { BlockDetailsModal } from "@/components/block-details-modal"
 import { ProjectedBlockDetailsModal } from "@/components/projected-block-details-modal"
+import { BlockItem } from "@/components/block-item"
 
-interface Block {
+export interface Block {
   height: number
   size: number
   tx_count: number
@@ -24,7 +25,7 @@ interface Block {
   }
 }
 
-interface ProjectedBlock {
+export interface ProjectedBlock {
   blockSize: number
   nTx: number
   feeRange: number[]
@@ -72,7 +73,15 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
   const [leftPadPx, setLeftPadPx] = useState(0)
   const projectedGroupRef = useRef<HTMLDivElement>(null)
   const blocksGroupRef = useRef<HTMLDivElement>(null)
+  const projectedGroupOffsetLeft = useRef<number>(0);
+  const blocksGroupOffsetLeft = useRef<number>(0);
 // Removed handleScroll and loadMorePastBlocks as they are no longer needed
+
+  const [mousePositionX, setMousePositionX] = useState<number | null>(null);
+  const [containerLeft, setContainerLeft] = useState<number>(0);
+  const mouseMoveAnimationFrameRef = useRef<number | null>(null);
+  const throttleTimeoutRef = useRef<number | null>(null); // New ref for throttling
+  const throttleInterval = 50; // Update every 50ms
 
   // Load older blocks (older = lower height)
   const loadOlderBlocks = useCallback(async (count: number = 10) => {
@@ -210,6 +219,13 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
     }
   }, [currentHeight, fetchBlocksForCurrentHeight])
 
+  useEffect(() => {
+    if (projectedGroupRef.current && blocksGroupRef.current && scrollRef.current) {
+      projectedGroupOffsetLeft.current = projectedGroupRef.current.offsetLeft;
+      blocksGroupOffsetLeft.current = blocksGroupRef.current.offsetLeft;
+    }
+  }, [blocks, projectedBlocks, leftPadPx]); // Recalculate if blocks or padding changes
+
   // Center the view on the current block
   useEffect(() => {
     if (scrollRef.current && !isInitialCenteringDone.current) {
@@ -301,6 +317,29 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
     setSelectedProjectedBlock(null)
   }
 
+  const getBlockScaleAndZIndex = useCallback((blockCenterXRelativeToScrollRef: number) => {
+    if (mousePositionX === null || !scrollRef.current || isDragging) {
+      return { scale: 1, zIndex: 1 };
+    }
+
+    const scrollLeft = scrollRef.current.scrollLeft;
+    const mouseXRelativeToContainer = mousePositionX - containerLeft + scrollLeft;
+
+    const distance = Math.abs(blockCenterXRelativeToScrollRef - mouseXRelativeToContainer);
+    const magnificationRadius = 200; // Pixels around the cursor where magnification occurs
+    const maxScale = 1.1; // Maximum scale for the block directly under the cursor
+
+    if (distance > magnificationRadius) {
+      return { scale: 1, zIndex: 1 };
+    }
+
+    const normalizedDistance = distance / magnificationRadius; // 0 to 1
+    const scale = maxScale - (maxScale - 1) * (normalizedDistance * normalizedDistance);
+    const zIndex = Math.round(scale * 10); // Scale 1.0 -> zIndex 10, Scale 1.2 -> zIndex 12
+
+    return { scale, zIndex };
+  }, [mousePositionX, containerLeft, isDragging]);
+
   return (
     <>
       <div className="absolute top-20 md:top-32 left-0 right-0 w-full z-10">
@@ -308,7 +347,7 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
           {/* Left Fade Overlay (Desktop Only) */}
           <div className="absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-black/50 to-transparent z-20 hidden md:block pointer-events-none" />
           {/* Right Fade Overlay (Desktop Only) */}
-          <div className="absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-black/50 to-transparent z-20 hidden md:block pointer-events-none" />
+          <div className className="absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-black/50 to-transparent z-20 hidden md:block pointer-events-none" />
           <div
             ref={scrollRef}
             className="flex overflow-x-auto p-4 space-x-4 no-scrollbar select-none"
@@ -326,7 +365,22 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
               const root = scrollRef.current
               if (!root || !isPointerDown.current) return
               const dx = e.clientX - startX.current
-              if (!hasDragged.current && Math.abs(dx) < dragThreshold) return
+              if (!hasDragged.current && Math.abs(dx) < dragThreshold) {
+                // If not dragging yet, just update mouse position for magnification
+                if (!throttleTimeoutRef.current) { // Only update if not currently throttled
+                  if (mouseMoveAnimationFrameRef.current) {
+                    cancelAnimationFrame(mouseMoveAnimationFrameRef.current);
+                  }
+                  mouseMoveAnimationFrameRef.current = requestAnimationFrame(() => {
+                    setMousePositionX(e.clientX);
+                    setContainerLeft(root.getBoundingClientRect().left);
+                    throttleTimeoutRef.current = window.setTimeout(() => {
+                      throttleTimeoutRef.current = null;
+                    }, throttleInterval);
+                  });
+                }
+                return;
+              }
               hasDragged.current = true
               setIsDragging(true)
               let next = startScrollLeft.current - dx
@@ -338,10 +392,44 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
             onPointerUp={() => {
               isPointerDown.current = false
               setIsDragging(false)
+              setMousePositionX(null); // Reset mouse position on pointer up
+              if (mouseMoveAnimationFrameRef.current) {
+                cancelAnimationFrame(mouseMoveAnimationFrameRef.current);
+                mouseMoveAnimationFrameRef.current = null;
+              }
+              if (throttleTimeoutRef.current) { // Clear throttle on pointer up
+                clearTimeout(throttleTimeoutRef.current);
+                throttleTimeoutRef.current = null;
+              }
             }}
             onPointerLeave={() => {
               isPointerDown.current = false
               setIsDragging(false)
+              setMousePositionX(null); // Reset mouse position on pointer leave
+              if (mouseMoveAnimationFrameRef.current) {
+                cancelAnimationFrame(mouseMoveAnimationFrameRef.current);
+                mouseMoveAnimationFrameRef.current = null;
+              }
+              if (throttleTimeoutRef.current) { // Clear throttle on pointer leave
+                clearTimeout(throttleTimeoutRef.current);
+                throttleTimeoutRef.current = null;
+              }
+            }}
+            onMouseMove={(e) => {
+              if (!isPointerDown.current) { // Only update mouse position if not dragging
+                if (!throttleTimeoutRef.current) { // Only update if not currently throttled
+                  if (mouseMoveAnimationFrameRef.current) {
+                    cancelAnimationFrame(mouseMoveAnimationFrameRef.current);
+                  }
+                  mouseMoveAnimationFrameRef.current = requestAnimationFrame(() => {
+                    setMousePositionX(e.clientX);
+                    setContainerLeft(scrollRef.current?.getBoundingClientRect().left || 0);
+                    throttleTimeoutRef.current = window.setTimeout(() => {
+                      throttleTimeoutRef.current = null;
+                    }, throttleInterval);
+                  });
+                }
+              }
             }}
           >
             <style jsx>{`
@@ -358,48 +446,30 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
                 .slice()
                 .reverse()
                 .map((proj, index) => {
-                  const futureHeight = currentHeight + (projectedBlocks.length - index)
-                  const estimatedWeightWU = proj.blockSize * BYTES_TO_WU_RATIO
-                  const weightPercentage = estimatedWeightWU
-                    ? Math.min((estimatedWeightWU / MAX_BLOCK_WEIGHT_WU) * 100, 100)
-                    : 0
+                  const blockWidth = 100; // min-w-[100px]
+                  const blockMargin = 16; // space-x-4 (4 * 4px = 16px)
+                  const blockCenterXRelativeToProjectedGroup = (index * (blockWidth + blockMargin)) + (blockWidth / 2);
+                  const blockCenterXRelativeToScrollRef = projectedGroupOffsetLeft.current + blockCenterXRelativeToProjectedGroup;
 
-                  const estimatedFeeRate = Number.parseFloat(getAverageFeeRate(proj.feeRange).replace("~", ""))
-                  const interpolatedFillColor = getInterpolatedFeeColor(estimatedFeeRate, 0.4) // 40% opacity for fill
-                  const interpolatedTextColor = getInterpolatedFeeColor(estimatedFeeRate) // Full opacity for text and badge
+                  const { scale, zIndex } = getBlockScaleAndZIndex(blockCenterXRelativeToScrollRef);
 
+                  const futureHeight = currentHeight + (projectedBlocks.length - index);
                   return (
-                    <div
-                      key={futureHeight}
-                      onClick={() => handleProjectedBlockClick(proj, index)}
-                      className="relative flex-shrink-0 p-3 rounded-lg text-center min-w-[100px] cursor-pointer overflow-hidden hover:scale-105 transition-all duration-200"
-                      title={`Click to view estimated details for future block ${futureHeight}`}
-                    >
-                      {/* Dynamic fill layer for future blocks */}
-                      <div
-                        className="absolute bottom-0 left-0 w-full transition-all duration-300"
-                        style={{ height: `${weightPercentage}%`, backgroundColor: interpolatedFillColor }}
-                      ></div>
-                      {/* Content layer */}
-                      <div className="relative z-10 flex flex-col h-full justify-between">
-                        <div>
-                          <div className="text-xl font-bold mb-1" style={{ color: interpolatedTextColor }}>
-                            {futureHeight}
-                          </div>
-                          <div className="text-xs text-white space-y-1">
-                            <div>{(proj.blockSize / 1000000).toFixed(2)} MB</div>
-                            <div>{proj.nTx.toLocaleString()} TX</div>
-                            <div className="text-gray-400">{getAverageFeeRate(proj.feeRange)} sat/vB</div>
-                          </div>
-                        </div>
-                        <Badge
-                          className="mt-2 text-white text-xs self-center"
-                          style={{ backgroundColor: interpolatedTextColor }}
-                        >
-                          in {getEstimatedTime(index)}
-                        </Badge>
-                      </div>
-                    </div>
+                    <BlockItem
+                      key={proj.nTx + "-" + index} // Use a unique key for projected blocks
+                      block={proj}
+                      currentHeight={currentHeight}
+                      isProjected={true}
+                      scale={scale}
+                      zIndex={zIndex}
+                      onClick={(projBlock) => handleProjectedBlockClick(projBlock as ProjectedBlock, index)}
+                      formatTimeAgo={formatTimeAgo}
+                      getEstimatedTime={getEstimatedTime}
+                      getAverageFeeRate={getAverageFeeRate}
+                      getInterpolatedFeeColor={getInterpolatedFeeColor}
+                      index={index}
+                      futureHeight={futureHeight} // New prop
+                    />
                   )
                 })}
 
@@ -407,40 +477,29 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
               {/* Past blocks group */}
               <div ref={blocksGroupRef} className="flex space-x-4">
 {/* Past blocks - newest to oldest (right to left) */}
-              {blocks.map((block) => {
-                const weightPercentage = block.weight ? Math.min((block.weight / MAX_BLOCK_WEIGHT_WU) * 100, 100) : 0
+              {blocks.map((block, index) => {
+                const blockWidth = 100; // min-w-[100px]
+                const blockMargin = 16; // space-x-4 (4 * 4px = 16px)
+                const blockCenterXRelativeToBlocksGroup = (index * (blockWidth + blockMargin)) + (blockWidth / 2);
+                const blockCenterXRelativeToScrollRef = blocksGroupOffsetLeft.current + blockCenterXRelativeToBlocksGroup;
+
+                const { scale, zIndex } = getBlockScaleAndZIndex(blockCenterXRelativeToScrollRef);
+
                 return (
-                  <div
+                  <BlockItem
                     key={block.height}
-                    onClick={() => handleBlockClick(block)}
-                    className={`relative flex-shrink-0 p-3 rounded-lg border text-center min-w-[100px] cursor-pointer overflow-hidden hover:scale-105 transition-all duration-200 ${block.height === currentHeight // Use prop here
-                        ? "border-blue-400 bg-black/50 shadow-lg shadow-blue-500/30 current-block hover:shadow-blue-500/50"
-                        : "border-blue-500/30 bg-black/50 hover:border-blue-400/50"
-                      }`}
-                    title={`Click to view details for block ${block.height}`}
-                  >
-                    {/* Blue fill layer */}
-                    <div
-                      className="absolute bottom-0 left-0 w-full bg-blue-500/40 transition-all duration-300"
-                      style={{ height: `${weightPercentage}%` }}
-                    ></div>
-                    {/* Content layer */}
-                    <div className="relative z-10 flex flex-col h-full justify-between">
-                      <div>
-                        <div className="text-xl font-bold text-blue-400 mb-1">{block.height}</div>
-                        <div className="text-xs text-white space-y-1">
-                          <div>{(block.size / 1000000).toFixed(2)} MB</div>
-                          <div>{block.tx_count.toLocaleString()} TX</div>
-                          <div className="text-gray-400">
-                            {block.weight ? `${(block.weight / 1000000).toFixed(2)} MWU` : "-- MWU"}
-                          </div>
-                        </div>
-                      </div>
-                      <Badge className="mt-2 bg-blue-500 text-white text-xs self-center hover:bg-blue-500">
-                        {formatTimeAgo(block.timestamp)}
-                      </Badge>
-                    </div>
-                  </div>
+                    block={block}
+                    currentHeight={currentHeight}
+                    isProjected={false}
+                    scale={scale}
+                    zIndex={zIndex}
+                    onClick={handleBlockClick}
+                    formatTimeAgo={formatTimeAgo}
+                    getEstimatedTime={getEstimatedTime}
+                    getAverageFeeRate={getAverageFeeRate}
+                    getInterpolatedFeeColor={getInterpolatedFeeColor}
+                    index={index}
+                  />
                 )
               })}
               {/* The "Load More Past Blocks" div has been removed */}
