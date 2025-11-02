@@ -1,106 +1,24 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { useMediaQuery } from "@/hooks/use-media-query"
-
-interface DifficultyData {
-  progressPercent: number
-  difficultyChange: number
-  previousChange: number
-  averageBlockTime: number
-  estimatedRetarget: string
-  blocksIntoEpoch: number
-}
-
-interface HalvingData {
-  progressPercent: number
-  blocksRemaining: number
-  estimatedDate: string
-  newSubsidy: number
-  currentSubsidy: number
-}
+import { useDifficultyData, useHalvingData } from "@/hooks/use-bitcoin-data"
 
 export function NetworkStats() {
-  const [difficultyData, setDifficultyData] = useState<DifficultyData | null>(null)
-  const [halvingData, setHalvingData] = useState<HalvingData | null>(null)
-  const [loading, setLoading] = useState(true)
+  const { data: difficultyData, isLoading: difficultyLoading, error: difficultyError } = useDifficultyData()
+  const { data: halvingData, isLoading: halvingLoading, error: halvingError } = useHalvingData()
   const isDesktop = useMediaQuery("(min-width: 768px)")
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Fetch difficulty data
-        const diffResponse = await fetch("https://mempool.space/api/v1/difficulty-adjustment")
-        const diffData = await diffResponse.json()
+  const loading = difficultyLoading || halvingLoading
 
-        const blocksIntoEpoch = (diffData.progressPercent * 2016) / 100
-        const retargetDate = new Date(diffData.estimatedRetargetDate)
-        const now = new Date()
-        const msUntil = retargetDate.getTime() - now.getTime()
-        const daysUntil = Math.floor(msUntil / (1000 * 60 * 60 * 24))
+  if (difficultyError) {
+    console.error("Error fetching difficulty data:", difficultyError)
+  }
 
-        const timeString = retargetDate.toLocaleString("en-US", {
-          month: "long",
-          day: "numeric",
-          hour: "numeric",
-          minute: "2-digit",
-          hour12: true,
-        })
-
-        setDifficultyData({
-          progressPercent: diffData.progressPercent,
-          difficultyChange: diffData.difficultyChange,
-          previousChange: diffData.previousRetarget || 0,
-          averageBlockTime: diffData.timeAvg / 60000,
-          estimatedRetarget: `In ~${daysUntil} days (${timeString})`,
-          blocksIntoEpoch: Math.round(blocksIntoEpoch),
-        })
-
-        // Fetch halving data
-        const heightRes = await fetch("https://mempool.space/api/blocks/tip/height")
-        const currentHeight = Number.parseInt(await heightRes.text(), 10)
-
-        const halvingInterval = 210000
-        const currentHalvingEpoch = Math.floor(currentHeight / halvingInterval)
-        const nextHalvingBlock = (currentHalvingEpoch + 1) * halvingInterval
-        const blocksRemaining = nextHalvingBlock - currentHeight
-        const blocksSinceLastHalving = currentHeight - currentHalvingEpoch * halvingInterval
-        const progressPercent = (blocksSinceLastHalving / halvingInterval) * 100
-
-        const currentSubsidy = 50 / Math.pow(2, currentHalvingEpoch)
-        const newSubsidy = currentSubsidy / 2
-
-        const minutesRemaining = blocksRemaining * 10
-        const estimatedDate = new Date(Date.now() + minutesRemaining * 60 * 1000)
-        const yearsUntil = Math.floor((estimatedDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24 * 365))
-        const daysUntil2 = Math.floor(((estimatedDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) % 365)
-        const dateString = estimatedDate.toLocaleString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        })
-
-        setHalvingData({
-          progressPercent,
-          blocksRemaining,
-          estimatedDate: `${dateString} (In ~${yearsUntil} years, ${daysUntil2} days)`,
-          newSubsidy,
-          currentSubsidy,
-        })
-
-        setLoading(false)
-      } catch (error) {
-        console.error("Error fetching network stats:", error)
-        setLoading(false)
-      }
-    }
-
-    fetchData()
-    const interval = setInterval(fetchData, 60000)
-    return () => clearInterval(interval)
-  }, [])
+  if (halvingError) {
+    console.error("Error fetching halving data:", halvingError)
+  }
 
   if (loading || !difficultyData || !halvingData) {
     return (

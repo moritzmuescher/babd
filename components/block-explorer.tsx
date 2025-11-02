@@ -3,33 +3,14 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-// Loader2 is no longer needed if Load More is removed, but keeping it for now as it might be used elsewhere or for future features.
-// import { Loader2 } from 'lucide-react'
 import { BlockDetailsModal } from "@/components/block-details-modal"
 import { ProjectedBlockDetailsModal } from "@/components/projected-block-details-modal"
 import { BlockItem } from "@/components/block-item"
+import { useRecentBlocks, useProjectedBlocks, useOlderBlocks } from "@/hooks/use-bitcoin-data"
+import { MempoolAPI } from "@/lib/mempool-api"
+import type { Block, ProjectedBlock } from "@/lib/types"
 
-export interface Block {
-  height: number
-  size: number
-  tx_count: number
-  timestamp: number
-  id: string
-  weight: number
-  extras?: {
-    totalFees: number
-    pool: {
-      id: number
-      name: string
-    }
-  }
-}
-
-export interface ProjectedBlock {
-  blockSize: number
-  nTx: number
-  feeRange: number[]
-}
+export type { Block, ProjectedBlock }
 
 interface BlockExplorerProps {
   currentHeight: number // Accept currentHeight as a prop
@@ -40,24 +21,38 @@ const BYTES_TO_WU_RATIO = 4
 // const BLOCKS_TO_LOAD = 10 // No longer needed as "Load More" is removed
 
 export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
-  const [blocks, setBlocks] = useState<Block[]>([])
-  const [projectedBlocks, setProjectedBlocks] = useState<ProjectedBlock[]>([])
+  // Use React Query for initial data
+  const { data: recentBlocksData, isLoading: recentBlocksLoading } = useRecentBlocks()
+  const { data: projectedBlocksData, isLoading: projectedBlocksLoading } = useProjectedBlocks()
+
+  // Local state for accumulated blocks (for lazy loading older blocks)
+  const [accumulatedBlocks, setAccumulatedBlocks] = useState<Block[]>([])
+  const [oldestHeight, setOldestHeight] = useState<number | null>(null)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+
+  // Modal state
   const [selectedBlockHash, setSelectedBlockHash] = useState<string | null>(null)
   const [selectedProjectedBlock, setSelectedProjectedBlock] = useState<
     (ProjectedBlock & { height: number; estimatedTime: string }) | null
   >(null)
   const [isBlockDetailsModalOpen, setIsBlockDetailsModalOpen] = useState(false)
   const [isProjectedBlockDetailsModalOpen, setIsProjectedBlockDetailsModalOpen] = useState(false)
-  // Removed oldestFetchedBlockHeight, isLoadingMore, showLoadMorePast states
-  // const [oldestFetchedBlockHeight, setOldestFetchedBlockHeight] = useState<number | null>(null)
-  // const [isLoadingMore, setIsLoadingMore] = useState(false)
-  // const [showLoadMorePast, setShowLoadMorePast] = useState(false)
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const olderSentinelRef = useRef<HTMLDivElement>(null)
-  const [isLoadingMore, setIsLoadingMore] = useState(false)
-  const [oldestHeight, setOldestHeight] = useState<number | null>(null)
   const isInitialCenteringDone = useRef(false)
+
+  // Sync React Query data to local state
+  useEffect(() => {
+    if (recentBlocksData && recentBlocksData.length > 0) {
+      setAccumulatedBlocks(recentBlocksData)
+      setOldestHeight(recentBlocksData[recentBlocksData.length - 1].height)
+      isInitialCenteringDone.current = false
+    }
+  }, [recentBlocksData])
+
+  const blocks = accumulatedBlocks
+  const projectedBlocks = projectedBlocksData || []
 
   
 
@@ -90,34 +85,20 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
       setIsLoadingMore(true)
       const currentOldest = oldestHeight ?? (blocks.length ? blocks[blocks.length - 1].height : null)
       if (!currentOldest) return
-      // mempool.space returns 10 blocks starting from a given height (older)
-      // We subtract 1 to avoid duplicating the current oldest
+
+      // Fetch older blocks using API service
       const start = currentOldest - 1
-      const res = await fetch(`https://mempool.space/api/blocks/${start}`)
-      if (!res.ok) {
-        console.error("Failed to fetch older blocks:", res.status, res.statusText)
-        return
-      }
-      const olderData: Block[] = await res.json()
-      // Optional: limit to 'count'
+      const olderData = await MempoolAPI.getBlocksFromHeight(start)
       const needed = olderData.slice(0, count)
-      // Fetch weights for each
-      const withWeights: Block[] = await Promise.all(
-        needed.map(async (block: Block) => {
-          try {
-            const blockDetailRes = await fetch(`https://mempool.space/api/block/${block.id}`)
-            if (!blockDetailRes.ok) return { ...block, weight: 0 }
-            const blockDetail = await blockDetailRes.json()
-            const weight = typeof blockDetail.weight === "number" ? blockDetail.weight : 0
-            return { ...block, weight }
-          } catch {
-            return { ...block, weight: 0 }
-          }
-        })
-      )
-      setBlocks((prev) => [...prev, ...withWeights])
+
+      // Fetch weights using API service
+      const withWeights = await MempoolAPI.getBlocksWithWeights(needed)
+
+      setAccumulatedBlocks((prev) => [...prev, ...withWeights])
       const newOldest = withWeights.length ? withWeights[withWeights.length - 1].height : currentOldest
       setOldestHeight(newOldest)
+    } catch (error) {
+      console.error("Failed to fetch older blocks:", error)
     } finally {
       setIsLoadingMore(false)
     }
@@ -140,84 +121,12 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
     return () => io.disconnect()
   }, [scrollRef, olderSentinelRef, loadOlderBlocks])
 
-  // const handleScroll = useCallback(() => { ... }, [...])
-  // const loadMorePastBlocks = useCallback(async () => { ... }, [...])
-
-  const fetchBlocksForCurrentHeight = useCallback(
-    async (height: number) => {
-      if (height === 0) return // Don't fetch if height is not yet available
-
-      try {
-        const [blocksRes, projectedRes] = await Promise.all([
-          fetch("https://mempool.space/api/blocks"), // Gets 10 most recent blocks
-          fetch("https://mempool.space/api/v1/fees/mempool-blocks"),
-        ])
-
-        const blocksData = await blocksRes.json()
-        const projectedData = await projectedRes.json()
-
-        let blocksWithWeight = await Promise.all(
-          blocksData.map(async (block: Block) => {
-            try {
-              const blockDetailRes = await fetch(`https://mempool.space/api/block/${block.id}`)
-              if (!blockDetailRes.ok) {
-                console.error(
-                  `Failed to fetch block details for block ${block.height}: ${blockDetailRes.status} ${blockDetailRes.statusText}`,
-                )
-                return { ...block, weight: 0 } // Return with default weight on failure
-              }
-              const blockDetail = await blockDetailRes.json()
-              console.log(blockDetail)
-              // Ensure weight is a number, default to 0 if not
-              const weight = typeof blockDetail.weight === "number" ? blockDetail.weight : 0
-              if (typeof blockDetail.weight !== "number") {
-                console.warn(`Block ${block.height} weight is not a number:`, blockDetail.weight)
-              }
-              return { ...block, weight: weight }
-            } catch (error) {
-              console.error(`Error fetching weight for block ${block.height}:`, error)
-              return { ...block, weight: 0 }
-            }
-          }),
-        )
-
-        setBlocks(blocksWithWeight)
-        setProjectedBlocks(projectedData)
-        // Removed setOldestFetchedBlockHeight
-        // setOldestFetchedBlockHeight(blocksWithWeight[blocksWithWeight.length - 1]?.height || null)
-
-        // The centering logic has been moved to a separate useEffect hook
-      } catch (error) {
-        console.error("Error fetching blocks for current height:", error)
-      }
-    },
-    [], // No dependencies needed for this useCallback as handleScroll is removed
-  )
-
-  // Effect for periodic projected blocks update (currentHeight is now from prop)
+  // Reset centering when current height changes
   useEffect(() => {
-    const fetchProjectedBlocksPeriodically = async () => {
-      try {
-        const projectedRes = await fetch("https://mempool.space/api/v1/fees/mempool-blocks")
-        const projectedData = await projectedRes.json()
-        setProjectedBlocks(projectedData)
-      } catch (error) {
-        console.error("Error fetching projected blocks periodically:", error)
-      }
-    }
-
-    fetchProjectedBlocksPeriodically() // Fetch immediately
-    const interval = setInterval(fetchProjectedBlocksPeriodically, 30000) // Update projected blocks more frequently (e.g., every 30 seconds)
-    return () => clearInterval(interval)
-  }, [])
-
-  // Effect to re-fetch blocks whenever currentHeight prop changes
-  useEffect(() => {
-    if (currentHeight > 0) {
+    if (currentHeight > 0 && recentBlocksData) {
       isInitialCenteringDone.current = false
-      fetchBlocksForCurrentHeight(currentHeight)
     }
-  }, [currentHeight, fetchBlocksForCurrentHeight])
+  }, [currentHeight, recentBlocksData])
 
   useEffect(() => {
     if (projectedGroupRef.current && blocksGroupRef.current && scrollRef.current) {
