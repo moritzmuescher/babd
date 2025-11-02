@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { ThreeScene } from "@/components/three-scene"
 import { StatsPanel } from "@/components/stats-panel"
@@ -10,12 +10,19 @@ import { DonationQR } from "@/components/donation-qr"
 import { SocialLink } from "@/components/social-link"
 import { SearchBar } from "@/components/search-bar"
 import { NetworkStats } from "@/components/network-stats"
+import { useCurrentHeight } from "@/hooks/use-bitcoin-data"
+import { useMempoolWebSocket } from "@/hooks/use-websocket"
 
 export default function Home({ initialQuery }: { initialQuery?: string }) {
   const [isSearchOpen, setIsSearchOpen] = useState(!!initialQuery)
   const [searchQuery, setSearchQuery] = useState(initialQuery || "")
-  const [currentBlockHeight, setCurrentBlockHeight] = useState(0)
   const router = useRouter()
+
+  // Get current block height from React Query (updated via WebSocket)
+  const { data: currentBlockHeight = 0 } = useCurrentHeight()
+
+  // Enable WebSocket for real-time updates
+  const wsStatus = useMempoolWebSocket()
 
   useEffect(() => {
     if (initialQuery) {
@@ -27,21 +34,12 @@ export default function Home({ initialQuery }: { initialQuery?: string }) {
     }
   }, [initialQuery])
 
-  const fetchCurrentBlockHeight = useCallback(async () => {
-    try {
-      const heightRes = await fetch("https://mempool.space/api/blocks/tip/height")
-      const blockHeight = await heightRes.text()
-      setCurrentBlockHeight(Number.parseInt(blockHeight, 10))
-    } catch (error) {
-      console.error("Error fetching current block height:", error)
-    }
-  }, [])
-
+  // Log WebSocket status (optional, can be removed in production)
   useEffect(() => {
-    fetchCurrentBlockHeight()
-    const interval = setInterval(fetchCurrentBlockHeight, 60000)
-    return () => clearInterval(interval)
-  }, [fetchCurrentBlockHeight])
+    if (wsStatus.isConnected) {
+      console.log("🟢 WebSocket connected - receiving real-time updates")
+    }
+  }, [wsStatus.isConnected])
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-black">

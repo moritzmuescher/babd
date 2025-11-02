@@ -10,9 +10,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 30 * 1000, // Data is fresh for 30 seconds
+            staleTime: 60 * 1000, // Data is fresh for 60 seconds (WebSocket provides real-time updates)
             refetchOnWindowFocus: false, // Don't refetch on window focus (3D scene might be running)
             retry: 2, // Retry failed requests twice
+            // Reduced polling frequency since WebSocket provides real-time updates
+            // Polling now serves as fallback only
           },
         },
       }),

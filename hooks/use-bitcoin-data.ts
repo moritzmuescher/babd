@@ -12,17 +12,19 @@ import type {
 
 /**
  * Hook to get the current block height
+ * Note: Real-time updates come via WebSocket, this is fallback polling
  */
 export function useCurrentHeight() {
   return useQuery({
     queryKey: ["blockHeight"],
     queryFn: MempoolAPI.getCurrentHeight,
-    refetchInterval: 60000, // Refetch every 60 seconds (blocks come ~10 min)
+    refetchInterval: 120000, // Refetch every 2 minutes (WebSocket provides real-time updates)
   })
 }
 
 /**
  * Hook to get recent blocks with weights
+ * Note: Real-time updates come via WebSocket, this is fallback polling
  */
 export function useRecentBlocks() {
   return useQuery({
@@ -31,7 +33,7 @@ export function useRecentBlocks() {
       const blocks = await MempoolAPI.getRecentBlocks()
       return MempoolAPI.getBlocksWithWeights(blocks)
     },
-    refetchInterval: 60000, // Refetch every 60 seconds
+    refetchInterval: 120000, // Refetch every 2 minutes (WebSocket provides real-time updates)
   })
 }
 
@@ -53,17 +55,19 @@ export function useOlderBlocks(startHeight: number | null, enabled: boolean = tr
 
 /**
  * Hook to get projected/mempool blocks
+ * Note: Real-time updates come via WebSocket, this is fallback polling
  */
 export function useProjectedBlocks() {
   return useQuery({
     queryKey: ["projectedBlocks"],
     queryFn: MempoolAPI.getProjectedBlocks,
-    refetchInterval: 30000, // Refetch every 30 seconds (mempool changes frequently)
+    refetchInterval: 60000, // Refetch every 60 seconds (WebSocket provides real-time updates)
   })
 }
 
 /**
  * Hook to get Bitcoin stats (price, mempool, fees)
+ * Note: Real-time updates come via WebSocket, this is fallback polling
  */
 export function useBitcoinStats(): {
   data: BitcoinStats | undefined
@@ -73,19 +77,19 @@ export function useBitcoinStats(): {
   const { data: prices, isLoading: isPricesLoading, error: pricesError } = useQuery({
     queryKey: ["prices"],
     queryFn: MempoolAPI.getPrices,
-    refetchInterval: 20000, // Refetch every 20 seconds
+    refetchInterval: 60000, // Refetch every 60 seconds (WebSocket provides updates)
   })
 
   const { data: mempool, isLoading: isMempoolLoading, error: mempoolError } = useQuery({
     queryKey: ["mempool"],
     queryFn: MempoolAPI.getMempoolInfo,
-    refetchInterval: 20000,
+    refetchInterval: 60000,
   })
 
   const { data: fees, isLoading: isFeesLoading, error: feesError } = useQuery({
     queryKey: ["fees"],
     queryFn: MempoolAPI.getRecommendedFees,
-    refetchInterval: 20000,
+    refetchInterval: 60000,
   })
 
   const isLoading = isPricesLoading || isMempoolLoading || isFeesLoading
@@ -106,6 +110,7 @@ export function useBitcoinStats(): {
 
 /**
  * Hook to get difficulty adjustment data
+ * Note: Updates on new blocks via WebSocket
  */
 export function useDifficultyData() {
   return useQuery({
@@ -138,12 +143,13 @@ export function useDifficultyData() {
 
       return difficultyData
     },
-    refetchInterval: 60000, // Refetch every 60 seconds
+    refetchInterval: 120000, // Refetch every 2 minutes (updates on new blocks via WebSocket)
   })
 }
 
 /**
  * Hook to get halving countdown data
+ * Note: Updates on new blocks via WebSocket
  */
 export function useHalvingData() {
   return useQuery({
@@ -186,6 +192,6 @@ export function useHalvingData() {
 
       return halvingData
     },
-    refetchInterval: 60000, // Refetch every 60 seconds
+    refetchInterval: 120000, // Refetch every 2 minutes (updates on new blocks via WebSocket)
   })
 }
