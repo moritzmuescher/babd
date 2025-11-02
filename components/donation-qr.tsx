@@ -66,25 +66,28 @@ export function DonationQR() {
     <div className="absolute right-4 top-64 md:top-80 z-10 hidden md:block">
       <Card className="bg-black/30 border-orange-500/25 backdrop-blur-md p-2 md:p-4 text-center">
         <div className="flex items-center justify-center space-x-2 mb-2 hidden md:block">
-          <div className="flex items-center justify-center space-x-1 rounded-md bg-neutral-700 p-1">
+          <div className="flex items-center justify-center gap-1">
             <Button
               onClick={() => setQrType("onchain")}
-              className={`px-2 py-1 text-xs h-auto ${qrType === "onchain" ? "bg-orange-500 text-white hover:bg-orange-500" : "bg-transparent text-neutral-400 hover:bg-neutral-600"}`}
+              size="sm"
               variant="ghost"
+              className={`border border-orange-500/25 px-2 py-0.5 h-7 text-xs ${qrType === "onchain" ? "bg-orange-500/30 text-orange-200" : "bg-orange-500/10 text-orange-400"} hover:text-orange-200 hover:bg-orange-500/20`}
             >
               On-Chain
             </Button>
             <Button
               onClick={() => setQrType("bolt11")}
-              className={`px-2 py-1 text-xs h-auto ${qrType === "bolt11" ? "bg-orange-500 text-white hover:bg-orange-500" : "bg-transparent text-neutral-400 hover:bg-neutral-600"}`}
+              size="sm"
               variant="ghost"
+              className={`border border-orange-500/25 px-2 py-0.5 h-7 text-xs ${qrType === "bolt11" ? "bg-orange-500/30 text-orange-200" : "bg-orange-500/10 text-orange-400"} hover:text-orange-200 hover:bg-orange-500/20`}
             >
               Bolt11
             </Button>
             <Button
               onClick={() => setQrType("bolt12")}
-              className={`px-2 py-1 text-xs h-auto ${qrType === "bolt12" ? "bg-orange-500 text-white hover:bg-orange-500" : "bg-transparent text-neutral-400 hover:bg-neutral-600"}`}
+              size="sm"
               variant="ghost"
+              className={`border border-orange-500/25 px-2 py-0.5 h-7 text-xs ${qrType === "bolt12" ? "bg-orange-500/30 text-orange-200" : "bg-orange-500/10 text-orange-400"} hover:text-orange-200 hover:bg-orange-500/20`}
             >
               Bolt12
             </Button>
