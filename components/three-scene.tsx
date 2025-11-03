@@ -435,7 +435,7 @@ export function ThreeScene() {
       let dragVelocityX = 0
       let dragVelocityY = 0
       let angularVelocity = new THREE.Vector3(0, 0, 0) // Current rotational velocity
-      const dampingFactor = 0.985 // How quickly rotation slows down (closer to 1 = slower dampening)
+      const dampingFactor = 0.993 // How quickly rotation slows down (closer to 1 = slower dampening)
 
       // Reusable vectors
       const vCenterW = new THREE.Vector3()
