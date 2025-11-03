@@ -428,6 +428,15 @@ export function ThreeScene() {
       let rippleTime = -999             // Time when ripple started
       const rippleDuration = 1.5        // Ripple wave duration in seconds
 
+      // Planet physics drag state
+      let isDraggingPlanet = false
+      let lastPointerX = 0
+      let lastPointerY = 0
+      let dragVelocityX = 0
+      let dragVelocityY = 0
+      let angularVelocity = new THREE.Vector3(0, 0, 0) // Current rotational velocity
+      const dampingFactor = 0.985 // How quickly rotation slows down (closer to 1 = slower dampening)
+
       // Reusable vectors
       const vCenterW = new THREE.Vector3()
       const vO = new THREE.Vector3()
@@ -449,11 +458,21 @@ export function ThreeScene() {
         ndc.x = ((e.clientX - rect.left) / rect.width) * 2 - 1
         ndc.y = -((e.clientY - rect.top) / rect.height) * 2 + 1
         pointerActive = true
+
+        // Track drag velocity if dragging the planet
+        if (isDraggingPlanet) {
+          dragVelocityX = e.clientX - lastPointerX
+          dragVelocityY = e.clientY - lastPointerY
+          lastPointerX = e.clientX
+          lastPointerY = e.clientY
+        }
       }
       function onPointerLeave() {
         pointerActive = false
         magnetActive = false
         compressionActive = false
+        isDraggingPlanet = false
+        controls.enabled = true // Re-enable camera controls
       }
 
       // PRESS-TO-COMPRESS: enable only if clicking the sphere surface
@@ -468,10 +487,28 @@ export function ThreeScene() {
         const hit = raycaster.ray.intersectSphere(sphere, vHit)
         if (hit) {
           compressionActive = true
+          isDraggingPlanet = true
+          lastPointerX = e.clientX
+          lastPointerY = e.clientY
+          dragVelocityX = 0
+          dragVelocityY = 0
+          controls.enabled = false // Disable camera controls when dragging planet
         }
       }
       function onPointerUp() {
         compressionActive = false
+
+        if (isDraggingPlanet) {
+          // Apply drag velocity as angular velocity
+          const sensitivity = 0.005 // How much drag affects rotation
+          angularVelocity.set(
+            -dragVelocityY * sensitivity,
+            dragVelocityX * sensitivity,
+            0
+          )
+          isDraggingPlanet = false
+          controls.enabled = true // Re-enable camera controls
+        }
       }
 
       window.addEventListener("pointermove", onGlobalPointerMove)
@@ -578,14 +615,35 @@ export function ThreeScene() {
         const targetSpin = compressionActive ? spinBoostTarget : 1.0
         spinSpeedFactor += (targetSpin - spinSpeedFactor) * spinEase
 
-        // Planet precession — boosted by smoothed spinSpeedFactor
-        const precessAx = 0.25 * Math.sin(t * 0.25)
-        const precessAz = 0.25 * Math.cos(t * 0.2)
-        _tmpAxis.set(precessAx, 1.0, precessAz).normalize()
-        const baseDelta = 0.0015
-        const deltaAngle = baseDelta * spinSpeedFactor
-        _tmpQuat.setFromAxisAngle(_tmpAxis, deltaAngle)
-        planet.quaternion.multiply(_tmpQuat)
+        // Apply physics-based rotation from drag
+        if (isDraggingPlanet) {
+          // Apply rotation based on current drag velocity (immediate feedback)
+          if (Math.abs(dragVelocityX) > 0.1 || Math.abs(dragVelocityY) > 0.1) {
+            const sensitivity = 0.01
+            _tmpAxis.set(-dragVelocityY, dragVelocityX, 0).normalize()
+            const dragAngle = Math.sqrt(dragVelocityX * dragVelocityX + dragVelocityY * dragVelocityY) * sensitivity
+            _tmpQuat.setFromAxisAngle(_tmpAxis, dragAngle)
+            planet.quaternion.multiply(_tmpQuat)
+          }
+        } else if (angularVelocity.lengthSq() > 0.00001) {
+          // Apply momentum-based rotation after release
+          const angle = angularVelocity.length()
+          _tmpAxis.copy(angularVelocity).normalize()
+          _tmpQuat.setFromAxisAngle(_tmpAxis, angle)
+          planet.quaternion.multiply(_tmpQuat)
+
+          // Apply damping to slow down rotation
+          angularVelocity.multiplyScalar(dampingFactor)
+        } else {
+          // Default precession when no manual rotation
+          const precessAx = 0.25 * Math.sin(t * 0.25)
+          const precessAz = 0.25 * Math.cos(t * 0.2)
+          _tmpAxis.set(precessAx, 1.0, precessAz).normalize()
+          const baseDelta = 0.0015
+          const deltaAngle = baseDelta * spinSpeedFactor
+          _tmpQuat.setFromAxisAngle(_tmpAxis, deltaAngle)
+          planet.quaternion.multiply(_tmpQuat)
+        }
 
         // Text morphing and physics animation
         const textPosAttr = textGeometry.getAttribute("position") as THREE.BufferAttribute
