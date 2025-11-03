@@ -225,7 +225,7 @@ export function ThreeScene() {
 
           // Make Bitcoin B smaller when it's part of text (like "Babd"), larger when standalone
           const isStandalone = !beforeBitcoin && !afterBitcoin
-          const bitcoinScale = isStandalone ? 1.0 : 0.75 // Smaller B in "Babd"
+          const bitcoinScale = isStandalone ? 1.0 : 0.82 // Slightly smaller B in "Babd"
           const bitcoinWidth = fontSize * 0.95 * bitcoinScale
           const totalWidth = beforeWidth + bitcoinWidth + afterWidth
 
@@ -244,7 +244,7 @@ export function ThreeScene() {
           const svgSize = 280
           const scale = (fontSize / svgSize) * bitcoinScale
           const pathCenterX = 138.5
-          const pathCenterY = isStandalone ? 180 : 180 // Adjusted vertical positioning
+          const pathCenterY = isStandalone ? 180 : 185 // Adjusted vertical positioning
 
           ctx.translate(currentX + (bitcoinWidth / 2) - (pathCenterX * scale), centerY - (pathCenterY * scale))
           ctx.scale(scale, scale)
@@ -595,7 +595,7 @@ export function ThreeScene() {
 
         // Smooth transition factor (0 = Babd, 1 = Bitcoin)
         const morphSpeed = compressionActive ? 0.1 : 0.08
-        const textMorphTarget = compressionActive ? 1.0 : 0.0
+        const textMorphTarget = compressionActive ? 0.0 : 1.0
         textMorphFactor += (textMorphTarget - textMorphFactor) * morphSpeed
 
         // Physics effects intensity during transition (peaks in the middle)
