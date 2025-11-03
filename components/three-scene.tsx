@@ -83,6 +83,8 @@ export function ThreeScene() {
       const planetGeometry = new THREE.BufferGeometry()
       const positions = new Float32Array(numParticles * 3)
       const colors = new Float32Array(numParticles * 3)
+      const baseColors = new Float32Array(numParticles * 3) // Store original colors
+      const particleVelocities = new Float32Array(numParticles * 3) // For wobble effect
 
       const goldenRatio = (1 + Math.sqrt(5)) / 2
       const angleIncrement = Math.PI * 2 * goldenRatio
@@ -105,6 +107,16 @@ export function ThreeScene() {
         colors[ix] = color
         colors[ix + 1] = color * 0.4
         colors[ix + 2] = 0
+
+        // Store base colors for animation
+        baseColors[ix] = color
+        baseColors[ix + 1] = color * 0.4
+        baseColors[ix + 2] = 0
+
+        // Initialize random velocities for wobble effect
+        particleVelocities[ix] = (Math.random() - 0.5) * 2
+        particleVelocities[ix + 1] = (Math.random() - 0.5) * 2
+        particleVelocities[ix + 2] = (Math.random() - 0.5) * 2
       }
 
       planetGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3))
@@ -130,7 +142,11 @@ export function ThreeScene() {
       // --- GLOW sphere ---
       const glowGeometry = new THREE.SphereGeometry(sphereRadius * 1.2, 32, 32)
       const glowMaterial = new THREE.ShaderMaterial({
-        uniforms: { time: { value: 0 } },
+        uniforms: {
+          time: { value: 0 },
+          spinFactor: { value: 1.0 },
+          cursorProximity: { value: 0.0 }
+        },
         vertexShader: `
           varying vec3 vNormal;
           void main() {
@@ -140,12 +156,30 @@ export function ThreeScene() {
         `,
         fragmentShader: `
           uniform float time;
+          uniform float spinFactor;
+          uniform float cursorProximity;
           varying vec3 vNormal;
           void main() {
             vec3 n = normalize(vNormal);
             float d = max(0.0, 0.7 - n.z);
-            float intensity = d * d;
-            vec3 glow = vec3(1.0, 0.4, 0.0) * intensity;
+
+            // Pulsing effect only when spinning faster (pressed), but slower
+            float pulse = 1.0;
+            if (spinFactor > 1.1) {
+              pulse = 0.9 + 0.1 * sin(time * 1.5);
+            }
+
+            // Cursor proximity brightness (0.5 = far, 1.0 = at center)
+            float proximityBoost = cursorProximity;
+
+            // Intensity boost when spinning faster
+            float boost = 0.5 + 0.5 * (spinFactor - 1.0);
+            float intensity = d * d * pulse * proximityBoost * (1.0 + boost * 0.6);
+
+            // Shift to hotter colors when spinning faster
+            float heatShift = (spinFactor - 1.0) * 0.5;
+            vec3 glow = vec3(1.0, 0.4 - heatShift * 0.2, 0.0) * intensity;
+
             gl_FragColor = vec4(glow, intensity * 0.4);
           }
         `,
@@ -160,82 +194,127 @@ export function ThreeScene() {
       glowSphere.rotation.set(initialPitch, initialYaw, 0)
 
       // --- Text group (points + wireframe) ---
-      const textCanvas = document.createElement("canvas")
-      textCanvas.width = 512
-      textCanvas.height = 128
-      const textCtx = textCanvas.getContext("2d")!
-      textCtx.font = "bold 100px arial"
-      textCtx.fillStyle = "#ff9900"
-      const text = "₿abd"
-      const metrics = textCtx.measureText(text)
-      textCtx.fillText(text, (textCanvas.width - metrics.width) / 2, 100)
+      // Helper function to generate high-quality text geometry
+      function generateTextGeometry(text: string, fontSize: number, canvasWidth: number, canvasHeight: number, depthLayers: number = 1) {
+        const canvas = document.createElement("canvas")
+        canvas.width = canvasWidth
+        canvas.height = canvasHeight
+        const ctx = canvas.getContext("2d")!
 
-      const imageData = textCtx.getImageData(0, 0, textCanvas.width, textCanvas.height).data
-      const pointsArr: number[] = []
-      const lineIndices: number[] = []
-      const pointMap = new Map<string, number>()
-      const scale = 0.02
-      const sampling = 4
-      const depthLayers = 2
-      const layerDepth = 0.2
+        const centerX = canvas.width / 2
+        const centerY = canvas.height / 2
 
-      for (let d = 0; d < depthLayers; d++) {
-        const pz = (d - (depthLayers - 1) / 2) * layerDepth
-        for (let y = 0; y < textCanvas.height; y += sampling) {
-          for (let x = 0; x < textCanvas.width; x += sampling) {
-            if (imageData[(y * textCanvas.width + x) * 4 + 3] > 128) {
-              const index = pointsArr.length / 3
-              pointsArr.push((x - textCanvas.width / 2) * scale, (textCanvas.height / 2 - y) * scale, pz)
-              pointMap.set(`${x},${y},${d}`, index)
+        // Use a better font for Bitcoin symbol
+        if (text === "₿") {
+          ctx.font = `bold ${fontSize}px "Arial Black", arial, sans-serif`
+        } else {
+          ctx.font = `bold ${fontSize}px arial`
+        }
+
+        // Draw filled text (this naturally creates hollow spaces inside B)
+        ctx.fillStyle = "#ff9900"
+        ctx.textAlign = "center"
+        ctx.textBaseline = "middle"
+        ctx.fillText(text, centerX, centerY)
+
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height).data
+        const pointsArr: number[] = []
+        const lineIndices: number[] = []
+        const pointMap = new Map<string, number>()
+        const scale = 0.02
+        const sampling = 3 // Fine sampling for high quality
+        const layerDepth = 0.15
+
+        for (let d = 0; d < depthLayers; d++) {
+          const pz = (d - (depthLayers - 1) / 2) * layerDepth
+
+          for (let y = 0; y < canvas.height; y += sampling) {
+            for (let x = 0; x < canvas.width; x += sampling) {
+              if (imageData[(y * canvas.width + x) * 4 + 3] > 128) {
+                const index = pointsArr.length / 3
+                pointsArr.push((x - canvas.width / 2) * scale, (canvas.height / 2 - y) * scale, pz)
+                pointMap.set(`${x},${y},${d}`, index)
+              }
             }
           }
         }
+
+        // Build wireframe connections
+        for (let d = 0; d < depthLayers; d++) {
+          for (let y = 0; y < canvas.height; y += sampling) {
+            for (let x = 0; x < canvas.width; x += sampling) {
+              const currentKey = `${x},${y},${d}`
+              if (pointMap.has(currentKey)) {
+                const currentIndex = pointMap.get(currentKey)!
+                const neighbors = [
+                  `${x + sampling},${y},${d}`,
+                  `${x},${y + sampling},${d}`,
+                  `${x + sampling},${y + sampling},${d}`,
+                  `${x - sampling},${y + sampling},${d}`,
+                ]
+                for (const neighborKey of neighbors) {
+                  if (pointMap.has(neighborKey)) {
+                    lineIndices.push(currentIndex, pointMap.get(neighborKey)!)
+                  }
+                }
+                // Connect depth layers
+                if (d < depthLayers - 1) {
+                  const nextLayerKey = `${x},${y},${d + 1}`
+                  if (pointMap.has(nextLayerKey)) {
+                    lineIndices.push(currentIndex, pointMap.get(nextLayerKey)!)
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        return { positions: new Float32Array(pointsArr), lineIndices }
       }
 
-      for (let d = 0; d < depthLayers; d++) {
-        for (let y = 0; y < textCanvas.height; y += sampling) {
-          for (let x = 0; x < textCanvas.width; x += sampling) {
-            const currentKey = `${x},${y},${d}`
-            if (pointMap.has(currentKey)) {
-              const currentIndex = pointMap.get(currentKey) as number
-              const neighbors = [
-                `${x + sampling},${y},${d}`,
-                `${x},${y + sampling},${d}`,
-                `${x + sampling},${y + sampling},${d}`,
-                `${x - sampling},${y + sampling},${d}`,
-              ]
-              for (const neighborKey of neighbors) {
-                if (pointMap.has(neighborKey)) {
-                  lineIndices.push(currentIndex, pointMap.get(neighborKey) as number)
-                }
-              }
-              if (d < depthLayers - 1) {
-                const nextLayerKey = `${x},${y},${d + 1}`
-                if (pointMap.has(nextLayerKey)) {
-                  lineIndices.push(currentIndex, pointMap.get(nextLayerKey) as number)
-                }
-              }
-            }
-          }
-        }
+      // Generate both text variants with proper quality
+      const babdGeom = generateTextGeometry("₿abd", 100, 512, 128, 3)
+      const bitcoinGeom = generateTextGeometry("₿", 240, 512, 512, 3)
+
+      // Create unified geometry that can hold both
+      const maxPoints = Math.max(babdGeom.positions.length / 3, bitcoinGeom.positions.length / 3)
+      const textPositions = new Float32Array(maxPoints * 3)
+      const textColors = new Float32Array(maxPoints * 3)
+      const textOpacities = new Float32Array(maxPoints)
+
+      // Initialize with Babd positions
+      for (let i = 0; i < babdGeom.positions.length; i++) {
+        textPositions[i] = babdGeom.positions[i]
+      }
+
+      // Initialize colors with gradient
+      for (let i = 0; i < maxPoints; i++) {
+        const i3 = i * 3
+        // Default orange color
+        textColors[i3] = 1.0     // R
+        textColors[i3 + 1] = 0.6 // G
+        textColors[i3 + 2] = 0.0 // B
+        textOpacities[i] = i < babdGeom.positions.length / 3 ? 1.0 : 0.0
       }
 
       const textGeometry = new THREE.BufferGeometry()
-      textGeometry.setAttribute("position", new THREE.Float32BufferAttribute(pointsArr, 3))
-      textGeometry.setIndex(lineIndices)
+      textGeometry.setAttribute("position", new THREE.BufferAttribute(textPositions, 3))
+      textGeometry.setAttribute("color", new THREE.BufferAttribute(textColors, 3))
+      textGeometry.setAttribute("opacity", new THREE.BufferAttribute(textOpacities, 1))
+      textGeometry.setIndex(babdGeom.lineIndices)
 
       const pointsMaterial = new THREE.PointsMaterial({
         size: 0.05,
-        color: 0xff9900,
+        vertexColors: true,
         map: circleTexture,
         transparent: true,
         blending: THREE.NormalBlending,
-        alphaTest: 0.5,
+        opacity: 1.0,
         depthWrite: true,
       })
       const textPoints = new THREE.Points(textGeometry, pointsMaterial)
 
-      const lineMaterial = new THREE.LineBasicMaterial({ color: 0xff9900, transparent: true, opacity: 1.0 })
+      const lineMaterial = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 1.0 })
       const textLines = new THREE.LineSegments(textGeometry, lineMaterial)
 
       const textGroup = new THREE.Group()
@@ -243,6 +322,15 @@ export function ThreeScene() {
       textGroup.add(textLines)
       scene.add(textGroup)
       textGroup.rotation.set(initialPitch, initialYaw, 0)
+
+      // Store particle velocities for physics effect
+      const textParticleVelocities = new Float32Array(maxPoints * 3)
+      for (let i = 0; i < maxPoints * 3; i++) {
+        textParticleVelocities[i] = (Math.random() - 0.5) * 0.15
+      }
+
+      // Track text morph state
+      let textMorphFactor = 0
 
       // --- Reusable objects ---
       const _tmpAxis = new THREE.Vector3()
@@ -257,6 +345,9 @@ export function ThreeScene() {
       const raycaster = new THREE.Raycaster()
       const ndc = new THREE.Vector2()
       let pointerActive = false
+      let globalCursorX = 0
+      let globalCursorY = 0
+      let hasCursorMoved = false
 
       // Tunables
       const influenceRadius = 1.6
@@ -282,8 +373,11 @@ export function ThreeScene() {
 
       // Press-to-compress state
       let compressionActive = false
+      let wasCompressed = false         // Track previous compression state for ripple
       let compressionFactor = 1.0       // animated radius scale (smooth)
       let spinSpeedFactor = 1.0         // animated spin multiplier (smooth)
+      let rippleTime = -999             // Time when ripple started
+      const rippleDuration = 1.5        // Ripple wave duration in seconds
 
       // Reusable vectors
       const vCenterW = new THREE.Vector3()
@@ -294,6 +388,12 @@ export function ThreeScene() {
       const vDir = new THREE.Vector3()
       const vHit = new THREE.Vector3()
       const vSurface = new THREE.Vector3()
+
+      function onGlobalPointerMove(e: PointerEvent) {
+        globalCursorX = e.clientX
+        globalCursorY = e.clientY
+        hasCursorMoved = true
+      }
 
       function onPointerMove(e: PointerEvent) {
         const rect = renderer.domElement.getBoundingClientRect()
@@ -325,6 +425,7 @@ export function ThreeScene() {
         compressionActive = false
       }
 
+      window.addEventListener("pointermove", onGlobalPointerMove)
       renderer.domElement.addEventListener("pointermove", onPointerMove)
       renderer.domElement.addEventListener("pointerleave", onPointerLeave)
       renderer.domElement.addEventListener("pointerdown", onPointerDown)
@@ -391,6 +492,34 @@ export function ThreeScene() {
         // Update sticky target (continuous outside → surface)
         updateMagnetFromRay()
 
+        // Calculate cursor proximity to planet center for glow intensity
+        let cursorProximity = 0.5 // Default minimum glow (50%)
+        if (hasCursorMoved) {
+          // Get planet center in screen space
+          vCenterW.setFromMatrixPosition(planet.matrixWorld)
+          const planetScreenPos = vCenterW.clone().project(camera)
+
+          // Convert planet screen position from NDC to pixel coordinates
+          const planetScreenX = (planetScreenPos.x * 0.5 + 0.5) * window.innerWidth
+          const planetScreenY = (-planetScreenPos.y * 0.5 + 0.5) * window.innerHeight
+
+          // Calculate distance from global cursor to planet center in pixels
+          const dx = globalCursorX - planetScreenX
+          const dy = globalCursorY - planetScreenY
+          const distFromCenter = Math.sqrt(dx * dx + dy * dy)
+
+          // Convert to proximity: 1 at center, 0.5 at far distance
+          // Use screen diagonal as max distance
+          const maxDist = Math.sqrt(window.innerWidth ** 2 + window.innerHeight ** 2)
+          const normalizedDist = Math.min(distFromCenter / maxDist, 1)
+
+          // Map from [0, 1] distance to [1.0, 0.5] proximity (inverted, with 50% minimum)
+          cursorProximity = 1.0 - normalizedDist * 0.5
+        }
+
+        // Update glow shader uniform
+        ;(glowMaterial.uniforms as any).cursorProximity.value = cursorProximity
+
         // Ease compression factor toward target
         const targetCompression = compressionActive ? compressionScaleActive : 1.0
         const compEase = compressionActive ? compressionEasePress : compressionEaseRelease
@@ -409,6 +538,129 @@ export function ThreeScene() {
         _tmpQuat.setFromAxisAngle(_tmpAxis, deltaAngle)
         planet.quaternion.multiply(_tmpQuat)
 
+        // Text morphing and physics animation
+        const textPosAttr = textGeometry.getAttribute("position") as THREE.BufferAttribute
+        const textColorAttr = textGeometry.getAttribute("color") as THREE.BufferAttribute
+        const textArr = textPosAttr.array as Float32Array
+        const textColorArr = textColorAttr.array as Float32Array
+
+        // Smooth transition factor (0 = Babd, 1 = Bitcoin)
+        const morphSpeed = compressionActive ? 0.1 : 0.08
+        const textMorphTarget = compressionActive ? 1.0 : 0.0
+        textMorphFactor += (textMorphTarget - textMorphFactor) * morphSpeed
+
+        // Physics effects intensity during transition (peaks in the middle)
+        const transitionIntensity = 1.0 - Math.abs(textMorphFactor * 2 - 1.0)
+        const spinEffect = transitionIntensity * 0.4
+        const scatterEffect = transitionIntensity * 0.3
+
+        const numBabdPoints = babdGeom.positions.length / 3
+        const numBitcoinPoints = bitcoinGeom.positions.length / 3
+
+        // Update geometry index to match current morph state
+        if (textMorphFactor < 0.5) {
+          textGeometry.setIndex(babdGeom.lineIndices)
+        } else {
+          textGeometry.setIndex(bitcoinGeom.lineIndices)
+        }
+
+        for (let i = 0; i < maxPoints; i++) {
+          const i3 = i * 3
+
+          // Determine source and target positions
+          let sourceX = 0, sourceY = 0, sourceZ = 0
+          let targetX = 0, targetY = 0, targetZ = 0
+          let particleVisible = true
+
+          if (i < numBabdPoints) {
+            sourceX = babdGeom.positions[i3]
+            sourceY = babdGeom.positions[i3 + 1]
+            sourceZ = babdGeom.positions[i3 + 2]
+          } else {
+            particleVisible = false
+          }
+
+          if (i < numBitcoinPoints) {
+            targetX = bitcoinGeom.positions[i3]
+            targetY = bitcoinGeom.positions[i3 + 1]
+            targetZ = bitcoinGeom.positions[i3 + 2]
+          } else {
+            // Scatter away
+            const angle = (i / maxPoints) * Math.PI * 2
+            const radius = 10
+            targetX = Math.cos(angle) * radius
+            targetY = Math.sin(angle) * radius
+            targetZ = 0
+          }
+
+          // Fade particles in/out based on visibility in each shape
+          let fadeIn = 1.0
+          let fadeOut = 1.0
+
+          if (i >= numBabdPoints) {
+            // This particle only exists in Bitcoin shape
+            fadeIn = textMorphFactor
+          }
+          if (i >= numBitcoinPoints) {
+            // This particle only exists in Babd shape
+            fadeOut = 1.0 - textMorphFactor
+          }
+
+          const particleOpacity = Math.min(fadeIn, fadeOut)
+
+          // Interpolate position
+          const lerpX = sourceX + (targetX - sourceX) * textMorphFactor
+          const lerpY = sourceY + (targetY - sourceY) * textMorphFactor
+          const lerpZ = sourceZ + (targetZ - sourceZ) * textMorphFactor
+
+          // Add physics effects during transition
+          const angle = Math.atan2(sourceY, sourceX)
+          const radius = Math.sqrt(sourceX * sourceX + sourceY * sourceY)
+          const spinAngle = angle + spinEffect * Math.sin(t * 4 + i * 0.1)
+          const spinX = Math.cos(spinAngle) * radius
+          const spinY = Math.sin(spinAngle) * radius
+
+          // Scatter/wobble effect
+          const wobbleX = textParticleVelocities[i3] * scatterEffect * Math.sin(t * 3 + i * 0.05)
+          const wobbleY = textParticleVelocities[i3 + 1] * scatterEffect * Math.sin(t * 3.2 + i * 0.07)
+          const wobbleZ = textParticleVelocities[i3 + 2] * scatterEffect * Math.sin(t * 2.8 + i * 0.06)
+
+          // Combine all effects
+          const finalX = lerpX + (spinX - lerpX) * transitionIntensity + wobbleX
+          const finalY = lerpY + (spinY - lerpY) * transitionIntensity + wobbleY
+          const finalZ = lerpZ + wobbleZ
+
+          textArr[i3] = finalX
+          textArr[i3 + 1] = finalY
+          textArr[i3 + 2] = finalZ * particleOpacity // Use Z to fade particles
+
+          // Animated gradient based on position and time
+          // Create a wave that moves across the text
+          const gradientPhase = (finalY * 0.8 + finalX * 0.5 + t * 0.8) % (Math.PI * 2)
+          const gradientValue = Math.sin(gradientPhase) * 0.5 + 0.5
+
+          // Dark color: darker red-orange (#dd5500)
+          const darkR = 0.87
+          const darkG = 0.33
+          const darkB = 0.0
+
+          // Bright color: standard orange (#ff9900)
+          const brightR = 1.0
+          const brightG = 0.6
+          const brightB = 0.0
+
+          // Interpolate between dark and bright based on gradient
+          const r = darkR + (brightR - darkR) * gradientValue
+          const g = darkG + (brightG - darkG) * gradientValue
+          const b = darkB + (brightB - darkB) * gradientValue
+
+          textColorArr[i3] = r
+          textColorArr[i3 + 1] = g
+          textColorArr[i3 + 2] = b
+        }
+        textPosAttr.needsUpdate = true
+        textColorAttr.needsUpdate = true
+
         // Text gentle drift (slightly boosted too)
         const driftBoost = 0.8 + 0.2 * spinSpeedFactor
         textGroup.rotation.y = initialYaw + 0.015 * driftBoost * Math.sin(t * 0.6 + 1.2)
@@ -425,13 +677,32 @@ export function ThreeScene() {
           magnetLocal.lerp(targetLocal, 0.18)
         }
 
-        // --- Deform + (SMOOTH) Compression ---
+        // Detect release for ripple effect
+        if (wasCompressed && !compressionActive) {
+          rippleTime = t // Start ripple
+        }
+        wasCompressed = compressionActive
+
+        // Calculate ripple effect
+        let rippleProgress = (t - rippleTime) / rippleDuration
+        rippleProgress = Math.max(0, Math.min(1, rippleProgress))
+        const rippleActive = rippleProgress < 1
+
+        // --- Deform + (SMOOTH) Compression + Wobble + Ripple ---
         const posAttr = planetGeometry.getAttribute("position") as THREE.BufferAttribute
+        const colorAttr = planetGeometry.getAttribute("color") as THREE.BufferAttribute
         const arr = posAttr.array as Float32Array
+        const colorArr = colorAttr.array as Float32Array
         const sigma = influenceRadius
         const twoSigma2 = 2 * sigma * sigma
 
-        if (deformAlpha > 0.001 || Math.abs(compressionFactor - 1.0) > 1e-4) {
+        // Particle scatter intensity (peaks during compression)
+        const scatterIntensity = (1.0 - compressionFactor) * 0.4
+
+        // Color heat shift (more red/orange when compressed)
+        const heatFactor = 1.0 - compressionFactor
+
+        if (deformAlpha > 0.001 || Math.abs(compressionFactor - 1.0) > 1e-4 || rippleActive || scatterIntensity > 0.001) {
           for (let i = 0; i < numParticles; i++) {
             const ix = i * 3
 
@@ -439,6 +710,34 @@ export function ThreeScene() {
             const bx = basePositions[ix] * compressionFactor
             const by = basePositions[ix + 1] * compressionFactor
             const bz = basePositions[ix + 2] * compressionFactor
+
+            // Particle scatter effect - push particles outward during compression
+            const baseLen = Math.sqrt(bx * bx + by * by + bz * bz)
+            const normX = baseLen > 0.001 ? bx / baseLen : 0
+            const normY = baseLen > 0.001 ? by / baseLen : 0
+            const normZ = baseLen > 0.001 ? bz / baseLen : 0
+
+            // Wobble effect using particle velocities
+            const wobbleAmount = scatterIntensity * 0.8
+            const wobbleX = particleVelocities[ix] * wobbleAmount * Math.sin(t * 3 + i * 0.1)
+            const wobbleY = particleVelocities[ix + 1] * wobbleAmount * Math.sin(t * 3.2 + i * 0.15)
+            const wobbleZ = particleVelocities[ix + 2] * wobbleAmount * Math.sin(t * 2.8 + i * 0.12)
+
+            // Scatter outward
+            const scatterDist = scatterIntensity * 1.5
+            const scatterX = normX * scatterDist
+            const scatterY = normY * scatterDist
+            const scatterZ = normZ * scatterDist
+
+            // Ripple wave effect on release
+            let rippleOffset = 0
+            if (rippleActive) {
+              // Calculate angle from particle to create wave pattern
+              const angle = Math.atan2(by, bx)
+              const wavePhase = angle * 2 + rippleProgress * Math.PI * 4
+              const rippleWave = Math.sin(wavePhase) * Math.exp(-rippleProgress * 3)
+              rippleOffset = rippleWave * 0.3
+            }
 
             // Magnet displacement around compressed base
             const dx = magnetLocal.x - bx
@@ -449,22 +748,43 @@ export function ThreeScene() {
             const w = Math.exp(-dist2 / twoSigma2)
             const k = strength * w * deformAlpha
 
-            arr[ix] = bx + dx * k
-            arr[ix + 1] = by + dy * k
-            arr[ix + 2] = bz + dz * k
+            // Combine all effects
+            arr[ix] = bx + dx * k + scatterX + wobbleX + normX * rippleOffset
+            arr[ix + 1] = by + dy * k + scatterY + wobbleY + normY * rippleOffset
+            arr[ix + 2] = bz + dz * k + scatterZ + wobbleZ + normZ * rippleOffset
+
+            // Color shift to hotter colors during compression
+            const baseR = baseColors[ix]
+            const baseG = baseColors[ix + 1]
+            const baseB = baseColors[ix + 2]
+
+            // Shift toward red/orange (reduce green, increase red)
+            const hotR = baseR * (1.0 + heatFactor * 0.3)
+            const hotG = baseG * (1.0 - heatFactor * 0.3)
+            const hotB = baseB + heatFactor * 0.15
+
+            colorArr[ix] = hotR
+            colorArr[ix + 1] = hotG
+            colorArr[ix + 2] = hotB
           }
           posAttr.needsUpdate = true
+          colorAttr.needsUpdate = true
         } else {
           // Fully relaxed, write true base
-          for (let i = 0; i < basePositions.length; i++) arr[i] = basePositions[i]
+          for (let i = 0; i < basePositions.length; i++) {
+            arr[i] = basePositions[i]
+            colorArr[i] = baseColors[i]
+          }
           posAttr.needsUpdate = true
+          colorAttr.needsUpdate = true
         }
 
-        // Starfield gentle forward drift
+        // Starfield drift - synced with planet rotation speed
         const starPositions = starGeometry.attributes.position as THREE.BufferAttribute
+        const starSpeed = 0.5 * spinSpeedFactor // Stars move faster when planet spins faster
         for (let i = 0; i < starPositions.count; i++) {
           let z = starPositions.getZ(i)
-          z += 0.5
+          z += starSpeed
           if (z > 2000) z -= 4000
           starPositions.setZ(i, z)
         }
@@ -473,6 +793,7 @@ export function ThreeScene() {
         renderer.render(scene, camera)
         controls.update()
         ;(glowMaterial.uniforms as any).time.value += 0.01
+        ;(glowMaterial.uniforms as any).spinFactor.value = spinSpeedFactor
       }
 
       frameId = requestAnimationFrame(animate)
@@ -490,6 +811,7 @@ export function ThreeScene() {
       // Cleanup
       return () => {
         window.removeEventListener("resize", handleResize)
+        window.removeEventListener("pointermove", onGlobalPointerMove)
         renderer.domElement.removeEventListener("pointermove", onPointerMove)
         renderer.domElement.removeEventListener("pointerleave", onPointerLeave)
         renderer.domElement.removeEventListener("pointerdown", onPointerDown)
