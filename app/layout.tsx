@@ -1,11 +1,15 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
+import { JetBrains_Mono } from "next/font/google"
 import { Providers } from "@/components/providers"
 import { ErrorBoundary } from "@/components/error-boundary"
 import "./globals.css"
 
-const inter = Inter({ subsets: ["latin"] })
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-jetbrains-mono",
+  display: "swap",
+})
 
 export const metadata: Metadata = {
   title: "Babd's Timechain Explorer",
@@ -48,7 +52,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#000000" />
         <link rel="icon" href="/images/logo2.png" type="image/png" />
       </head>
-      <body className={`${inter.className} bg-black`}>
+      <body className={`${jetbrainsMono.className} bg-black`}>
         <ErrorBoundary>
           <Providers>{children}</Providers>
         </ErrorBoundary>

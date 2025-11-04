@@ -256,7 +256,7 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
           {/* Left Fade Overlay (Desktop Only) */}
           <div className="absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-black/50 to-transparent z-20 hidden md:block pointer-events-none" />
           {/* Right Fade Overlay (Desktop Only) */}
-          <div className className="absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-black/50 to-transparent z-20 hidden md:block pointer-events-none" />
+          <div className="absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-black/50 to-transparent z-20 hidden md:block pointer-events-none" />
           <div
             ref={scrollRef}
             className="flex overflow-x-auto p-4 space-x-4 no-scrollbar select-none"

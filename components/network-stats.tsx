@@ -2,6 +2,8 @@
 
 import { Card } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
+import { AnimatedNumber } from "@/components/ui/animated-number"
+import { CyberBrackets } from "@/components/ui/cyber-brackets"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { useDifficultyData, useHalvingData } from "@/hooks/use-bitcoin-data"
 
@@ -37,7 +39,8 @@ export function NetworkStats() {
   if (isDesktop) {
     return (
     <div className="absolute left-4 top-80 z-10 max-w-xs">
-      <Card className="bg-black/30 border-orange-500/25 backdrop-blur-md p-4">
+      <CyberBrackets>
+        <Card className="frosted-glass scanline-container p-4">
         {/* Difficulty Adjustment Section */}
         <div className="mb-4">
           <div className="text-orange-400 text-sm font-semibold mb-3">Difficulty Adjustment</div>
@@ -65,7 +68,13 @@ export function NetworkStats() {
           <div className="space-y-2 text-xs">
             <div className="flex justify-between items-center">
               <span className="text-gray-400">Average block time</span>
-              <span className="text-white font-medium">~{difficultyData.averageBlockTime.toFixed(1)} minutes</span>
+              <span className="text-white font-medium">
+                ~<AnimatedNumber
+                  value={difficultyData.averageBlockTime}
+                  decimals={1}
+                  duration={800}
+                /> minutes
+              </span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-gray-400">Difficulty change</span>
@@ -73,14 +82,22 @@ export function NetworkStats() {
                 className={`font-medium ${difficultyData.difficultyChange > 0 ? "text-green-400" : "text-red-400"}`}
               >
                 {difficultyData.difficultyChange > 0 ? "+" : ""}
-                {difficultyData.difficultyChange.toFixed(2)}%
+                <AnimatedNumber
+                  value={difficultyData.difficultyChange}
+                  decimals={2}
+                  duration={800}
+                />%
               </span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-gray-400">Previous</span>
               <span className={`font-medium ${difficultyData.previousChange > 0 ? "text-green-400" : "text-red-400"}`}>
                 {difficultyData.previousChange > 0 ? "+" : ""}
-                {difficultyData.previousChange.toFixed(2)}%
+                <AnimatedNumber
+                  value={difficultyData.previousChange}
+                  decimals={2}
+                  duration={800}
+                />%
               </span>
             </div>
             <div className="flex justify-between items-center">
@@ -124,7 +141,13 @@ export function NetworkStats() {
             </div>
             <div className="flex justify-between items-center">
               <span className="text-gray-400">Blocks remaining</span>
-              <span className="text-white font-medium">{halvingData.blocksRemaining.toLocaleString("en-US")}</span>
+              <span className="text-white font-medium">
+                <AnimatedNumber
+                  value={halvingData.blocksRemaining}
+                  formatFn={(val) => Math.floor(val).toLocaleString("en-US")}
+                  duration={800}
+                />
+              </span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-gray-400">Estimated date</span>
@@ -133,13 +156,14 @@ export function NetworkStats() {
           </div>
         </div>
       </Card>
+      </CyberBrackets>
     </div>
     )
   }
 
   return (
     <div className="absolute left-0 top-64 z-10 w-full px-4">
-      <Card className="bg-black/30 border-orange-500/25 backdrop-blur-md p-2">
+      <Card className="frosted-glass p-2">
         <div className="grid grid-cols-1 gap-4">
           {/* Difficulty Adjustment Section */}
           <div className="mb-0">
@@ -161,14 +185,26 @@ export function NetworkStats() {
                   />
                 )}
               </div>
-              <div className="text-xs text-gray-400 mt-1">{difficultyData.blocksIntoEpoch} / 2016 blocks</div>
+              <div className="text-xs text-gray-400 mt-1">
+                <AnimatedNumber
+                  value={difficultyData.blocksIntoEpoch}
+                  formatFn={(val) => Math.floor(val).toString()}
+                  duration={800}
+                /> / 2016 blocks
+              </div>
             </div>
 
             {/* Stats */}
             <div className="space-y-1 text-xs">
               <div className="flex justify-between items-center">
                 <span className="text-gray-400">Avg block time</span>
-                <span className="text-white font-medium">~{difficultyData.averageBlockTime.toFixed(1)} min</span>
+                <span className="text-white font-medium">
+                  ~<AnimatedNumber
+                    value={difficultyData.averageBlockTime}
+                    decimals={1}
+                    duration={800}
+                  /> min
+                </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-gray-400">Difficulty</span>
@@ -176,14 +212,22 @@ export function NetworkStats() {
                   className={`font-medium ${difficultyData.difficultyChange > 0 ? "text-green-400" : "text-red-400"}`}
                 >
                   {difficultyData.difficultyChange > 0 ? "+" : ""}
-                  {difficultyData.difficultyChange.toFixed(2)}%
+                  <AnimatedNumber
+                    value={difficultyData.difficultyChange}
+                    decimals={2}
+                    duration={800}
+                  />%
                 </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-gray-400">Previous</span>
                 <span className={`font-medium ${difficultyData.previousChange > 0 ? "text-green-400" : "text-red-400"}`}>
                   {difficultyData.previousChange > 0 ? "+" : ""}
-                  {difficultyData.previousChange.toFixed(2)}%
+                  <AnimatedNumber
+                    value={difficultyData.previousChange}
+                    decimals={2}
+                    duration={800}
+                  />%
                 </span>
               </div>
               <div className="flex justify-between items-center">
@@ -205,7 +249,13 @@ export function NetworkStats() {
                   style={{ width: `${halvingData.progressPercent}%` }}
                 />
               </div>
-              <div className="text-xs text-gray-400 mt-1">{halvingData.progressPercent.toFixed(2)}% complete</div>
+              <div className="text-xs text-gray-400 mt-1">
+                <AnimatedNumber
+                  value={halvingData.progressPercent}
+                  decimals={2}
+                  duration={800}
+                />% complete
+              </div>
             </div>
 
             {/* Stats */}
@@ -224,7 +274,13 @@ export function NetworkStats() {
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-gray-400">Blocks remaining</span>
-                <span className="text-white font-medium">{halvingData.blocksRemaining.toLocaleString("en-US")}</span>
+                <span className="text-white font-medium">
+                  <AnimatedNumber
+                    value={halvingData.blocksRemaining}
+                    formatFn={(val) => Math.floor(val).toLocaleString("en-US")}
+                    duration={800}
+                  />
+                </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-gray-400">Estimated date</span>
