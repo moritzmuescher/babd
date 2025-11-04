@@ -19,10 +19,13 @@ jobs:
         run: |
           eval $(ssh-agent -s)
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
-          echo "" >> ~/.ssh/id_rsa  # Ensures a trailing newline
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" | base64 --decode > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-add ~/.ssh/id_rsa
+
+      - name: Debug SSH Key (Temporary - Remove After Success)
+        run: |
+          ssh-keygen -l -f ~/.ssh/id_rsa || echo "Key verification failed - check format"
 
       - name: Deploy to VPS
         run: |
