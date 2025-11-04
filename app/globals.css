@@ -256,6 +256,67 @@
   box-shadow: 0 0 10px rgba(249, 115, 22, 0.5);
 }
 
+/* Height-responsive scaling for side panels */
+.height-responsive-scale {
+  transition: transform 0.3s ease;
+  transform-origin: top left;
+}
+
+.height-responsive-scale-right {
+  transition: transform 0.3s ease;
+  transform-origin: top right;
+}
+
+/* Progressive scaling based on viewport height */
+@media (max-height: 900px) {
+  .height-responsive-scale,
+  .height-responsive-scale-right {
+    transform: scale(0.95);
+  }
+}
+
+@media (max-height: 850px) {
+  .height-responsive-scale,
+  .height-responsive-scale-right {
+    transform: scale(0.9);
+  }
+}
+
+@media (max-height: 800px) {
+  .height-responsive-scale,
+  .height-responsive-scale-right {
+    transform: scale(0.85);
+  }
+}
+
+@media (max-height: 750px) {
+  .height-responsive-scale,
+  .height-responsive-scale-right {
+    transform: scale(0.8);
+  }
+}
+
+@media (max-height: 700px) {
+  .height-responsive-scale,
+  .height-responsive-scale-right {
+    transform: scale(0.75);
+  }
+}
+
+@media (max-height: 650px) {
+  .height-responsive-scale,
+  .height-responsive-scale-right {
+    transform: scale(0.7);
+  }
+}
+
+@media (max-height: 600px) {
+  .height-responsive-scale,
+  .height-responsive-scale-right {
+    transform: scale(0.65);
+  }
+}
+
 /* Holographic Border Effect */
 @keyframes holographicShift {
   0% { background-position: 0% 50%; }

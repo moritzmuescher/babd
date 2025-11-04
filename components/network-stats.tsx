@@ -38,7 +38,7 @@ export function NetworkStats() {
 
   if (isDesktop) {
     return (
-    <div className="absolute left-4 top-80 z-10 max-w-xs">
+    <div className="absolute left-4 top-80 z-20 max-w-xs height-responsive-scale">
       <CyberBrackets>
         <Card className="frosted-glass scanline-container p-4">
         {/* Difficulty Adjustment Section */}
