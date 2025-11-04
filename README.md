@@ -1,6 +1,6 @@
 # babd.space
 
-**https://babd.space**
+**<https://babd.space>**
 
 A Bitcoin blockchain explorer with a 3D space theme. Shows live network stats, block details, and lets you search transactions and addresses.
 
@@ -25,4 +25,3 @@ The background has a Three.js scene with a rotating planet and some visual effec
 - Block weight visualization (the blue/green fill shows MWU relative to max)
 - Search for transactions and addresses
 - Lightning Network donation QR code
-- Works on mobile
