@@ -467,12 +467,22 @@
   opacity: 1;
 }
 
-/* Purple scanline effect for blocks */
-.scanline-container-block::before {
+/* Purple scanline effect for past blocks (blue) */
+.scanline-container-block-past::before {
   background: linear-gradient(
     to bottom,
     transparent 0%,
     rgba(168, 85, 247, 0.4) 50%,
+    transparent 100%
+  );
+}
+
+/* Green-yellowish scanline effect for future blocks (projected/mempool) */
+.scanline-container-block-future::before {
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(132, 204, 22, 0.4) 50%,
     transparent 100%
   );
 }
