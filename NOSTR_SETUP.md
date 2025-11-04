@@ -176,8 +176,18 @@ relays: {
 - Never share your private key (nsec)
 - Use HTTPS in production for security
 
+## Lightning Address Integration
+
+Want to use your domain for Lightning payments too? Check out `LIGHTNING_SETUP.md` for instructions on setting up `_@babd.space` as your Lightning address (no Lightning node required - it proxies to Wallet of Satoshi).
+
+With both NIP-05 and Lightning address configured, you'll have:
+- **Nostr identity:** `babd.space` or `_@babd.space`
+- **Lightning address:** `_@babd.space`
+- Both on the same domain!
+
 ## Resources
 
 - [NIP-05 Specification](https://github.com/nostr-protocol/nips/blob/master/05.md)
 - [Nostr Tools](https://github.com/nbd-wtf/nostr-tools)
 - [PM2 Documentation](https://pm2.keymetrics.io/docs/usage/quick-start/)
+- [Lightning Address Spec](https://github.com/andrerfneves/lightning-address)
