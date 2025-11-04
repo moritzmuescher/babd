@@ -57,7 +57,7 @@ export const BlockItem = React.memo(
       return (
         <div
           onClick={() => onClick(proj)}
-          className="relative flex-shrink-0 p-3 rounded-lg text-center min-w-[100px] cursor-pointer overflow-hidden transition-all duration-100 scanline-container hover-lift"
+          className="relative flex-shrink-0 p-3 rounded-lg text-center min-w-[100px] cursor-pointer overflow-hidden transition-all duration-100 scanline-container scanline-container-block hover-lift"
           title={`Click to view estimated details for future block ${displayHeight}`}
           style={{ transform: `scale(${scale})`, zIndex: zIndex }}
         >
@@ -100,7 +100,7 @@ export const BlockItem = React.memo(
       return (
         <div
           onClick={() => onClick(blockData)}
-          className={`relative flex-shrink-0 p-3 rounded-lg border text-center min-w-[100px] cursor-pointer overflow-hidden transition-all duration-200 scanline-container ${
+          className={`relative flex-shrink-0 p-3 rounded-lg border text-center min-w-[100px] cursor-pointer overflow-hidden transition-all duration-200 scanline-container scanline-container-block ${
             isCurrentBlock
               ? "border-blue-400 bg-black/50 shadow-lg shadow-blue-500/30 current-block current-block-pulse hover:shadow-blue-500/50"
               : "border-blue-500/30 bg-black/50 hover:border-blue-400/50 hover-lift"

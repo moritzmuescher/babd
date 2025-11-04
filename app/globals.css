@@ -467,6 +467,16 @@
   opacity: 1;
 }
 
+/* Purple scanline effect for blocks */
+.scanline-container-block::before {
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(168, 85, 247, 0.4) 50%,
+    transparent 100%
+  );
+}
+
 /* Number Counter Animation */
 @keyframes numberRoll {
   0% { transform: translateY(100%); opacity: 0; }
