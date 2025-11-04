@@ -235,16 +235,17 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
     const mouseXRelativeToContainer = mousePositionX - containerLeft + scrollLeft;
 
     const distance = Math.abs(blockCenterXRelativeToScrollRef - mouseXRelativeToContainer);
-    const magnificationRadius = 200; // Pixels around the cursor where magnification occurs
-    const maxScale = 1.1; // Maximum scale for the block directly under the cursor
+    const magnificationRadius = 180; // Pixels around the cursor where magnification occurs
+    const maxScale = 1.18; // Maximum scale for the block directly under the cursor
 
     if (distance > magnificationRadius) {
       return { scale: 1, zIndex: 1 };
     }
 
     const normalizedDistance = distance / magnificationRadius; // 0 to 1
-    const scale = maxScale - (maxScale - 1) * (normalizedDistance * normalizedDistance);
-    const zIndex = Math.round(scale * 10); // Scale 1.0 -> zIndex 10, Scale 1.2 -> zIndex 12
+    // Use a lower power for faster falloff on adjacent blocks
+    const scale = maxScale - (maxScale - 1) * Math.pow(normalizedDistance, 1.5);
+    const zIndex = Math.round(scale * 10); // Scale 1.0 -> zIndex 10, Scale 1.18 -> zIndex 11
 
     return { scale, zIndex };
   }, [mousePositionX, containerLeft, isDragging]);
