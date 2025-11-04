@@ -477,6 +477,11 @@
   );
 }
 
+/* Always show scanline on current block */
+.current-block.scanline-container::before {
+  opacity: 1;
+}
+
 /* Number Counter Animation */
 @keyframes numberRoll {
   0% { transform: translateY(100%); opacity: 0; }
