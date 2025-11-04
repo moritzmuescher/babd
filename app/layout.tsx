@@ -8,14 +8,14 @@ import "./globals.css"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Babd Timechain Explorer",
+  title: "Babd's Timechain Explorer",
   description: "Bitcoin blockchain explorer with 3D visualization",
   icons: {
     icon: "/images/logo2.png",
   },
   generator: 'v0.dev',
   openGraph: {
-    title: 'Babd Timechain Explorer',
+    title: 'Babd's Timechain Explorer',
     description: 'Bitcoin blockchain explorer with 3D visualization',
     url: 'https://babd.space',
     images: [
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
         url: 'https://babd.space/images/preview.png',
         width: 1200,
         height: 630,
-        alt: 'Babd Timechain Explorer',
+        alt: 'Babd's Timechain Explorer',
       },
     ],
     locale: 'en_US',
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Babd Timechain Explorer',
+    title: 'Babd's Timechain Explorer',
     description: 'Bitcoin blockchain explorer with 3D visualization',
     images: ['https://babd.space/images/preview.png'],
   },
