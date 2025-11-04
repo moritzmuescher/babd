@@ -28,3 +28,11 @@ next-env.d.ts
 
 # vs code
 .vscode
+
+# pm2
+logs/
+.pm2
+pids/
+*.pid
+*.seed
+*.pid.lock
