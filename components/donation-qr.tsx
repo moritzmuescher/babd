@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Copy, Check } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
+import { CyberBrackets } from "@/components/ui/cyber-brackets"
 
 export function DonationQR() {
   const [copied, setCopied] = useState(false)
@@ -64,7 +65,8 @@ export function DonationQR() {
 
   return (
     <div className="absolute right-4 top-64 md:top-80 z-10 hidden md:block">
-      <Card className="bg-black/30 border-orange-500/25 backdrop-blur-md p-2 md:p-4 text-center">
+      <CyberBrackets>
+        <Card className="bg-black/30 border-orange-500/25 backdrop-blur-md p-2 md:p-4 text-center">
         <div className="flex items-center justify-center mb-2 hidden md:block">
           <div className="flex items-center justify-center gap-1 w-48">
             <Button
@@ -134,6 +136,7 @@ export function DonationQR() {
           </a>
         </div>
       </Card>
+      </CyberBrackets>
     </div>
   )
 }
