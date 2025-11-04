@@ -8,7 +8,9 @@ interface CyberBracketsProps {
 export function CyberBrackets({ children, className = "" }: CyberBracketsProps) {
   return (
     <div className={`cyber-brackets hover-lift ${className}`}>
-      {children}
+      <div className="cyber-brackets-inner">
+        {children}
+      </div>
     </div>
   )
 }

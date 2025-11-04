@@ -188,6 +188,7 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Top-left corner */
 .cyber-brackets::before {
   top: -2px;
   left: -2px;
@@ -195,15 +196,60 @@
   border-bottom: none;
 }
 
+/* Top-right corner */
 .cyber-brackets::after {
+  top: -2px;
+  right: -2px;
+  border-left: none;
+  border-bottom: none;
+}
+
+.cyber-brackets:hover::before,
+.cyber-brackets:hover::after {
+  width: 20px;
+  height: 20px;
+  border-color: rgba(249, 115, 22, 0.9);
+  box-shadow: 0 0 10px rgba(249, 115, 22, 0.5);
+}
+
+/* Inner wrapper for bottom corners */
+.cyber-brackets-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.cyber-brackets-inner::before,
+.cyber-brackets-inner::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(249, 115, 22, 0.5);
+  background: transparent;
+  pointer-events: none;
+  z-index: -1;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Bottom-left corner */
+.cyber-brackets-inner::before {
+  bottom: -2px;
+  left: -2px;
+  border-right: none;
+  border-top: none;
+}
+
+/* Bottom-right corner */
+.cyber-brackets-inner::after {
   bottom: -2px;
   right: -2px;
   border-left: none;
   border-top: none;
 }
 
-.cyber-brackets:hover::before,
-.cyber-brackets:hover::after {
+.cyber-brackets:hover .cyber-brackets-inner::before,
+.cyber-brackets:hover .cyber-brackets-inner::after {
   width: 20px;
   height: 20px;
   border-color: rgba(249, 115, 22, 0.9);
