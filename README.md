@@ -18,6 +18,41 @@ The background has a Three.js scene with a rotating planet and some visual effec
 - shadcn/ui components
 - Mempool.space API for Bitcoin data
 
+## Setup
+
+To run this project locally, follow these steps:
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/yourusername/babd.git
+   cd babd
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Build the project**
+   ```bash
+   npm run build
+   ```
+
+4. **Start the development server**
+   ```bash
+   npm run dev
+   ```
+
+5. **Open your browser**
+   Navigate to `http://localhost:3000` to view the site.
+
+### Available Scripts
+
+- `npm run dev` - Starts the development server
+- `npm run build` - Creates an optimized production build
+- `npm start` - Runs the production server
+- `npm run lint` - Runs ESLint to check code quality
+
 ## Features
 
 - Live Bitcoin price, mempool size, fee rates, and block height
