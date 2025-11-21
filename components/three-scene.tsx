@@ -32,6 +32,9 @@ export function ThreeScene() {
       controls.enablePan = false
       controls.maxDistance = 500
       controls.minDistance = 0.1
+      controls.enableDamping = true // Enable smooth damping
+      controls.dampingFactor = 0.05 // Lower = smoother (0.05 is nice and smooth)
+      controls.rotateSpeed = 0.8 // Slightly reduce rotation speed for better control
 
       // Camera
       camera.position.z = 15
