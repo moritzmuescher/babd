@@ -47,9 +47,12 @@ export function StatsPanel({ blockHeight }: StatsPanelProps) {
   return (
     <>
       {/* Block Height - Center Top */}
-      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-30 hidden md:block cursor-pointer pointer-events-auto transition-transform hover:scale-105 active:scale-95" onClick={handleBlockHeightClick}>
+      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-30 hidden md:block">
         <CyberBrackets>
-          <Card className="frosted-glass scanline-container hover:bg-orange-500/10 transition-colors">
+          <Card
+            className="frosted-glass scanline-container hover:bg-orange-500/10 transition-colors cursor-pointer"
+            onClick={handleBlockHeightClick}
+          >
             <div className="p-4 text-center">
               <div className="text-5xl md:text-6xl font-bold text-orange-400 number-glow">
                 <AnimatedNumber
