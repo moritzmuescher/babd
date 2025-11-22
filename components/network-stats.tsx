@@ -9,12 +9,15 @@ import { useMediaQuery } from "@/hooks/use-media-query"
 import { useDifficultyData, useHalvingData } from "@/hooks/use-bitcoin-data"
 import { motion } from "framer-motion"
 import { NetworkStatsModal } from "@/components/network-stats-modal"
+import { MiningStatsModal } from "@/components/mining-stats-modal"
+import { BarChart3 } from "lucide-react"
 
 export function NetworkStats() {
   const { data: difficultyData, isLoading: difficultyLoading, error: difficultyError } = useDifficultyData()
   const { data: halvingData, isLoading: halvingLoading, error: halvingError } = useHalvingData()
   const isDesktop = useMediaQuery("(min-width: 768px)")
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isMiningModalOpen, setIsMiningModalOpen] = useState(false)
 
   const loading = difficultyLoading || halvingLoading
 
@@ -60,6 +63,7 @@ export function NetworkStats() {
                 baseProgress={baseProgress}
                 isAhead={isAhead}
                 extensionPercent={extensionPercent}
+                onOpenMiningModal={() => setIsMiningModalOpen(true)}
               />
             </Card>
           </CyberBrackets>
@@ -71,6 +75,7 @@ export function NetworkStats() {
               baseProgress={baseProgress}
               isAhead={isAhead}
               extensionPercent={extensionPercent}
+              onOpenMiningModal={() => setIsMiningModalOpen(true)}
             />
           </Card>
         )}
@@ -82,16 +87,33 @@ export function NetworkStats() {
         difficultyData={difficultyData}
         halvingData={halvingData}
       />
+
+      <MiningStatsModal
+        isOpen={isMiningModalOpen}
+        onClose={() => setIsMiningModalOpen(false)}
+      />
     </>
   )
 }
 
-function StatsContent({ difficultyData, halvingData, baseProgress, isAhead, extensionPercent }: any) {
+function StatsContent({ difficultyData, halvingData, baseProgress, isAhead, extensionPercent, onOpenMiningModal }: any) {
   return (
     <div className="grid grid-cols-1 gap-4">
       {/* Difficulty Adjustment Section */}
       <div className="mb-0">
-        <div className="text-orange-400 text-xs font-semibold mb-2">Difficulty Adjustment</div>
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-orange-400 text-xs font-semibold">Difficulty Adjustment</div>
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              onOpenMiningModal()
+            }}
+            className="bg-orange-500/20 hover:bg-orange-500/40 text-orange-400 hover:text-orange-300 transition-all p-1.5 rounded-md border border-orange-500/30 hover:border-orange-500/50 shadow-[0_0_10px_rgba(249,115,22,0.1)] hover:shadow-[0_0_15px_rgba(249,115,22,0.3)]"
+            title="View Hashrate & Difficulty Chart"
+          >
+            <BarChart3 className="w-3.5 h-3.5" />
+          </button>
+        </div>
 
         {/* Progress Bar */}
         <div className="relative mb-2">

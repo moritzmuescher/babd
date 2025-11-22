@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Link from "next/link"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -133,11 +134,20 @@ export function SearchModal({ isOpen, onClose, query }: SearchModalProps) {
               <div key={i} className="bg-black/40 p-3 rounded border border-white/5 text-sm group hover:border-orange-500/30 transition-colors">
                 <div className="flex justify-between items-start mb-1">
                   <span className="text-xs text-gray-500">#{i}</span>
-                  <span className="text-orange-400 font-mono">{vin.prevout.value.toLocaleString()} sat</span>
+                  <span className="text-orange-400 font-mono">{vin.prevout ? `${vin.prevout.value.toLocaleString()} sat` : "Coinbase"}</span>
                 </div>
-                <div className="text-xs text-gray-300 font-mono break-all opacity-70 group-hover:opacity-100 transition-opacity">
-                  {vin.prevout.scriptpubkey_address}
-                </div>
+                {vin.prevout?.scriptpubkey_address ? (
+                  <Link
+                    href={`/address/${vin.prevout.scriptpubkey_address}`}
+                    className="text-xs text-gray-300 font-mono break-all opacity-70 group-hover:opacity-100 transition-opacity hover:text-orange-400 hover:underline block"
+                  >
+                    {vin.prevout.scriptpubkey_address}
+                  </Link>
+                ) : (
+                  <div className="text-xs text-gray-500 font-mono italic opacity-50">
+                    No address available
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -157,9 +167,18 @@ export function SearchModal({ isOpen, onClose, query }: SearchModalProps) {
                   <span className="text-xs text-gray-500">#{i}</span>
                   <span className="text-orange-400 font-mono">{vout.value.toLocaleString()} sat</span>
                 </div>
-                <div className="text-xs text-gray-300 font-mono break-all opacity-70 group-hover:opacity-100 transition-opacity">
-                  {vout.scriptpubkey_address}
-                </div>
+                {vout.scriptpubkey_address ? (
+                  <Link
+                    href={`/address/${vout.scriptpubkey_address}`}
+                    className="text-xs text-gray-300 font-mono break-all opacity-70 group-hover:opacity-100 transition-opacity hover:text-orange-400 hover:underline block"
+                  >
+                    {vout.scriptpubkey_address}
+                  </Link>
+                ) : (
+                  <div className="text-xs text-gray-500 font-mono italic opacity-50">
+                    No address available
+                  </div>
+                )}
               </div>
             ))}
           </div>

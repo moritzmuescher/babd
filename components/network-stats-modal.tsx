@@ -4,9 +4,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Card } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { AnimatedNumber } from "@/components/ui/animated-number"
-import { Activity, Calendar, Clock, TrendingUp, TrendingDown, Coins, Hourglass } from "lucide-react"
+import { Activity, Calendar, Clock, TrendingUp, TrendingDown, Coins, Hourglass, BarChart3 } from "lucide-react"
 import { motion } from "framer-motion"
 import type { DifficultyData, HalvingData } from "@/lib/types"
+import { MiningStatsChart } from "@/components/mining-stats-chart"
 
 interface NetworkStatsModalProps {
     isOpen: boolean
@@ -192,6 +193,18 @@ export function NetworkStatsModal({ isOpen, onClose, difficultyData, halvingData
                                         </div>
                                     </div>
                                 </div>
+                            </Card>
+                        </motion.div>
+
+                        {/* Mining Stats Chart Section */}
+                        <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}>
+                            <div className="flex items-center gap-2 mb-4">
+                                <BarChart3 className="w-5 h-5 text-purple-400" />
+                                <h3 className="text-xl font-bold text-purple-400">Hashrate & Difficulty (1 Year)</h3>
+                            </div>
+
+                            <Card className="bg-black/30 border-purple-500/20 p-6">
+                                <MiningStatsChart />
                             </Card>
                         </motion.div>
                     </motion.div>
