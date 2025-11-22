@@ -4,7 +4,8 @@ import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, ExternalLink } from "lucide-react"
+import { Loader2, ExternalLink, Copy, Check, ArrowRight, ArrowLeft, Wallet, Coins, HardDrive, Activity } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 interface SearchModalProps {
   isOpen: boolean
@@ -16,12 +17,19 @@ export function SearchModal({ isOpen, onClose, query }: SearchModalProps) {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     if (isOpen && query) {
       searchQuery(query)
     }
   }, [isOpen, query])
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(query)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   const searchQuery = async (searchQuery: string) => {
     setLoading(true)
@@ -57,67 +65,101 @@ export function SearchModal({ isOpen, onClose, query }: SearchModalProps) {
     }
   }
 
+  const StatCard = ({ label, value, icon: Icon, subValue }: any) => (
+    <div className="bg-black/40 p-3 rounded-lg border border-white/5 flex items-center space-x-3">
+      <div className="p-2 bg-orange-500/10 rounded-full">
+        <Icon className="w-4 h-4 text-orange-400" />
+      </div>
+      <div>
+        <div className="text-xs text-gray-400">{label}</div>
+        <div className="text-sm font-medium text-white">{value}</div>
+        {subValue && <div className="text-xs text-gray-500">{subValue}</div>}
+      </div>
+    </div>
+  )
+
   const renderTransactionResult = (txData: any) => (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-orange-400">Transaction Details</h3>
+        <div className="flex items-center space-x-2">
+          <Activity className="w-5 h-5 text-orange-400" />
+          <h3 className="text-lg font-semibold text-white">Transaction Details</h3>
+        </div>
         <a
           href={`https://mempool.space/tx/${query}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-blue-400 hover:text-blue-300"
+          className="flex items-center space-x-1 text-xs text-blue-400 hover:text-blue-300 transition-colors"
         >
-          <ExternalLink className="w-4 h-4" />
+          <span>View on Mempool</span>
+          <ExternalLink className="w-3 h-3" />
         </a>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="bg-black/30 border-orange-500/25 p-4">
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-gray-400">Status:</span>
-              <Badge className={txData.status.confirmed ? "bg-green-500" : "bg-yellow-500"}>
-                {txData.status.confirmed ? `Confirmed (Block ${txData.status.block_height})` : "Unconfirmed"}
-              </Badge>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-400">Fee:</span>
-              <span className="text-white">{txData.fee.toLocaleString()} sat</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-400">Size:</span>
-              <span className="text-white">{txData.size} bytes</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-400">vSize:</span>
-              <span className="text-white">{txData.vsize} vBytes</span>
-            </div>
-          </div>
-        </Card>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <StatCard
+          label="Status"
+          value={txData.status.confirmed ? "Confirmed" : "Unconfirmed"}
+          subValue={txData.status.confirmed ? `Block ${txData.status.block_height}` : undefined}
+          icon={Activity}
+        />
+        <StatCard
+          label="Fee"
+          value={`${txData.fee.toLocaleString()} sat`}
+          icon={Coins}
+        />
+        <StatCard
+          label="Size"
+          value={`${txData.size} B`}
+          icon={HardDrive}
+        />
+        <StatCard
+          label="Virtual Size"
+          value={`${txData.vsize} vB`}
+          icon={HardDrive}
+        />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="bg-black/30 border-orange-500/25 p-4">
-          <h4 className="text-orange-400 font-semibold mb-3">Inputs ({txData.vin.length})</h4>
-          <div className="space-y-2 max-h-40 overflow-y-auto">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="bg-black/20 border-white/10 p-4 backdrop-blur-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h4 className="text-sm font-medium text-gray-300 flex items-center">
+              <ArrowRight className="w-4 h-4 mr-2 text-green-400" />
+              Inputs ({txData.vin.length})
+            </h4>
+          </div>
+          <div className="space-y-3 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
             {txData.vin.map((vin: any, i: number) => (
-              <div key={i} className="text-sm">
-                <div className="text-gray-400">Input {i + 1}:</div>
-                <div className="text-white font-mono text-xs break-all">{vin.prevout.scriptpubkey_address}</div>
-                <div className="text-yellow-400">{vin.prevout.value.toLocaleString()} sat</div>
+              <div key={i} className="bg-black/40 p-3 rounded border border-white/5 text-sm group hover:border-orange-500/30 transition-colors">
+                <div className="flex justify-between items-start mb-1">
+                  <span className="text-xs text-gray-500">#{i}</span>
+                  <span className="text-orange-400 font-mono">{vin.prevout.value.toLocaleString()} sat</span>
+                </div>
+                <div className="text-xs text-gray-300 font-mono break-all opacity-70 group-hover:opacity-100 transition-opacity">
+                  {vin.prevout.scriptpubkey_address}
+                </div>
               </div>
             ))}
           </div>
         </Card>
 
-        <Card className="bg-black/30 border-orange-500/25 p-4">
-          <h4 className="text-orange-400 font-semibold mb-3">Outputs ({txData.vout.length})</h4>
-          <div className="space-y-2 max-h-40 overflow-y-auto">
+        <Card className="bg-black/20 border-white/10 p-4 backdrop-blur-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h4 className="text-sm font-medium text-gray-300 flex items-center">
+              <ArrowLeft className="w-4 h-4 mr-2 text-red-400" />
+              Outputs ({txData.vout.length})
+            </h4>
+          </div>
+          <div className="space-y-3 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
             {txData.vout.map((vout: any, i: number) => (
-              <div key={i} className="text-sm">
-                <div className="text-gray-400">Output {i + 1}:</div>
-                <div className="text-white font-mono text-xs break-all">{vout.scriptpubkey_address}</div>
-                <div className="text-yellow-400">{vout.value.toLocaleString()} sat</div>
+              <div key={i} className="bg-black/40 p-3 rounded border border-white/5 text-sm group hover:border-orange-500/30 transition-colors">
+                <div className="flex justify-between items-start mb-1">
+                  <span className="text-xs text-gray-500">#{i}</span>
+                  <span className="text-orange-400 font-mono">{vout.value.toLocaleString()} sat</span>
+                </div>
+                <div className="text-xs text-gray-300 font-mono break-all opacity-70 group-hover:opacity-100 transition-opacity">
+                  {vout.scriptpubkey_address}
+                </div>
               </div>
             ))}
           </div>
@@ -130,61 +172,68 @@ export function SearchModal({ isOpen, onClose, query }: SearchModalProps) {
     const balance = addrData.chain_stats.funded_txo_sum - addrData.chain_stats.spent_txo_sum
 
     return (
-      <div className="space-y-4">
+      <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-orange-400">Address Details</h3>
+          <div className="flex items-center space-x-2">
+            <Wallet className="w-5 h-5 text-orange-400" />
+            <h3 className="text-lg font-semibold text-white">Address Details</h3>
+          </div>
           <a
             href={`https://mempool.space/address/${query}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-blue-400 hover:text-blue-300"
+            className="flex items-center space-x-1 text-xs text-blue-400 hover:text-blue-300 transition-colors"
           >
-            <ExternalLink className="w-4 h-4" />
+            <span>View on Mempool</span>
+            <ExternalLink className="w-3 h-3" />
           </a>
         </div>
 
-        <Card className="bg-black/30 border-orange-500/25 p-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-gray-400">Balance:</span>
-                <span className="text-green-400 font-semibold">{balance.toLocaleString()} sat</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Received:</span>
-                <span className="text-white">{addrData.chain_stats.funded_txo_sum.toLocaleString()} sat</span>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-gray-400">Spent:</span>
-                <span className="text-white">{addrData.chain_stats.spent_txo_sum.toLocaleString()} sat</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Transactions:</span>
-                <span className="text-white">{addrData.chain_stats.tx_count.toLocaleString()}</span>
-              </div>
-            </div>
-          </div>
-        </Card>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <StatCard
+            label="Balance"
+            value={`${balance.toLocaleString()} sat`}
+            icon={Wallet}
+          />
+          <StatCard
+            label="Total Received"
+            value={`${addrData.chain_stats.funded_txo_sum.toLocaleString()} sat`}
+            icon={ArrowRight}
+          />
+          <StatCard
+            label="Total Spent"
+            value={`${addrData.chain_stats.spent_txo_sum.toLocaleString()} sat`}
+            icon={ArrowLeft}
+          />
+          <StatCard
+            label="Transactions"
+            value={addrData.chain_stats.tx_count.toLocaleString()}
+            icon={Activity}
+          />
+        </div>
 
-        <Card className="bg-black/30 border-orange-500/25 p-4">
-          <h4 className="text-orange-400 font-semibold mb-3">UTXOs ({utxos.length})</h4>
-          <div className="space-y-2 max-h-60 overflow-y-auto">
+        <Card className="bg-black/20 border-white/10 p-4 backdrop-blur-sm">
+          <h4 className="text-sm font-medium text-gray-300 mb-4 flex items-center">
+            <Coins className="w-4 h-4 mr-2 text-yellow-400" />
+            UTXOs ({utxos.length})
+          </h4>
+          <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
             {utxos.map((utxo, i) => (
-              <div key={i} className="border-b border-gray-700 pb-2 last:border-b-0">
+              <div key={i} className="bg-black/40 p-3 rounded border border-white/5 hover:border-orange-500/30 transition-colors">
                 <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="text-sm text-gray-400">UTXO {i + 1}:</div>
-                    <div className="text-xs font-mono text-white break-all">
+                  <div className="flex-1 min-w-0 mr-4">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <span className="text-xs text-gray-500">UTXO #{i + 1}</span>
+                      <Badge variant="outline" className={`text-[10px] h-5 ${utxo.status.confirmed ? "text-green-400 border-green-400/30" : "text-yellow-400 border-yellow-400/30"}`}>
+                        {utxo.status.confirmed ? `Block ${utxo.status.block_height}` : "Unconfirmed"}
+                      </Badge>
+                    </div>
+                    <div className="text-xs font-mono text-gray-300 break-all truncate">
                       {utxo.txid}:{utxo.vout}
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-yellow-400 font-semibold">{utxo.value.toLocaleString()} sat</div>
-                    <Badge className={utxo.status.confirmed ? "bg-green-500" : "bg-yellow-500"}>
-                      {utxo.status.confirmed ? `Block ${utxo.status.block_height}` : "Unconfirmed"}
-                    </Badge>
+                  <div className="text-right whitespace-nowrap">
+                    <div className="text-orange-400 font-mono text-sm">{utxo.value.toLocaleString()} sat</div>
                   </div>
                 </div>
               </div>
@@ -197,27 +246,53 @@ export function SearchModal({ isOpen, onClose, query }: SearchModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-black/90 border-orange-500/25 text-white max-w-4xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="bg-black/80 backdrop-blur-xl border-white/10 text-white max-w-4xl max-h-[85vh] overflow-y-auto shadow-2xl">
         <DialogHeader>
-          <DialogTitle className="text-orange-400">Search Results</DialogTitle>
+          <DialogTitle className="text-xl font-bold bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent">
+            Search Results
+          </DialogTitle>
         </DialogHeader>
 
-        <div className="mt-4">
-          <div className="mb-4 p-2 bg-gray-800/50 rounded font-mono text-sm break-all">{query}</div>
+        <div className="mt-4 space-y-6">
+          <div className="relative group">
+            <div className="p-3 bg-white/5 rounded-lg border border-white/10 font-mono text-xs text-gray-300 break-all pr-10">
+              {query}
+            </div>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="absolute right-1 top-1 h-7 w-7 text-gray-400 hover:text-white hover:bg-white/10"
+              onClick={copyToClipboard}
+            >
+              {copied ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3" />}
+            </Button>
+          </div>
 
           {loading && (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-8 h-8 animate-spin text-orange-400" />
-              <span className="ml-2 text-gray-400">Searching...</span>
+            <div className="flex flex-col items-center justify-center py-12 space-y-4">
+              <div className="relative">
+                <div className="absolute inset-0 bg-orange-500/20 blur-xl rounded-full animate-pulse" />
+                <Loader2 className="w-10 h-10 animate-spin text-orange-400 relative z-10" />
+              </div>
+              <span className="text-sm text-gray-400 animate-pulse">Fetching blockchain data...</span>
             </div>
           )}
 
-          {error && <div className="text-red-400 text-center py-4">{error}</div>}
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 text-center">
+              <p className="text-red-400 text-sm">{error}</p>
+            </div>
+          )}
 
-          {result && result.type === "transaction" && renderTransactionResult(result.data)}
-          {result && result.type === "address" && renderAddressResult(result.data, result.utxos)}
+          {result && !loading && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+              {result.type === "transaction" && renderTransactionResult(result.data)}
+              {result.type === "address" && renderAddressResult(result.data, result.utxos)}
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
   )
 }
+
