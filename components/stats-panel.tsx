@@ -2,21 +2,24 @@
 
 import { useState } from "react"
 import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { AnimatedNumber } from "@/components/ui/animated-number"
 import { CyberBrackets } from "@/components/ui/cyber-brackets"
-import TradingViewWidget from "@/components/tradingview-widget"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { ChartModal } from "@/components/chart-modal"
+import { FeesModal, MempoolModal } from "@/components/stats-modals"
+import { BlockDetailsModal } from "@/components/block-details-modal"
 import { useBitcoinStats } from "@/hooks/use-bitcoin-data"
+import { MempoolAPI } from "@/lib/mempool-api"
 
 interface StatsPanelProps {
   blockHeight: number
 }
 
+type ModalType = 'chart' | 'fees' | 'mempool' | 'unconfirmed' | 'block-height' | null
+
 export function StatsPanel({ blockHeight }: StatsPanelProps) {
-  const [isChartOpen, setIsChartOpen] = useState(false)
-  const [chartSymbol, setChartSymbol] = useState<'BTCUSD' | 'BTCEUR'>('BTCUSD')
+  const [activeModal, setActiveModal] = useState<ModalType>(null)
+  const [tipHash, setTipHash] = useState<string | null>(null)
   const { data: stats, isLoading, error } = useBitcoinStats()
 
   // Default values while loading
@@ -31,12 +34,22 @@ export function StatsPanel({ blockHeight }: StatsPanelProps) {
     console.error("Error fetching stats:", error)
   }
 
+  const handleBlockHeightClick = async () => {
+    try {
+      const hash = await MempoolAPI.getTipHash()
+      setTipHash(hash)
+      setActiveModal('block-height')
+    } catch (err) {
+      console.error("Failed to fetch tip hash:", err)
+    }
+  }
+
   return (
     <>
       {/* Block Height - Center Top */}
-      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10 hidden md:block">
+      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10 hidden md:block cursor-pointer transition-transform hover:scale-105 active:scale-95" onClick={handleBlockHeightClick}>
         <CyberBrackets>
-          <Card className="frosted-glass scanline-container">
+          <Card className="frosted-glass scanline-container hover:bg-orange-500/10 transition-colors">
             <div className="p-4 text-center">
               <div className="text-5xl md:text-6xl font-bold text-orange-400 number-glow">
                 <AnimatedNumber
@@ -52,9 +65,9 @@ export function StatsPanel({ blockHeight }: StatsPanelProps) {
       </div>
 
       {/* Price - Top Left */}
-      <div className="absolute top-4 left-4 z-10">
+      <div className="absolute top-4 left-4 z-10 cursor-pointer transition-transform hover:scale-105 active:scale-95" onClick={() => setActiveModal('chart')}>
         <CyberBrackets>
-          <Card className="frosted-glass scanline-container">
+          <Card className="frosted-glass scanline-container hover:bg-orange-500/10 transition-colors">
             <div className="p-3 relative">
               {isLoading ? (
                 <>
@@ -70,7 +83,7 @@ export function StatsPanel({ blockHeight }: StatsPanelProps) {
                       duration={800}
                     />
                   </div>
-                  <div className="text-orange-400 text-sm flex items-center gap-2"><span>Price</span><Button onClick={() => setIsChartOpen(true)} size="sm" variant="ghost" className="border border-orange-500/25 px-2 py-0.5 h-7 text-orange-400 bg-orange-500/30 hover:text-orange-200 hover:bg-orange-500/20 transition-all">Chart</Button></div>
+                  <div className="text-orange-400 text-sm flex items-center gap-2">Price</div>
                 </>
               )}
             </div>
@@ -79,9 +92,9 @@ export function StatsPanel({ blockHeight }: StatsPanelProps) {
       </div>
 
       {/* High Priority - Top Right */}
-      <div className="absolute top-4 right-4 z-10">
+      <div className="absolute top-4 right-4 z-10 cursor-pointer transition-transform hover:scale-105 active:scale-95" onClick={() => setActiveModal('fees')}>
         <CyberBrackets>
-          <Card className="frosted-glass scanline-container">
+          <Card className="frosted-glass scanline-container hover:bg-orange-500/10 transition-colors">
             <div className="p-3 text-right">
               {isLoading ? (
                 <>
@@ -106,9 +119,9 @@ export function StatsPanel({ blockHeight }: StatsPanelProps) {
       </div>
 
       {/* Mempool Size - Bottom Left */}
-      <div className="absolute bottom-20 md:bottom-4 left-4 z-10">
+      <div className="absolute bottom-20 md:bottom-4 left-4 z-10 cursor-pointer transition-transform hover:scale-105 active:scale-95" onClick={() => setActiveModal('mempool')}>
         <CyberBrackets>
-          <Card className="frosted-glass scanline-container">
+          <Card className="frosted-glass scanline-container hover:bg-orange-500/10 transition-colors">
             <div className="p-3 relative">
               {isLoading ? (
                 <>
@@ -133,9 +146,9 @@ export function StatsPanel({ blockHeight }: StatsPanelProps) {
       </div>
 
       {/* Unconfirmed - Bottom Right */}
-      <div className="absolute bottom-20 md:bottom-4 right-4 z-10">
+      <div className="absolute bottom-20 md:bottom-4 right-4 z-10 cursor-pointer transition-transform hover:scale-105 active:scale-95" onClick={() => setActiveModal('unconfirmed')}>
         <CyberBrackets>
-          <Card className="frosted-glass scanline-container">
+          <Card className="frosted-glass scanline-container hover:bg-orange-500/10 transition-colors">
             <div className="p-3 text-right">
               {isLoading ? (
                 <>
@@ -158,34 +171,30 @@ export function StatsPanel({ blockHeight }: StatsPanelProps) {
           </Card>
         </CyberBrackets>
       </div>
-    
-      {/* Chart Modal */}
 
-      {/* Chart Modal (TradingView) */}
-      <Dialog open={isChartOpen} onOpenChange={setIsChartOpen}>
-        <DialogContent className="max-w-[95vw] w-[95vw] h-[80vh] p-0 bg-black text-white border border-orange-500/25">
-          <DialogHeader className="pt-2 pb-0 px-2">
-            <DialogTitle className="pt-0 pb-0">
-          {/* Symbol toggle */}
-          <div className="px-0 pb-0">
-            <div className="inline-flex rounded-md border border-orange-500/25 overflow-hidden">
-              <button
-                className={`px-3 py-1 text-sm ${chartSymbol === "BTCUSD" ? "bg-orange-500/20 text-orange-200" : "text-orange-400 hover:bg-orange-500/10"}`}
-                onClick={() => setChartSymbol("BTCUSD")}
-              >USD</button>
-              <button
-                className={`px-3 py-1 text-sm border-l border-orange-500/25 ${chartSymbol === "BTCEUR" ? "bg-orange-500/20 text-orange-200" : "text-orange-400 hover:bg-orange-500/10"}`}
-                onClick={() => setChartSymbol("BTCEUR")}
-              >EUR</button>
-            </div>
-          </div>
-            </DialogTitle>
-          </DialogHeader>
-          <div className="h-[calc(80vh-28px)] w-full">
-            <TradingViewWidget key={chartSymbol} symbol={chartSymbol} />
-          </div>
-        </DialogContent>
-      </Dialog>
-</>
+      {/* Modals */}
+      <ChartModal
+        open={activeModal === 'chart'}
+        onOpenChange={(open) => !open && setActiveModal(null)}
+      />
+
+      <FeesModal
+        isOpen={activeModal === 'fees'}
+        onClose={() => setActiveModal(null)}
+        fees={stats?.fees}
+      />
+
+      <MempoolModal
+        isOpen={activeModal === 'mempool' || activeModal === 'unconfirmed'}
+        onClose={() => setActiveModal(null)}
+        mempool={stats?.mempool}
+      />
+
+      <BlockDetailsModal
+        isOpen={activeModal === 'block-height'}
+        onClose={() => setActiveModal(null)}
+        blockHash={tipHash}
+      />
+    </>
   )
 }

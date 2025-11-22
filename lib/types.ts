@@ -27,6 +27,10 @@ export interface BitcoinStats {
   mempoolSize: number
   highPriority: number
   unconfirmed: number
+  // Raw data for modals
+  prices?: MempoolPriceResponse
+  mempool?: MempoolInfoResponse
+  fees?: RecommendedFeesResponse
 }
 
 export interface DifficultyData {
@@ -61,6 +65,7 @@ export interface MempoolInfoResponse {
   vsize: number
   count: number
   size: number
+  total_fee: number
 }
 
 export interface RecommendedFeesResponse {

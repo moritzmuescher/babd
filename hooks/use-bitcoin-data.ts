@@ -98,11 +98,14 @@ export function useBitcoinStats(): {
   const stats: BitcoinStats | undefined =
     prices && mempool && fees
       ? {
-          price: prices.USD,
-          mempoolSize: mempool.vsize / 1000000,
-          highPriority: fees.fastestFee,
-          unconfirmed: mempool.count,
-        }
+        price: prices.USD,
+        mempoolSize: mempool.vsize / 1000000,
+        highPriority: fees.fastestFee,
+        unconfirmed: mempool.count,
+        prices,
+        mempool,
+        fees,
+      }
       : undefined
 
   return { data: stats, isLoading, error }

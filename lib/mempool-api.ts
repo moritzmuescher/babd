@@ -55,6 +55,13 @@ export class MempoolAPI {
   }
 
   /**
+   * Get the current block hash (tip of the chain)
+   */
+  static async getTipHash(): Promise<string> {
+    return fetchWithErrorHandling<string>(`${BASE_URL}/blocks/tip/hash`)
+  }
+
+  /**
    * Get the most recent blocks (default: 10)
    */
   static async getRecentBlocks(): Promise<Block[]> {
