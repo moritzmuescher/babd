@@ -1,7 +1,7 @@
 import React from "react";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Block, ProjectedBlock } from "@/components/block-explorer";
+import { Block, ProjectedBlock } from "@/lib/types";
+import { motion } from "framer-motion";
 
 interface BlockItemProps {
   block: Block | ProjectedBlock;
@@ -55,20 +55,27 @@ export const BlockItem = React.memo(
       const interpolatedTextColor = getInterpolatedFeeColor?.(estimatedFeeRate) || "white";
 
       return (
-        <div
+        <motion.div
+          layoutId={`block-${displayHeight}`}
           onClick={() => onClick(proj)}
-          className="relative flex-shrink-0 p-3 rounded-lg text-center min-w-[100px] cursor-pointer overflow-hidden transition-all duration-100 scanline-container scanline-container-block-future hover-lift"
+          className="relative flex-shrink-0 p-3 rounded-lg text-center min-w-[100px] cursor-pointer overflow-hidden scanline-container scanline-container-block-future"
           title={`Click to view estimated details for future block ${displayHeight}`}
-          style={{ transform: `scale(${scale})`, zIndex: zIndex }}
+          style={{ zIndex: zIndex }}
+          animate={{ scale: scale }}
+          whileHover={{ scale: scale * 1.05, zIndex: zIndex + 10 }}
+          whileTap={{ scale: scale * 0.95 }}
+          transition={{ type: "spring", stiffness: 300, damping: 20 }}
         >
           {/* Dynamic fill layer for future blocks */}
-          <div
-            className="absolute bottom-0 left-0 w-full transition-all duration-300"
-            style={{
+          <motion.div
+            className="absolute bottom-0 left-0 w-full"
+            initial={{ height: 0 }}
+            animate={{
               height: `${projectedWeightPercentage}%`,
-              backgroundColor: interpolatedFillColor,
+              backgroundColor: interpolatedFillColor
             }}
-          ></div>
+            transition={{ type: "spring", stiffness: 100, damping: 20 }}
+          />
           {/* Content layer */}
           <div className="relative z-10 flex flex-col h-full justify-between">
             <div>
@@ -90,7 +97,7 @@ export const BlockItem = React.memo(
               in {getEstimatedTime?.(index || 0)}
             </Badge>
           </div>
-        </div>
+        </motion.div>
       );
     } else {
       // Past blocks
@@ -98,21 +105,32 @@ export const BlockItem = React.memo(
       const isCurrentBlock = blockData.height === currentHeight;
 
       return (
-        <div
+        <motion.div
+          layoutId={`block-${blockData.height}`}
           onClick={() => onClick(blockData)}
-          className={`relative flex-shrink-0 p-3 rounded-lg border text-center min-w-[100px] cursor-pointer overflow-hidden transition-all duration-200 scanline-container scanline-container-block-past ${
-            isCurrentBlock
-              ? "border-blue-400 bg-black/50 shadow-lg shadow-blue-500/30 current-block current-block-pulse hover:shadow-blue-500/50"
-              : "border-blue-500/30 bg-black/50 hover:border-blue-400/50 hover-lift"
-          }`}
+          className={`relative flex-shrink-0 p-3 rounded-lg border text-center min-w-[100px] cursor-pointer overflow-hidden scanline-container scanline-container-block-past ${isCurrentBlock
+            ? "border-blue-400 bg-black/50 shadow-lg shadow-blue-500/30 current-block current-block-pulse"
+            : "border-blue-500/30 bg-black/50"
+            }`}
           title={`Click to view details for block ${blockData.height}`}
-          style={{ transform: `scale(${scale})`, zIndex: zIndex }}
+          style={{ zIndex: zIndex }}
+          animate={{ scale: scale }}
+          whileHover={{
+            scale: scale * 1.05,
+            zIndex: zIndex + 10,
+            borderColor: "rgba(96, 165, 250, 0.8)",
+            boxShadow: "0 0 15px rgba(59, 130, 246, 0.5)"
+          }}
+          whileTap={{ scale: scale * 0.95 }}
+          transition={{ type: "spring", stiffness: 300, damping: 20 }}
         >
           {/* Blue fill layer */}
-          <div
-            className="absolute bottom-0 left-0 w-full bg-blue-500/40 transition-all duration-300"
-            style={{ height: `${weightPercentage}%` }}
-          ></div>
+          <motion.div
+            className="absolute bottom-0 left-0 w-full bg-blue-500/40"
+            initial={{ height: 0 }}
+            animate={{ height: `${weightPercentage}%` }}
+            transition={{ type: "spring", stiffness: 100, damping: 20 }}
+          />
           {/* Content layer */}
           <div className="relative z-10 flex flex-col h-full justify-between">
             <div>
@@ -129,7 +147,7 @@ export const BlockItem = React.memo(
               {formatTimeAgo?.(blockData.timestamp)}
             </Badge>
           </div>
-        </div>
+        </motion.div>
       );
     }
   }

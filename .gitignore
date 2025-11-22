@@ -36,3 +36,4 @@ pids/
 *.pid
 *.seed
 *.pid.lock
+nul

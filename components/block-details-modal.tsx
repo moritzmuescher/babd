@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Loader2, ExternalLink, Copy, Check, Clock, Hash, Zap, Users } from "lucide-react"
+import { motion } from "framer-motion"
 
 interface BlockDetailsModalProps {
   isOpen: boolean
@@ -132,80 +133,106 @@ export function BlockDetailsModal({ isOpen, onClose, blockHash }: BlockDetailsMo
           )}
 
           {blockDetails && (
-            <div className="space-y-6">
+            <motion.div
+              className="space-y-6"
+              initial="hidden"
+              animate="visible"
+              variants={{
+                hidden: { opacity: 0 },
+                visible: {
+                  opacity: 1,
+                  transition: {
+                    staggerChildren: 0.1
+                  }
+                }
+              }}
+            >
               {/* Block Header */}
-              <Card className="bg-black/30 border-orange-500/25 p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-2xl font-bold text-orange-400">Block #{blockDetails.height}</h3>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => copyToClipboard(blockDetails.id, "hash")}
-                      className="border-orange-500/50 text-orange-400 hover:bg-orange-500/20 bg-transparent"
-                    >
-                      {copiedField === "hash" ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      asChild
-                      className="border-blue-500/50 text-blue-400 hover:bg-blue-500/20 bg-transparent"
-                    >
-                      <a
-                        href={`https://mempool.space/block/${blockDetails.id}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
+              <motion.div
+                variants={{
+                  hidden: { opacity: 0, y: 20 },
+                  visible: { opacity: 1, y: 0 }
+                }}
+              >
+                <Card className="bg-black/30 border-orange-500/25 p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-2xl font-bold text-orange-400">Block #{blockDetails.height}</h3>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => copyToClipboard(blockDetails.id, "hash")}
+                        className="border-orange-500/50 text-orange-400 hover:bg-orange-500/20 bg-transparent"
                       >
-                        <ExternalLink className="w-4 h-4" />
-                      </a>
-                    </Button>
+                        {copiedField === "hash" ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        asChild
+                        className="border-blue-500/50 text-blue-400 hover:bg-blue-500/20 bg-transparent"
+                      >
+                        <a
+                          href={`https://mempool.space/block/${blockDetails.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+                      </Button>
+                    </div>
                   </div>
-                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Hash:</span>
-                      <span className="font-mono text-xs text-white break-all max-w-[200px]">{blockDetails.id}</span>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Hash:</span>
+                        <span className="font-mono text-xs text-white break-all max-w-[200px]">{blockDetails.id}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Timestamp:</span>
+                        <span className="text-white">{formatDate(blockDetails.timestamp)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Size:</span>
+                        <span className="text-white">{formatBytes(blockDetails.size)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Weight:</span>
+                        <span className="text-white">{blockDetails.weight.toLocaleString()} WU</span>
+                      </div>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Timestamp:</span>
-                      <span className="text-white">{formatDate(blockDetails.timestamp)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Size:</span>
-                      <span className="text-white">{formatBytes(blockDetails.size)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Weight:</span>
-                      <span className="text-white">{blockDetails.weight.toLocaleString()} WU</span>
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Transactions:</span>
+                        <span className="text-white">{blockDetails.tx_count.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Difficulty:</span>
+                        <span className="text-white">{blockDetails.difficulty.toExponential(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Nonce:</span>
+                        <span className="text-white">{blockDetails.nonce.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Version:</span>
+                        <span className="text-white">{blockDetails.version}</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Transactions:</span>
-                      <span className="text-white">{blockDetails.tx_count.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Difficulty:</span>
-                      <span className="text-white">{blockDetails.difficulty.toExponential(2)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Nonce:</span>
-                      <span className="text-white">{blockDetails.nonce.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Version:</span>
-                      <span className="text-white">{blockDetails.version}</span>
-                    </div>
-                  </div>
-                </div>
-              </Card>
+                </Card>
+              </motion.div>
 
               {/* Transaction & Fee Statistics */}
               {blockDetails.extras && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <motion.div
+                  className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                  variants={{
+                    hidden: { opacity: 0, y: 20 },
+                    visible: { opacity: 1, y: 0 }
+                  }}
+                >
                   <Card className="bg-black/30 border-green-500/25 p-4">
                     <h4 className="text-green-400 font-semibold mb-3 flex items-center gap-2">
                       <Zap className="w-4 h-4" />
@@ -260,62 +287,76 @@ export function BlockDetailsModal({ isOpen, onClose, blockHash }: BlockDetailsMo
                       </div>
                     </div>
                   </Card>
-                </div>
+                </motion.div>
               )}
 
               {/* SegWit Statistics */}
               {blockDetails.extras && blockDetails.extras.segwitTotalTxs > 0 && (
-                <Card className="bg-black/30 border-purple-500/25 p-4">
-                  <h4 className="text-purple-400 font-semibold mb-3">SegWit Statistics</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">SegWit TXs:</span>
-                      <span className="text-white">{blockDetails.extras.segwitTotalTxs.toLocaleString()}</span>
+                <motion.div
+                  variants={{
+                    hidden: { opacity: 0, y: 20 },
+                    visible: { opacity: 1, y: 0 }
+                  }}
+                >
+                  <Card className="bg-black/30 border-purple-500/25 p-4">
+                    <h4 className="text-purple-400 font-semibold mb-3">SegWit Statistics</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">SegWit TXs:</span>
+                        <span className="text-white">{blockDetails.extras.segwitTotalTxs.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">SegWit Size:</span>
+                        <span className="text-white">{formatBytes(blockDetails.extras.segwitTotalSize)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">SegWit Weight:</span>
+                        <span className="text-white">{blockDetails.extras.segwitTotalWeight.toLocaleString()} WU</span>
+                      </div>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">SegWit Size:</span>
-                      <span className="text-white">{formatBytes(blockDetails.extras.segwitTotalSize)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">SegWit Weight:</span>
-                      <span className="text-white">{blockDetails.extras.segwitTotalWeight.toLocaleString()} WU</span>
-                    </div>
-                  </div>
-                </Card>
+                  </Card>
+                </motion.div>
               )}
 
               {/* Technical Details */}
-              <Card className="bg-black/30 border-gray-500/25 p-4">
-                <h4 className="text-gray-400 font-semibold mb-3 flex items-center gap-2">
-                  <Clock className="w-4 h-4" />
-                  Technical Details
-                </h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Merkle Root:</span>
-                    <span className="font-mono text-xs text-white break-all max-w-[300px]">
-                      {blockDetails.merkle_root}
-                    </span>
+              <motion.div
+                variants={{
+                  hidden: { opacity: 0, y: 20 },
+                  visible: { opacity: 1, y: 0 }
+                }}
+              >
+                <Card className="bg-black/30 border-gray-500/25 p-4">
+                  <h4 className="text-gray-400 font-semibold mb-3 flex items-center gap-2">
+                    <Clock className="w-4 h-4" />
+                    Technical Details
+                  </h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Merkle Root:</span>
+                      <span className="font-mono text-xs text-white break-all max-w-[300px]">
+                        {blockDetails.merkle_root}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Previous Block:</span>
+                      <span className="font-mono text-xs text-white break-all max-w-[300px]">
+                        {blockDetails.previousblockhash}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Bits:</span>
+                      <span className="text-white">{blockDetails.bits.toString(16)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Chainwork:</span>
+                      <span className="font-mono text-xs text-white break-all max-w-[300px]">
+                        {blockDetails.chainwork}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Previous Block:</span>
-                    <span className="font-mono text-xs text-white break-all max-w-[300px]">
-                      {blockDetails.previousblockhash}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Bits:</span>
-                    <span className="text-white">{blockDetails.bits.toString(16)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Chainwork:</span>
-                    <span className="font-mono text-xs text-white break-all max-w-[300px]">
-                      {blockDetails.chainwork}
-                    </span>
-                  </div>
-                </div>
-              </Card>
-            </div>
+                </Card>
+              </motion.div>
+            </motion.div>
           )}
         </div>
       </DialogContent>

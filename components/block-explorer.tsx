@@ -9,6 +9,7 @@ import { BlockItem } from "@/components/block-item"
 import { useRecentBlocks, useProjectedBlocks, useOlderBlocks } from "@/hooks/use-bitcoin-data"
 import { MempoolAPI } from "@/lib/mempool-api"
 import type { Block, ProjectedBlock } from "@/lib/types"
+import { AnimatePresence, motion } from "framer-motion"
 
 export type { Block, ProjectedBlock }
 
@@ -54,9 +55,7 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
   const blocks = accumulatedBlocks
   const projectedBlocks = projectedBlocksData || []
 
-  
 
-  
   // Drag-to-pan
   const isPointerDown = useRef(false)
   const startX = useRef(0)
@@ -70,7 +69,7 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
   const blocksGroupRef = useRef<HTMLDivElement>(null)
   const projectedGroupOffsetLeft = useRef<number>(0);
   const blocksGroupOffsetLeft = useRef<number>(0);
-// Removed handleScroll and loadMorePastBlocks as they are no longer needed
+  // Removed handleScroll and loadMorePastBlocks as they are no longer needed
 
   const [mousePositionX, setMousePositionX] = useState<number | null>(null);
   const [containerLeft, setContainerLeft] = useState<number>(0);
@@ -149,7 +148,7 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
       }
     }
   }, [blocks, projectedBlocks])
-// Removed dedicated useEffect for scroll listener
+  // Removed dedicated useEffect for scroll listener
   // useEffect(() => { ... }, [...])
 
   const formatTimeAgo = (timestamp: number) => {
@@ -210,9 +209,10 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
     setIsProjectedBlockDetailsModalOpen(true)
   }
 
-  const handleBlockClick = (block: Block) => {
+  const handleBlockClick = (block: Block | ProjectedBlock) => {
     if (isDragging || hasDragged.current) return
-    setSelectedBlockHash(block.id)
+    const pastBlock = block as Block
+    setSelectedBlockHash(pastBlock.id)
     setIsBlockDetailsModalOpen(true)
   }
 
@@ -236,7 +236,7 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
 
     const distance = Math.abs(blockCenterXRelativeToScrollRef - mouseXRelativeToContainer);
     const magnificationRadius = 180; // Pixels around the cursor where magnification occurs
-    const maxScale = 1.18; // Maximum scale for the block directly under the cursor
+    const maxScale = 1.15; // Maximum scale for the block directly under the cursor
 
     if (distance > magnificationRadius) {
       return { scale: 1, zIndex: 1 };
@@ -260,7 +260,7 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
           <div className="absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-black/50 to-transparent z-20 hidden md:block pointer-events-none" />
           <div
             ref={scrollRef}
-            className="flex overflow-x-auto p-4 space-x-4 no-scrollbar select-none"
+            className="flex overflow-x-auto p-4 space-x-4 no-scrollbar select-none items-center"
             style={{ direction: "ltr", cursor: isDragging ? "grabbing" : "grab", scrollbarWidth: "none", msOverflowStyle: "none" }}
             onPointerDown={(e) => {
               const root = scrollRef.current
@@ -350,76 +350,94 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
               {/* Left spacer to center current block at left cap */}
               <div style={{ width: `${leftPadPx}px`, flex: "0 0 auto" }} />
               {/* Future projected blocks group */}
-              <div ref={projectedGroupRef} className="flex space-x-4">
-              {/* Future projected blocks - rightmost, reversed order */}
-              {projectedBlocks
-                .slice()
-                .reverse()
-                .map((proj, index) => {
-                  const blockWidth = 100; // min-w-[100px]
-                  const blockMargin = 16; // space-x-4 (4 * 4px = 16px)
-                  const blockCenterXRelativeToProjectedGroup = (index * (blockWidth + blockMargin)) + (blockWidth / 2);
-                  const blockCenterXRelativeToScrollRef = projectedGroupOffsetLeft.current + blockCenterXRelativeToProjectedGroup;
+              <motion.div ref={projectedGroupRef} className="flex space-x-4" layout>
+                <AnimatePresence mode="popLayout" initial={false}>
+                  {/* Future projected blocks - rightmost, reversed order */}
+                  {projectedBlocks
+                    .slice()
+                    .reverse()
+                    .map((proj, index) => {
+                      const blockWidth = 100; // min-w-[100px]
+                      const blockMargin = 16; // space-x-4 (4 * 4px = 16px)
+                      const blockCenterXRelativeToProjectedGroup = (index * (blockWidth + blockMargin)) + (blockWidth / 2);
+                      const blockCenterXRelativeToScrollRef = projectedGroupOffsetLeft.current + blockCenterXRelativeToProjectedGroup;
 
-                  const { scale, zIndex } = getBlockScaleAndZIndex(blockCenterXRelativeToScrollRef);
+                      const { scale, zIndex } = getBlockScaleAndZIndex(blockCenterXRelativeToScrollRef);
 
-                  const futureHeight = currentHeight + (projectedBlocks.length - index);
-                  return (
-                    <BlockItem
-                      key={proj.nTx + "-" + index} // Use a unique key for projected blocks
-                      block={proj}
-                      currentHeight={currentHeight}
-                      isProjected={true}
-                      scale={scale}
-                      zIndex={zIndex}
-                      onClick={(projBlock) => handleProjectedBlockClick(projBlock as ProjectedBlock, index)}
-                      formatTimeAgo={formatTimeAgo}
-                      getEstimatedTime={getEstimatedTime}
-                      getAverageFeeRate={getAverageFeeRate}
-                      getInterpolatedFeeColor={getInterpolatedFeeColor}
-                      index={index}
-                      futureHeight={futureHeight} // New prop
-                    />
-                  )
-                })}
-
-              </div>
+                      const futureHeight = currentHeight + (projectedBlocks.length - index);
+                      return (
+                        <motion.div
+                          key={proj.nTx + "-" + index}
+                          layout
+                          initial={{ opacity: 0, scale: 0.8, x: -20 }}
+                          animate={{ opacity: 1, scale: 1, x: 0 }}
+                          exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2 } }}
+                          transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                        >
+                          <BlockItem
+                            block={proj}
+                            currentHeight={currentHeight}
+                            isProjected={true}
+                            scale={scale}
+                            zIndex={zIndex}
+                            onClick={(projBlock) => handleProjectedBlockClick(projBlock as ProjectedBlock, index)}
+                            formatTimeAgo={formatTimeAgo}
+                            getEstimatedTime={getEstimatedTime}
+                            getAverageFeeRate={getAverageFeeRate}
+                            getInterpolatedFeeColor={getInterpolatedFeeColor}
+                            index={index}
+                            futureHeight={futureHeight} // New prop
+                          />
+                        </motion.div>
+                      )
+                    })}
+                </AnimatePresence>
+              </motion.div>
               {/* Past blocks group */}
-              <div ref={blocksGroupRef} className="flex space-x-4">
-{/* Past blocks - newest to oldest (right to left) */}
-              {blocks.map((block, index) => {
-                const blockWidth = 100; // min-w-[100px]
-                const blockMargin = 16; // space-x-4 (4 * 4px = 16px)
-                const blockCenterXRelativeToBlocksGroup = (index * (blockWidth + blockMargin)) + (blockWidth / 2);
-                const blockCenterXRelativeToScrollRef = blocksGroupOffsetLeft.current + blockCenterXRelativeToBlocksGroup;
+              <motion.div ref={blocksGroupRef} className="flex space-x-4" layout>
+                <AnimatePresence mode="popLayout" initial={false}>
+                  {/* Past blocks - newest to oldest (right to left) */}
+                  {blocks.map((block, index) => {
+                    const blockWidth = 100; // min-w-[100px]
+                    const blockMargin = 16; // space-x-4 (4 * 4px = 16px)
+                    const blockCenterXRelativeToBlocksGroup = (index * (blockWidth + blockMargin)) + (blockWidth / 2);
+                    const blockCenterXRelativeToScrollRef = blocksGroupOffsetLeft.current + blockCenterXRelativeToBlocksGroup;
 
-                const { scale, zIndex } = getBlockScaleAndZIndex(blockCenterXRelativeToScrollRef);
+                    const { scale, zIndex } = getBlockScaleAndZIndex(blockCenterXRelativeToScrollRef);
 
-                return (
-                  <BlockItem
-                    key={block.height}
-                    block={block}
-                    currentHeight={currentHeight}
-                    isProjected={false}
-                    scale={scale}
-                    zIndex={zIndex}
-                    onClick={handleBlockClick}
-                    formatTimeAgo={formatTimeAgo}
-                    getEstimatedTime={getEstimatedTime}
-                    getAverageFeeRate={getAverageFeeRate}
-                    getInterpolatedFeeColor={getInterpolatedFeeColor}
-                    index={index}
-                  />
-                )
-              })}
-              {/* The "Load More Past Blocks" div has been removed */}
-              </div>
+                    return (
+                      <motion.div
+                        key={block.height}
+                        layout
+                        initial={{ opacity: 0, scale: 0.8, x: 20 }}
+                        animate={{ opacity: 1, scale: 1, x: 0 }}
+                        exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2 } }}
+                        transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                      >
+                        <BlockItem
+                          block={block}
+                          currentHeight={currentHeight}
+                          isProjected={false}
+                          scale={scale}
+                          zIndex={zIndex}
+                          onClick={handleBlockClick}
+                          formatTimeAgo={formatTimeAgo}
+                          getEstimatedTime={getEstimatedTime}
+                          getAverageFeeRate={getAverageFeeRate}
+                          getInterpolatedFeeColor={getInterpolatedFeeColor}
+                          index={index}
+                        />
+                      </motion.div>
+                    )
+                  })}
+                </AnimatePresence>
+              </motion.div>
             </div>
-              {/* Sentinel for older blocks (right edge) */}
-              <div ref={olderSentinelRef} className="w-px h-1" />
+            {/* Sentinel for older blocks (right edge) */}
+            <div ref={olderSentinelRef} className="w-px h-1" />
 
-              {/* Sentinel for older blocks (right edge in LTR) */}
-              <div ref={olderSentinelRef} className="w-px h-1" />
+            {/* Sentinel for older blocks (right edge in LTR) */}
+            <div ref={olderSentinelRef} className="w-px h-1" />
 
           </div>
         </Card>
