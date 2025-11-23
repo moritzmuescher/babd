@@ -28,16 +28,28 @@ export function ThreeScene() {
 
       controls = new OrbitControls(camera, renderer.domElement)
       controls.enableRotate = true
-      controls.enableZoom = true
+      controls.enableZoom = false // We handle zoom manually for smoothness
       controls.enablePan = false
       controls.maxDistance = 500
       controls.minDistance = 0.1
       controls.enableDamping = true // Enable smooth damping
-      controls.dampingFactor = 0.05 // Lower = smoother (0.05 is nice and smooth)
+      controls.dampingFactor = 0.03 // Lower = smoother (0.05 is nice and smooth)
       controls.rotateSpeed = 0.8 // Slightly reduce rotation speed for better control
+      controls.zoomSpeed = 0.5 // Slower zoom for smoother experience
 
       // Camera
       camera.position.z = 15
+
+      // --- Custom Smooth Zoom ---
+      let targetZoomDistance = 15
+      const onWheel = (e: WheelEvent) => {
+        e.preventDefault()
+        const zoomSensitivity = 0.001
+        const zoomFactor = Math.exp(e.deltaY * zoomSensitivity)
+        targetZoomDistance *= zoomFactor
+        targetZoomDistance = Math.max(controls.minDistance, Math.min(controls.maxDistance, targetZoomDistance))
+      }
+      renderer.domElement.addEventListener("wheel", onWheel, { passive: false })
 
       // --- UTIL: Circle texture for point sprites ---
       const canvas = document.createElement("canvas")
@@ -607,7 +619,7 @@ export function ThreeScene() {
         }
 
         // Update glow shader uniform
-        ;(glowMaterial.uniforms as any).cursorProximity.value = cursorProximity
+        ; (glowMaterial.uniforms as any).cursorProximity.value = cursorProximity
 
         // Ease compression factor toward target
         const targetCompression = compressionActive ? compressionScaleActive : 1.0
@@ -901,9 +913,19 @@ export function ThreeScene() {
         starPositions.needsUpdate = true
 
         renderer.render(scene, camera)
+
+        // Smooth zoom interpolation
+        const currentDist = camera.position.distanceTo(controls.target)
+        if (Math.abs(currentDist - targetZoomDistance) > 0.001) {
+          const smoothFactor = 0.1
+          const newDist = THREE.MathUtils.lerp(currentDist, targetZoomDistance, smoothFactor)
+          const direction = new THREE.Vector3().subVectors(camera.position, controls.target).normalize()
+          camera.position.copy(controls.target).add(direction.multiplyScalar(newDist))
+        }
+
         controls.update()
-        ;(glowMaterial.uniforms as any).time.value += 0.01
-        ;(glowMaterial.uniforms as any).spinFactor.value = spinSpeedFactor
+          ; (glowMaterial.uniforms as any).time.value += 0.01
+          ; (glowMaterial.uniforms as any).spinFactor.value = spinSpeedFactor
       }
 
       frameId = requestAnimationFrame(animate)
@@ -926,6 +948,7 @@ export function ThreeScene() {
         renderer.domElement.removeEventListener("pointerleave", onPointerLeave)
         renderer.domElement.removeEventListener("pointerdown", onPointerDown)
         window.removeEventListener("pointerup", onPointerUp)
+        renderer.domElement.removeEventListener("wheel", onWheel)
         if (frameId) cancelAnimationFrame(frameId)
         if (renderer.domElement && renderer.domElement.parentElement) {
           renderer.domElement.parentElement.removeChild(renderer.domElement)
