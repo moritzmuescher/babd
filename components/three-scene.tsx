@@ -92,6 +92,105 @@ export function ThreeScene() {
       const stars = new THREE.Points(starGeometry, starMaterial)
       scene.add(stars)
 
+      // --- Easter Egg Floating Texts ---
+      const easterEggTexts = [
+        "stack sats",
+        "Don't trust, verify!",
+        "Not your keys, not your coins!",
+        "fix the money, fix the world",
+        "21 Million",
+        "tick tock, next block",
+        "cypherpunks write code",
+        "Defund The State",
+        "fuck the state",
+        "open source everything",
+        "21M / ∞",
+        "privacy is not a crime",
+        "1 BTC = 1 BTC",
+        "#EndTheFed",
+        "#EndTheECB",
+        "activism.net/cypherpunk/manifesto.html",
+        "run your own node",
+        "sound money",
+        "inflation is theft",
+        "cantillon was right",
+        "proof of work",
+        "taxation is armed robbery",
+        "the seperation of money and state",
+        "DON'T TREAD ON ME",
+        "anarcho-capitalism is inevitable",
+        "read Rothbard",
+        "read Hoppe",
+        "bitcoin fixes this!",
+        "coinjoin your coins",
+        "Cashu brings Chaumian dreams back",
+        "fuck KYC, use Cashu blind signatures",
+        "Black Markets Matter",
+        "practice Agorism",
+        "be the counter-economy",
+        "Regulate THIS!"
+      ]
+
+      const textSprites: any[] = []
+
+      const createTextSprite = (text: string) => {
+        const fontface = "Arial"
+        const fontsize = 24
+        const borderThickness = 0
+        const canvas = document.createElement("canvas")
+        const context = canvas.getContext("2d")!
+
+        // Measure text size
+        context.font = "Bold " + fontsize + "px " + fontface
+        const metrics = context.measureText(text)
+        const textWidth = metrics.width
+
+        // Resize canvas to fit text
+        canvas.width = textWidth + 20
+        canvas.height = fontsize + 20
+
+        // Draw text
+        context.font = "Bold " + fontsize + "px " + fontface
+        context.fillStyle = "rgba(255, 255, 255, 0.4)" // Subtle white
+        context.textAlign = "center"
+        context.textBaseline = "middle"
+        context.fillText(text, canvas.width / 2, canvas.height / 2)
+
+        const texture = new THREE.CanvasTexture(canvas)
+        texture.minFilter = THREE.LinearFilter
+        texture.magFilter = THREE.LinearFilter
+
+        const spriteMaterial = new THREE.SpriteMaterial({
+          map: texture,
+          transparent: true,
+          opacity: 0.6,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending
+        })
+
+        const sprite = new THREE.Sprite(spriteMaterial)
+        // Scale sprite to maintain aspect ratio but keep it relatively small
+        const scale = 10
+        sprite.scale.set(scale * (canvas.width / canvas.height), scale, 1)
+
+        return sprite
+      }
+
+      // Create sprites for each text
+      easterEggTexts.forEach(text => {
+        const sprite = createTextSprite(text)
+
+        // Random position within starfield bounds
+        sprite.position.set(
+          THREE.MathUtils.randFloatSpread(1500),
+          THREE.MathUtils.randFloatSpread(1500),
+          THREE.MathUtils.randFloatSpread(3000)
+        )
+
+        scene.add(sprite)
+        textSprites.push(sprite)
+      })
+
       // --- Planet (point cloud) ---
       const numParticles = 5000
       const sphereRadius = 5
@@ -911,6 +1010,17 @@ export function ThreeScene() {
           starPositions.setZ(i, z)
         }
         starPositions.needsUpdate = true
+
+        // Animate easter egg texts (drift with stars)
+        textSprites.forEach(sprite => {
+          sprite.position.z += starSpeed
+          if (sprite.position.z > 2000) {
+            sprite.position.z -= 4000
+            // Randomize X/Y again when wrapping for variety
+            sprite.position.x = THREE.MathUtils.randFloatSpread(1500)
+            sprite.position.y = THREE.MathUtils.randFloatSpread(1500)
+          }
+        })
 
         renderer.render(scene, camera)
 
