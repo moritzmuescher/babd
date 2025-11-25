@@ -514,9 +514,9 @@ export function ThreeScene() {
 
       // Tunables
       const influenceRadius = 4.5
-      const strength = 1.1
-      const hoverReach = 15.0       // how far outside still influences (world)
-      const maxOutward = 8.0        // max outward offset (world)
+      const strength = 0.6
+      const hoverReach = 40.0       // how far outside still influences (world)
+      const maxOutward = 5.0        // max outward offset (world)
       const tentSharpness = 1.0     // triangular peak sharpness
 
       // Press-to-compress tunables
@@ -565,13 +565,13 @@ export function ThreeScene() {
         globalCursorX = e.clientX
         globalCursorY = e.clientY
         hasCursorMoved = true
-      }
 
-      function onPointerMove(e: PointerEvent) {
-        const rect = renderer.domElement.getBoundingClientRect()
-        ndc.x = ((e.clientX - rect.left) / rect.width) * 2 - 1
-        ndc.y = -((e.clientY - rect.top) / rect.height) * 2 + 1
-        pointerActive = true
+        if (renderer && renderer.domElement) {
+          const rect = renderer.domElement.getBoundingClientRect()
+          ndc.x = ((e.clientX - rect.left) / rect.width) * 2 - 1
+          ndc.y = -((e.clientY - rect.top) / rect.height) * 2 + 1
+          pointerActive = true
+        }
 
         // Track drag velocity if dragging the planet
         if (isDraggingPlanet) {
@@ -626,8 +626,7 @@ export function ThreeScene() {
       }
 
       window.addEventListener("pointermove", onGlobalPointerMove)
-      renderer.domElement.addEventListener("pointermove", onPointerMove)
-      renderer.domElement.addEventListener("pointerleave", onPointerLeave)
+      document.addEventListener("pointerleave", onPointerLeave)
       renderer.domElement.addEventListener("pointerdown", onPointerDown)
       window.addEventListener("pointerup", onPointerUp)
 
@@ -673,7 +672,7 @@ export function ThreeScene() {
           vSurface.copy(vCenterW).addScaledVector(vDir, sphereRadius)
         }
 
-        const withinHover = d <= sphereRadius + hoverReach
+        const withinHover = d <= sphereRadius + 2000.0 // Active over whole site
         magnetActive = withinHover || !!hit
 
         const u = Math.max(0, Math.min(1, (d - sphereRadius) / hoverReach))
@@ -1054,8 +1053,7 @@ export function ThreeScene() {
       return () => {
         window.removeEventListener("resize", handleResize)
         window.removeEventListener("pointermove", onGlobalPointerMove)
-        renderer.domElement.removeEventListener("pointermove", onPointerMove)
-        renderer.domElement.removeEventListener("pointerleave", onPointerLeave)
+        document.removeEventListener("pointerleave", onPointerLeave)
         renderer.domElement.removeEventListener("pointerdown", onPointerDown)
         window.removeEventListener("pointerup", onPointerUp)
         renderer.domElement.removeEventListener("wheel", onWheel)
