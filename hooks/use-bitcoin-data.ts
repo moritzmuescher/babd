@@ -31,6 +31,13 @@ export function useRecentBlocks() {
     queryKey: ["recentBlocks"],
     queryFn: async () => {
       const blocks = await MempoolAPI.getRecentBlocks()
+      // Fetch one more batch of older blocks immediately to ensure we have enough for the wider view
+      if (blocks.length > 0) {
+        const oldestHeight = blocks[blocks.length - 1].height
+        const olderBlocks = await MempoolAPI.getBlocksFromHeight(oldestHeight - 1)
+        // Add just a few more to fill the gap (e.g. 5 more)
+        blocks.push(...olderBlocks.slice(0, 5))
+      }
       return MempoolAPI.getBlocksWithWeights(blocks)
     },
     refetchInterval: 120000, // Refetch every 2 minutes (WebSocket provides real-time updates)

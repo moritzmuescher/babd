@@ -252,195 +252,190 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
 
   return (
     <>
-      <div className="absolute top-20 md:top-32 left-0 right-0 w-full z-10">
-        <Card className="bg-transparent border-transparent shadow-none relative">
-          {/* Left Fade Overlay (Desktop Only) */}
-          <div className="absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-black/50 to-transparent z-20 hidden md:block pointer-events-none" />
-          {/* Right Fade Overlay (Desktop Only) */}
-          <div className="absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-black/50 to-transparent z-20 hidden md:block pointer-events-none" />
-          <div
-            ref={scrollRef}
-            className="flex overflow-x-auto p-4 space-x-4 no-scrollbar select-none items-center"
-            style={{ direction: "ltr", cursor: isDragging ? "grabbing" : "grab", scrollbarWidth: "none", msOverflowStyle: "none" }}
-            onPointerDown={(e) => {
-              const root = scrollRef.current
-              if (!root) return
-              isPointerDown.current = true
-              hasDragged.current = false
-              setIsDragging(false)
-              startX.current = e.clientX
-              startScrollLeft.current = root.scrollLeft
-            }}
-            onPointerMove={(e) => {
-              const root = scrollRef.current
-              if (!root || !isPointerDown.current) return
-              const dx = e.clientX - startX.current
-              if (!hasDragged.current && Math.abs(dx) < dragThreshold) {
-                // If not dragging yet, just update mouse position for magnification
-                if (!throttleTimeoutRef.current) { // Only update if not currently throttled
-                  if (mouseMoveAnimationFrameRef.current) {
-                    cancelAnimationFrame(mouseMoveAnimationFrameRef.current);
+      <div className="absolute top-20 md:top-32 left-1/2 -translate-x-1/2 w-[120vw] z-10">
+        <div className="hud-panel-top">
+          <Card className="bg-transparent border-transparent shadow-none relative">
+            <div
+              ref={scrollRef}
+              className="flex overflow-x-auto pl-4 py-4 pr-32 space-x-4 no-scrollbar select-none items-center"
+              style={{ direction: "ltr", cursor: isDragging ? "grabbing" : "grab", scrollbarWidth: "none", msOverflowStyle: "none" }}
+              onPointerDown={(e) => {
+                const root = scrollRef.current
+                if (!root) return
+                isPointerDown.current = true
+                hasDragged.current = false
+                setIsDragging(false)
+                startX.current = e.clientX
+                startScrollLeft.current = root.scrollLeft
+              }}
+              onPointerMove={(e) => {
+                const root = scrollRef.current
+                if (!root || !isPointerDown.current) return
+                const dx = e.clientX - startX.current
+                if (!hasDragged.current && Math.abs(dx) < dragThreshold) {
+                  // If not dragging yet, just update mouse position for magnification
+                  if (!throttleTimeoutRef.current) { // Only update if not currently throttled
+                    if (mouseMoveAnimationFrameRef.current) {
+                      cancelAnimationFrame(mouseMoveAnimationFrameRef.current);
+                    }
+                    mouseMoveAnimationFrameRef.current = requestAnimationFrame(() => {
+                      setMousePositionX(e.clientX);
+                      setContainerLeft(root.getBoundingClientRect().left);
+                      throttleTimeoutRef.current = window.setTimeout(() => {
+                        throttleTimeoutRef.current = null;
+                      }, throttleInterval);
+                    });
                   }
-                  mouseMoveAnimationFrameRef.current = requestAnimationFrame(() => {
-                    setMousePositionX(e.clientX);
-                    setContainerLeft(root.getBoundingClientRect().left);
-                    throttleTimeoutRef.current = window.setTimeout(() => {
-                      throttleTimeoutRef.current = null;
-                    }, throttleInterval);
-                  });
+                  return;
                 }
-                return;
-              }
-              hasDragged.current = true
-              setIsDragging(true)
-              let next = startScrollLeft.current - dx
-              const max = root.scrollWidth - root.clientWidth
-              if (next < 0) next = 0
-              if (next > max) next = max
-              root.scrollLeft = next
-            }}
-            onPointerUp={() => {
-              isPointerDown.current = false
-              setIsDragging(false)
-              setMousePositionX(null); // Reset mouse position on pointer up
-              if (mouseMoveAnimationFrameRef.current) {
-                cancelAnimationFrame(mouseMoveAnimationFrameRef.current);
-                mouseMoveAnimationFrameRef.current = null;
-              }
-              if (throttleTimeoutRef.current) { // Clear throttle on pointer up
-                clearTimeout(throttleTimeoutRef.current);
-                throttleTimeoutRef.current = null;
-              }
-            }}
-            onPointerLeave={() => {
-              isPointerDown.current = false
-              setIsDragging(false)
-              setMousePositionX(null); // Reset mouse position on pointer leave
-              if (mouseMoveAnimationFrameRef.current) {
-                cancelAnimationFrame(mouseMoveAnimationFrameRef.current);
-                mouseMoveAnimationFrameRef.current = null;
-              }
-              if (throttleTimeoutRef.current) { // Clear throttle on pointer leave
-                clearTimeout(throttleTimeoutRef.current);
-                throttleTimeoutRef.current = null;
-              }
-            }}
-            onMouseMove={(e) => {
-              if (!isPointerDown.current) { // Only update mouse position if not dragging
-                if (!throttleTimeoutRef.current) { // Only update if not currently throttled
-                  if (mouseMoveAnimationFrameRef.current) {
-                    cancelAnimationFrame(mouseMoveAnimationFrameRef.current);
+                hasDragged.current = true
+                setIsDragging(true)
+                let next = startScrollLeft.current - dx
+                const max = root.scrollWidth - root.clientWidth
+                if (next < 0) next = 0
+                if (next > max) next = max
+                root.scrollLeft = next
+              }}
+              onPointerUp={() => {
+                isPointerDown.current = false
+                setIsDragging(false)
+                setMousePositionX(null); // Reset mouse position on pointer up
+                if (mouseMoveAnimationFrameRef.current) {
+                  cancelAnimationFrame(mouseMoveAnimationFrameRef.current);
+                  mouseMoveAnimationFrameRef.current = null;
+                }
+                if (throttleTimeoutRef.current) { // Clear throttle on pointer up
+                  clearTimeout(throttleTimeoutRef.current);
+                  throttleTimeoutRef.current = null;
+                }
+              }}
+              onPointerLeave={() => {
+                isPointerDown.current = false
+                setIsDragging(false)
+                setMousePositionX(null); // Reset mouse position on pointer leave
+                if (mouseMoveAnimationFrameRef.current) {
+                  cancelAnimationFrame(mouseMoveAnimationFrameRef.current);
+                  mouseMoveAnimationFrameRef.current = null;
+                }
+                if (throttleTimeoutRef.current) { // Clear throttle on pointer leave
+                  clearTimeout(throttleTimeoutRef.current);
+                  throttleTimeoutRef.current = null;
+                }
+              }}
+              onMouseMove={(e) => {
+                if (!isPointerDown.current) { // Only update mouse position if not dragging
+                  if (!throttleTimeoutRef.current) { // Only update if not currently throttled
+                    if (mouseMoveAnimationFrameRef.current) {
+                      cancelAnimationFrame(mouseMoveAnimationFrameRef.current);
+                    }
+                    mouseMoveAnimationFrameRef.current = requestAnimationFrame(() => {
+                      setMousePositionX(e.clientX);
+                      setContainerLeft(scrollRef.current?.getBoundingClientRect().left || 0);
+                      throttleTimeoutRef.current = window.setTimeout(() => {
+                        throttleTimeoutRef.current = null;
+                      }, throttleInterval);
+                    });
                   }
-                  mouseMoveAnimationFrameRef.current = requestAnimationFrame(() => {
-                    setMousePositionX(e.clientX);
-                    setContainerLeft(scrollRef.current?.getBoundingClientRect().left || 0);
-                    throttleTimeoutRef.current = window.setTimeout(() => {
-                      throttleTimeoutRef.current = null;
-                    }, throttleInterval);
-                  });
                 }
-              }
-            }}
-          >
-            <style jsx>{`
+              }}
+            >
+              <style jsx>{`
               .no-scrollbar::-webkit-scrollbar { display: none; }
             `}</style>
 
-            <div className="flex space-x-4" style={{ direction: "ltr" }}>
-              {/* Left spacer to center current block at left cap */}
-              <div style={{ width: `${leftPadPx}px`, flex: "0 0 auto" }} />
-              {/* Future projected blocks group */}
-              <motion.div ref={projectedGroupRef} className="flex space-x-4" layout>
-                <AnimatePresence mode="popLayout" initial={false}>
-                  {/* Future projected blocks - rightmost, reversed order */}
-                  {projectedBlocks
-                    .slice()
-                    .reverse()
-                    .map((proj, index) => {
+              <div className="flex space-x-4" style={{ direction: "ltr" }}>
+                {/* Left spacer to center current block at left cap */}
+                <div style={{ width: `${leftPadPx}px`, flex: "0 0 auto" }} />
+                {/* Future projected blocks group */}
+                <motion.div ref={projectedGroupRef} className="flex space-x-4" layout>
+                  <AnimatePresence mode="popLayout" initial={false}>
+                    {/* Future projected blocks - rightmost, reversed order */}
+                    {projectedBlocks
+                      .slice()
+                      .reverse()
+                      .map((proj, index) => {
+                        const blockWidth = 100; // min-w-[100px]
+                        const blockMargin = 16; // space-x-4 (4 * 4px = 16px)
+                        const blockCenterXRelativeToProjectedGroup = (index * (blockWidth + blockMargin)) + (blockWidth / 2);
+                        const blockCenterXRelativeToScrollRef = projectedGroupOffsetLeft.current + blockCenterXRelativeToProjectedGroup;
+
+                        const { scale, zIndex } = getBlockScaleAndZIndex(blockCenterXRelativeToScrollRef);
+
+                        const futureHeight = currentHeight + (projectedBlocks.length - index);
+                        return (
+                          <motion.div
+                            key={proj.nTx + "-" + index}
+                            layout
+                            initial={{ opacity: 0, scale: 0.8, x: -20 }}
+                            animate={{ opacity: 1, scale: 1, x: 0 }}
+                            exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2 } }}
+                            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                          >
+                            <BlockItem
+                              block={proj}
+                              currentHeight={currentHeight}
+                              isProjected={true}
+                              scale={scale}
+                              zIndex={zIndex}
+                              onClick={(projBlock) => handleProjectedBlockClick(projBlock as ProjectedBlock, index)}
+                              formatTimeAgo={formatTimeAgo}
+                              getEstimatedTime={getEstimatedTime}
+                              getAverageFeeRate={getAverageFeeRate}
+                              getInterpolatedFeeColor={getInterpolatedFeeColor}
+                              index={index}
+                              futureHeight={futureHeight} // New prop
+                            />
+                          </motion.div>
+                        )
+                      })}
+                  </AnimatePresence>
+                </motion.div>
+                {/* Past blocks group */}
+                <motion.div ref={blocksGroupRef} className="flex space-x-4" layout>
+                  <AnimatePresence mode="popLayout" initial={false}>
+                    {/* Past blocks - newest to oldest (right to left) */}
+                    {blocks.map((block, index) => {
                       const blockWidth = 100; // min-w-[100px]
                       const blockMargin = 16; // space-x-4 (4 * 4px = 16px)
-                      const blockCenterXRelativeToProjectedGroup = (index * (blockWidth + blockMargin)) + (blockWidth / 2);
-                      const blockCenterXRelativeToScrollRef = projectedGroupOffsetLeft.current + blockCenterXRelativeToProjectedGroup;
+                      const blockCenterXRelativeToBlocksGroup = (index * (blockWidth + blockMargin)) + (blockWidth / 2);
+                      const blockCenterXRelativeToScrollRef = blocksGroupOffsetLeft.current + blockCenterXRelativeToBlocksGroup;
 
                       const { scale, zIndex } = getBlockScaleAndZIndex(blockCenterXRelativeToScrollRef);
 
-                      const futureHeight = currentHeight + (projectedBlocks.length - index);
                       return (
                         <motion.div
-                          key={proj.nTx + "-" + index}
+                          key={block.height}
                           layout
-                          initial={{ opacity: 0, scale: 0.8, x: -20 }}
+                          initial={{ opacity: 0, scale: 0.8, x: 20 }}
                           animate={{ opacity: 1, scale: 1, x: 0 }}
                           exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2 } }}
                           transition={{ type: "spring", stiffness: 300, damping: 25 }}
                         >
                           <BlockItem
-                            block={proj}
+                            block={block}
                             currentHeight={currentHeight}
-                            isProjected={true}
+                            isProjected={false}
                             scale={scale}
                             zIndex={zIndex}
-                            onClick={(projBlock) => handleProjectedBlockClick(projBlock as ProjectedBlock, index)}
+                            onClick={handleBlockClick}
                             formatTimeAgo={formatTimeAgo}
                             getEstimatedTime={getEstimatedTime}
                             getAverageFeeRate={getAverageFeeRate}
                             getInterpolatedFeeColor={getInterpolatedFeeColor}
                             index={index}
-                            futureHeight={futureHeight} // New prop
                           />
                         </motion.div>
                       )
                     })}
-                </AnimatePresence>
-              </motion.div>
-              {/* Past blocks group */}
-              <motion.div ref={blocksGroupRef} className="flex space-x-4" layout>
-                <AnimatePresence mode="popLayout" initial={false}>
-                  {/* Past blocks - newest to oldest (right to left) */}
-                  {blocks.map((block, index) => {
-                    const blockWidth = 100; // min-w-[100px]
-                    const blockMargin = 16; // space-x-4 (4 * 4px = 16px)
-                    const blockCenterXRelativeToBlocksGroup = (index * (blockWidth + blockMargin)) + (blockWidth / 2);
-                    const blockCenterXRelativeToScrollRef = blocksGroupOffsetLeft.current + blockCenterXRelativeToBlocksGroup;
+                  </AnimatePresence>
+                </motion.div>
+              </div>
+              {/* Sentinel for older blocks (right edge) */}
+              <div ref={olderSentinelRef} className="w-px h-1" />
 
-                    const { scale, zIndex } = getBlockScaleAndZIndex(blockCenterXRelativeToScrollRef);
-
-                    return (
-                      <motion.div
-                        key={block.height}
-                        layout
-                        initial={{ opacity: 0, scale: 0.8, x: 20 }}
-                        animate={{ opacity: 1, scale: 1, x: 0 }}
-                        exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2 } }}
-                        transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                      >
-                        <BlockItem
-                          block={block}
-                          currentHeight={currentHeight}
-                          isProjected={false}
-                          scale={scale}
-                          zIndex={zIndex}
-                          onClick={handleBlockClick}
-                          formatTimeAgo={formatTimeAgo}
-                          getEstimatedTime={getEstimatedTime}
-                          getAverageFeeRate={getAverageFeeRate}
-                          getInterpolatedFeeColor={getInterpolatedFeeColor}
-                          index={index}
-                        />
-                      </motion.div>
-                    )
-                  })}
-                </AnimatePresence>
-              </motion.div>
             </div>
-            {/* Sentinel for older blocks (right edge) */}
-            <div ref={olderSentinelRef} className="w-px h-1" />
-
-            {/* Sentinel for older blocks (right edge in LTR) */}
-            <div ref={olderSentinelRef} className="w-px h-1" />
-
-          </div>
-        </Card>
+          </Card>
+        </div>
       </div>
 
       {/* Block Details Modal for existing blocks */}

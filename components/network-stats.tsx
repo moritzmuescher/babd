@@ -54,9 +54,22 @@ export function NetworkStats() {
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
       >
-        {isDesktop ? (
-          <CyberBrackets>
-            <Card className="frosted-glass scanline-container p-4 hover:bg-orange-500/10 transition-colors">
+        <div className="hud-panel-left">
+          {isDesktop ? (
+            <CyberBrackets>
+              <Card className="frosted-glass scanline-container p-4 hover:bg-orange-500/10 transition-colors">
+                <StatsContent
+                  difficultyData={difficultyData}
+                  halvingData={halvingData}
+                  baseProgress={baseProgress}
+                  isAhead={isAhead}
+                  extensionPercent={extensionPercent}
+                  onOpenMiningModal={() => setIsMiningModalOpen(true)}
+                />
+              </Card>
+            </CyberBrackets>
+          ) : (
+            <Card className="frosted-glass p-2 hover:bg-orange-500/10 transition-colors">
               <StatsContent
                 difficultyData={difficultyData}
                 halvingData={halvingData}
@@ -66,19 +79,8 @@ export function NetworkStats() {
                 onOpenMiningModal={() => setIsMiningModalOpen(true)}
               />
             </Card>
-          </CyberBrackets>
-        ) : (
-          <Card className="frosted-glass p-2 hover:bg-orange-500/10 transition-colors">
-            <StatsContent
-              difficultyData={difficultyData}
-              halvingData={halvingData}
-              baseProgress={baseProgress}
-              isAhead={isAhead}
-              extensionPercent={extensionPercent}
-              onOpenMiningModal={() => setIsMiningModalOpen(true)}
-            />
-          </Card>
-        )}
+          )}
+        </div>
       </motion.div>
 
       <NetworkStatsModal

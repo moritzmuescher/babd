@@ -85,6 +85,7 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "tnum";
@@ -118,49 +119,70 @@
   width: 6px;
   height: 6px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
   background: rgba(249, 115, 22, 0.5);
   border-radius: 3px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(249, 115, 22, 0.7);
 }
 
 /* Search bar glow */
 @keyframes borderGlow {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
 }
+
 @keyframes pulse {
-  0%, 100% { box-shadow: 0 0 20px rgba(249, 115, 22, 0.3); }
-  50% { box-shadow: 0 0 30px rgba(249, 115, 22, 0.6); }
+
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(249, 115, 22, 0.3);
+  }
+
+  50% {
+    box-shadow: 0 0 30px rgba(249, 115, 22, 0.6);
+  }
 }
+
 .search-bar-glow {
   position: relative;
-  background: linear-gradient(
-    45deg,
-    rgba(249, 115, 22, 0.8),
-    rgba(251, 191, 36, 0.8),
-    rgba(249, 115, 22, 0.8),
-    rgba(251, 191, 36, 0.8)
-  );
+  background: linear-gradient(45deg,
+      rgba(249, 115, 22, 0.8),
+      rgba(251, 191, 36, 0.8),
+      rgba(249, 115, 22, 0.8),
+      rgba(251, 191, 36, 0.8));
   background-size: 200% 200%;
   animation: borderGlow 8s ease-in-out infinite;
   border-radius: 0.75rem;
   padding: 2px;
 }
+
 .search-bar-inner {
   background: rgba(0, 0, 0, 0.8);
   border-radius: 0.625rem;
   backdrop-filter: blur(12px);
 }
+
 .search-bar-container:hover .search-bar-glow {
   animation: borderGlow 6s ease-in-out infinite, pulse 4s ease-in-out infinite;
 }
+
 .search-input-glow:focus {
   box-shadow: 0 0 15px rgba(249, 115, 22, 0.4);
   border-color: rgba(249, 115, 22, 0.8);
@@ -209,7 +231,8 @@
   width: 20px;
   height: 20px;
   border-color: rgba(249, 115, 22, 0.9);
-  box-shadow: 0 0 10px rgba(249, 115, 22, 0.5);
+  filter: drop-shadow(0 0 8px rgba(249, 115, 22, 0.5));
+  box-shadow: none;
 }
 
 /* Inner wrapper for bottom corners */
@@ -253,7 +276,8 @@
   width: 20px;
   height: 20px;
   border-color: rgba(249, 115, 22, 0.9);
-  box-shadow: 0 0 10px rgba(249, 115, 22, 0.5);
+  filter: drop-shadow(0 0 8px rgba(249, 115, 22, 0.5));
+  box-shadow: none;
 }
 
 /* Height-responsive scaling for side panels */
@@ -269,6 +293,7 @@
 
 /* Progressive scaling based on viewport height */
 @media (max-height: 900px) {
+
   .height-responsive-scale,
   .height-responsive-scale-right {
     transform: scale(0.95);
@@ -276,6 +301,7 @@
 }
 
 @media (max-height: 850px) {
+
   .height-responsive-scale,
   .height-responsive-scale-right {
     transform: scale(0.9);
@@ -283,6 +309,7 @@
 }
 
 @media (max-height: 800px) {
+
   .height-responsive-scale,
   .height-responsive-scale-right {
     transform: scale(0.85);
@@ -290,6 +317,7 @@
 }
 
 @media (max-height: 750px) {
+
   .height-responsive-scale,
   .height-responsive-scale-right {
     transform: scale(0.8);
@@ -297,6 +325,7 @@
 }
 
 @media (max-height: 700px) {
+
   .height-responsive-scale,
   .height-responsive-scale-right {
     transform: scale(0.75);
@@ -304,6 +333,7 @@
 }
 
 @media (max-height: 650px) {
+
   .height-responsive-scale,
   .height-responsive-scale-right {
     transform: scale(0.7);
@@ -311,6 +341,7 @@
 }
 
 @media (max-height: 600px) {
+
   .height-responsive-scale,
   .height-responsive-scale-right {
     transform: scale(0.65);
@@ -319,21 +350,27 @@
 
 /* Holographic Border Effect */
 @keyframes holographicShift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 .holographic-border {
   position: relative;
   border-radius: 0.5rem;
-  background: linear-gradient(
-    90deg,
-    rgba(249, 115, 22, 0.3),
-    rgba(59, 130, 246, 0.3),
-    rgba(147, 51, 234, 0.3),
-    rgba(249, 115, 22, 0.3)
-  );
+  background: linear-gradient(90deg,
+      rgba(249, 115, 22, 0.3),
+      rgba(59, 130, 246, 0.3),
+      rgba(147, 51, 234, 0.3),
+      rgba(249, 115, 22, 0.3));
   background-size: 300% 100%;
   animation: holographicShift 6s ease infinite;
   padding: 1px;
@@ -347,19 +384,22 @@
 
 /* Shimmer Loading Effect */
 @keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 .shimmer {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.1) 50%,
-    rgba(255, 255, 255, 0) 100%
-  );
+  background: linear-gradient(90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.1) 50%,
+      rgba(255, 255, 255, 0) 100%);
   background-size: 200% 100%;
   animation: shimmer 2s infinite;
 }
@@ -376,26 +416,27 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(249, 115, 22, 0.2) 50%,
-    transparent 100%
-  );
+  background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(249, 115, 22, 0.2) 50%,
+      transparent 100%);
   animation: shimmer 2s infinite;
 }
 
 /* Pulse Glow Animation */
 @keyframes pulseGlow {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 0 20px rgba(249, 115, 22, 0.3),
-                0 0 40px rgba(249, 115, 22, 0.1),
-                inset 0 0 10px rgba(249, 115, 22, 0.1);
+      0 0 40px rgba(249, 115, 22, 0.1),
+      inset 0 0 10px rgba(249, 115, 22, 0.1);
   }
+
   50% {
     box-shadow: 0 0 30px rgba(249, 115, 22, 0.6),
-                0 0 60px rgba(249, 115, 22, 0.2),
-                inset 0 0 20px rgba(249, 115, 22, 0.2);
+      0 0 60px rgba(249, 115, 22, 0.2),
+      inset 0 0 20px rgba(249, 115, 22, 0.2);
   }
 }
 
@@ -405,14 +446,17 @@
 
 /* Current Block Indicator Pulse */
 @keyframes currentBlockPulse {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 0 20px rgba(59, 130, 246, 0.4),
-                0 0 40px rgba(59, 130, 246, 0.2);
+      0 0 40px rgba(59, 130, 246, 0.2);
     border-color: rgba(59, 130, 246, 0.6);
   }
+
   50% {
     box-shadow: 0 0 30px rgba(59, 130, 246, 0.8),
-                0 0 60px rgba(59, 130, 246, 0.4);
+      0 0 60px rgba(59, 130, 246, 0.4);
     border-color: rgba(59, 130, 246, 1);
   }
 }
@@ -429,13 +473,18 @@
 .hover-lift:hover {
   transform: translateY(-4px);
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4),
-              0 0 20px rgba(249, 115, 22, 0.2);
+    0 0 20px rgba(249, 115, 22, 0.2);
 }
 
 /* Scanline Effect */
 @keyframes scanline {
-  0% { transform: translateY(-100%); }
-  100% { transform: translateY(100%); }
+  0% {
+    transform: translateY(-100%);
+  }
+
+  100% {
+    transform: translateY(100%);
+  }
 }
 
 .scanline-container {
@@ -450,12 +499,10 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(
-    to bottom,
-    transparent 0%,
-    rgba(249, 115, 22, 0.1) 50%,
-    transparent 100%
-  );
+  background: linear-gradient(to bottom,
+      transparent 0%,
+      rgba(249, 115, 22, 0.1) 50%,
+      transparent 100%);
   pointer-events: none;
   z-index: 10;
   animation: scanline 4s linear infinite;
@@ -469,22 +516,18 @@
 
 /* Purple scanline effect for past blocks (blue) */
 .scanline-container-block-past::before {
-  background: linear-gradient(
-    to bottom,
-    transparent 0%,
-    rgba(168, 85, 247, 0.4) 50%,
-    transparent 100%
-  );
+  background: linear-gradient(to bottom,
+      transparent 0%,
+      rgba(168, 85, 247, 0.4) 50%,
+      transparent 100%);
 }
 
 /* Green-yellowish scanline effect for future blocks (projected/mempool) */
 .scanline-container-block-future::before {
-  background: linear-gradient(
-    to bottom,
-    transparent 0%,
-    rgba(132, 204, 22, 0.4) 50%,
-    transparent 100%
-  );
+  background: linear-gradient(to bottom,
+      transparent 0%,
+      rgba(132, 204, 22, 0.4) 50%,
+      transparent 100%);
 }
 
 /* Always show scanline on current block */
@@ -494,8 +537,15 @@
 
 /* Number Counter Animation */
 @keyframes numberRoll {
-  0% { transform: translateY(100%); opacity: 0; }
-  100% { transform: translateY(0); opacity: 1; }
+  0% {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .number-roll {
@@ -505,9 +555,19 @@
 
 /* Terminal Text Reveal */
 @keyframes terminalReveal {
-  0% { width: 0; opacity: 0; }
-  1% { opacity: 1; }
-  100% { width: 100%; opacity: 1; }
+  0% {
+    width: 0;
+    opacity: 0;
+  }
+
+  1% {
+    opacity: 1;
+  }
+
+  100% {
+    width: 100%;
+    opacity: 1;
+  }
 }
 
 .terminal-reveal {
@@ -546,12 +606,10 @@
   position: absolute;
   inset: -2px;
   border-radius: inherit;
-  background: linear-gradient(
-    45deg,
-    rgba(249, 115, 22, 0.5),
-    rgba(251, 191, 36, 0.5),
-    rgba(249, 115, 22, 0.5)
-  );
+  background: linear-gradient(45deg,
+      rgba(249, 115, 22, 0.5),
+      rgba(251, 191, 36, 0.5),
+      rgba(249, 115, 22, 0.5));
   opacity: 0;
   z-index: -1;
   filter: blur(10px);
@@ -564,7 +622,9 @@
 
 /* Progress Ring */
 @keyframes progressRing {
-  0% { stroke-dashoffset: 283; }
+  0% {
+    stroke-dashoffset: 283;
+  }
 }
 
 .progress-ring-circle {
@@ -580,13 +640,11 @@
   left: 0;
   width: 100%;
   height: 2px;
-  background: linear-gradient(
-    to right,
-    transparent,
-    rgba(249, 115, 22, 0.3) 20%,
-    rgba(249, 115, 22, 0.3) 80%,
-    transparent
-  );
+  background: linear-gradient(to right,
+      transparent,
+      rgba(249, 115, 22, 0.3) 20%,
+      rgba(249, 115, 22, 0.3) 80%,
+      transparent);
   z-index: 0;
   pointer-events: none;
 }
@@ -603,12 +661,10 @@
   left: 50%;
   width: 4px;
   height: 100%;
-  background: linear-gradient(
-    to bottom,
-    transparent,
-    rgba(249, 115, 22, 0.5),
-    transparent
-  );
+  background: linear-gradient(to bottom,
+      transparent,
+      rgba(249, 115, 22, 0.5),
+      transparent);
   transform: translate(-50%, -50%);
   pointer-events: none;
 }
@@ -623,6 +679,7 @@
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -632,8 +689,8 @@
 /* Number Glow */
 .number-glow {
   text-shadow: 0 0 10px rgba(249, 115, 22, 0.5),
-               0 0 20px rgba(249, 115, 22, 0.3),
-               0 0 30px rgba(249, 115, 22, 0.2);
+    0 0 20px rgba(249, 115, 22, 0.3),
+    0 0 30px rgba(249, 115, 22, 0.2);
 }
 
 /* Frosted Glass Effect */
@@ -642,4 +699,38 @@
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid rgba(249, 115, 22, 0.2);
+}
+
+/* HUD Perspective Effects */
+.hud-panel-left {
+  transform: perspective(1200px) rotateY(20deg) translateZ(0);
+  transform-origin: left center;
+  transition: transform 0.3s ease;
+}
+
+.hud-panel-right {
+  transform: perspective(1200px) rotateY(-20deg) translateZ(0);
+  transform-origin: right center;
+  transition: transform 0.3s ease;
+}
+
+.hud-panel-top {
+  transform: perspective(1200px) rotateX(-20deg) translateZ(0);
+  transform-origin: center top;
+  transition: transform 0.3s ease;
+}
+
+.hud-panel-bottom {
+  transform: perspective(1200px) rotateX(20deg) translateZ(0);
+  transform-origin: center bottom;
+  transition: transform 0.3s ease;
+}
+
+/* Enhance hover effects to "straighten" or "pop" the panels */
+.hud-panel-left:hover,
+.hud-panel-right:hover,
+.hud-panel-top:hover,
+.hud-panel-bottom:hover {
+  transform: perspective(1200px) rotateY(0) rotateX(0) translateZ(20px) scale(1.02);
+  z-index: 50;
 }

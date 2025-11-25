@@ -5,20 +5,19 @@ import { Card } from "@/components/ui/card"
 export function SocialLink() {
   return (
     <div className="absolute right-4 top-[41rem] md:top-[40rem] z-10 hidden md:block">
-      <Card className="bg-black/50 border-orange-500/25 backdrop-blur-sm">
-        <a
-          href="https://x.com/babdcs"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block p-4 hover:bg-orange-500/10 transition-colors rounded-lg"
-        >
-          <img
-            src="/images/twitter.png"
-            alt="Follow @babdcs on X (Twitter)"
-            className="w-12 h-12 hover:opacity-80 transition-opacity"
-          />
-        </a>
-      </Card>
+      <div className="hud-panel-right">
+        <Card className="bg-black/30 border-orange-500/25 backdrop-blur-md p-2 hover:bg-orange-500/10 transition-colors cursor-pointer">
+          <a
+            href="https://x.com/babdcs"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2"
+          >
+            <img src="/images/twitter.png" alt="X logo" className="h-5 w-5" />
+            <span className="text-orange-400 text-xs font-medium">@babdcs</span>
+          </a>
+        </Card>
+      </div>
     </div>
   )
 }

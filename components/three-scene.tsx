@@ -100,35 +100,35 @@ export function ThreeScene() {
         "fix the money, fix the world",
         "21 Million",
         "tick tock, next block",
-        "cypherpunks write code",
         "Defund The State",
-        "fuck the state",
-        "open source everything",
+        "no state is the best state",
+        "Open-source everything",
         "21M / ∞",
-        "privacy is not a crime",
+        "Privacy is not a crime",
         "1 BTC = 1 BTC",
         "#EndTheFed",
         "#EndTheECB",
         "activism.net/cypherpunk/manifesto.html",
-        "run your own node",
-        "sound money",
-        "inflation is theft",
-        "cantillon was right",
-        "proof of work",
-        "taxation is armed robbery",
-        "the seperation of money and state",
+        "Run your own node!",
+        "Sound money",
+        "Inflation is theft",
+        "Cantillon was right",
+        "Proof of work",
+        "Taxation is armed robbery",
+        "The seperation of money and state",
         "DON'T TREAD ON ME",
-        "anarcho-capitalism is inevitable",
-        "read Rothbard",
-        "read Hoppe",
-        "bitcoin fixes this!",
-        "coinjoin your coins",
+        "Anarcho-capitalism is inevitable",
+        "Read Rothbard",
+        "Read Hoppe",
+        "Bitcoin fixes this!",
+        "Coinjoin your coins",
         "Cashu brings Chaumian dreams back",
-        "fuck KYC, use Cashu blind signatures",
+        "Non-KYC",
         "Black Markets Matter",
-        "practice Agorism",
-        "be the counter-economy",
-        "Regulate THIS!"
+        "Practice Agorism",
+        "Be the counter-economy",
+        "Regulate THIS!",
+        "Fuck your Shitcoin"
       ]
 
       const textSprites: any[] = []
@@ -513,10 +513,10 @@ export function ThreeScene() {
       let hasCursorMoved = false
 
       // Tunables
-      const influenceRadius = 1.6
-      const strength = 0.45
-      const hoverReach = 3.0        // how far outside still influences (world)
-      const maxOutward = 1.2        // max outward offset (world)
+      const influenceRadius = 4.5
+      const strength = 1.1
+      const hoverReach = 15.0       // how far outside still influences (world)
+      const maxOutward = 8.0        // max outward offset (world)
       const tentSharpness = 1.0     // triangular peak sharpness
 
       // Press-to-compress tunables
