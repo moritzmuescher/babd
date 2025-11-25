@@ -686,6 +686,184 @@
   }
 }
 
+
+
+.scanline-container:hover::before {
+  opacity: 1;
+}
+
+/* Purple scanline effect for past blocks (blue) */
+.scanline-container-block-past::before {
+  background: linear-gradient(to bottom,
+      transparent 0%,
+      rgba(168, 85, 247, 0.4) 50%,
+      transparent 100%);
+}
+
+/* Green-yellowish scanline effect for future blocks (projected/mempool) */
+.scanline-container-block-future::before {
+  background: linear-gradient(to bottom,
+      transparent 0%,
+      rgba(132, 204, 22, 0.4) 50%,
+      transparent 100%);
+}
+
+/* Always show scanline on current block */
+.current-block.scanline-container::before {
+  opacity: 1;
+}
+
+/* Number Counter Animation */
+@keyframes numberRoll {
+  0% {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.number-roll {
+  display: inline-block;
+  animation: numberRoll 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Terminal Text Reveal */
+@keyframes terminalReveal {
+  0% {
+    width: 0;
+    opacity: 0;
+  }
+
+  1% {
+    opacity: 1;
+  }
+
+  100% {
+    width: 100%;
+    opacity: 1;
+  }
+}
+
+.terminal-reveal {
+  overflow: hidden;
+  white-space: nowrap;
+  animation: terminalReveal 1s steps(40, end);
+}
+
+/* Depth of Field Blur */
+.dof-blur-near {
+  filter: blur(2px);
+  opacity: 0.7;
+  transition: all 0.3s ease;
+}
+
+.dof-blur-far {
+  filter: blur(3px);
+  opacity: 0.5;
+  transition: all 0.3s ease;
+}
+
+.dof-blur-near:hover,
+.dof-blur-far:hover {
+  filter: blur(0);
+  opacity: 1;
+}
+
+/* Card Glow on Hover */
+.card-glow {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.card-glow::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: linear-gradient(45deg,
+      rgba(249, 115, 22, 0.5),
+      rgba(251, 191, 36, 0.5),
+      rgba(249, 115, 22, 0.5));
+  opacity: 0;
+  z-index: -1;
+  filter: blur(10px);
+  transition: opacity 0.3s ease;
+}
+
+.card-glow:hover::before {
+  opacity: 1;
+}
+
+/* Progress Ring */
+@keyframes progressRing {
+  0% {
+    stroke-dashoffset: 283;
+  }
+}
+
+.progress-ring-circle {
+  transition: stroke-dashoffset 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+}
+
+/* Block Connection Line */
+.block-connection-line {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(to right,
+      transparent,
+      rgba(249, 115, 22, 0.3) 20%,
+      rgba(249, 115, 22, 0.3) 80%,
+      transparent);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Timeline Indicator */
+.timeline-indicator {
+  position: relative;
+}
+
+.timeline-indicator::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(to bottom,
+      transparent,
+      rgba(249, 115, 22, 0.5),
+      transparent);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+/* Smooth Page Transitions */
+.page-transition {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Number Glow */
 .number-glow {
   text-shadow: 0 0 10px rgba(249, 115, 22, 0.5),
@@ -696,30 +874,42 @@
 /* Frosted Glass Effect */
 .frosted-glass {
   background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(249, 115, 22, 0.2);
+}
+
+/* HUD Perspective Effects */
+.hud-panel-left {
+  transform: perspective(1000px) rotateY(25deg) translateZ(0);
+  transform-origin: left center;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .hud-panel-right {
-  transform: perspective(1200px) rotateY(-20deg) translateZ(0);
+  transform: perspective(1000px) rotateY(-25deg) translateZ(0);
   transform-origin: right center;
-  transition: transform 0.3s ease;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .hud-panel-top {
-  transform: perspective(1200px) rotateX(-20deg) translateZ(0);
+  transform: perspective(1000px) rotateX(-25deg) translateZ(0);
   transform-origin: center top;
-  transition: transform 0.3s ease;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .hud-panel-bottom {
-  transform: perspective(1200px) rotateX(20deg) translateZ(0);
+  transform: perspective(1000px) rotateX(25deg) translateZ(0);
   transform-origin: center bottom;
-  transition: transform 0.3s ease;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Enhance hover effects to "straighten" or "pop" the panels */
 .hud-panel-left:hover,
 .hud-panel-right:hover,
-.hud-panel-bottom:hover {
-  transform: perspective(1200px) rotateY(0) rotateX(0) translateZ(20px) scale(1.02);
+.hud-panel-bottom:hover,
+.hud-panel-top.interactive:hover {
+  transform: perspective(1000px) rotateY(0) rotateX(0) translateZ(20px) scale(1.05);
   z-index: 50;
+  filter: brightness(1.1);
 }

@@ -121,14 +121,14 @@ export function ThreeScene() {
         "Read Rothbard",
         "Read Hoppe",
         "Bitcoin fixes this!",
-        "Coinjoin your coins",
+        "Anonymize your coins",
         "Cashu brings Chaumian dreams back",
         "Non-KYC",
         "Black Markets Matter",
         "Practice Agorism",
         "Be the counter-economy",
         "Regulate THIS!",
-        "Fuck your Shitcoin"
+        "Don't impose democracy on me!"
       ]
 
       const textSprites: any[] = []

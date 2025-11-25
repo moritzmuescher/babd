@@ -48,7 +48,7 @@ export function StatsPanel({ blockHeight }: StatsPanelProps) {
     <>
       {/* Block Height - Center Top */}
       <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-30 hidden md:block">
-        <div className="hud-panel-top">
+        <div className="hud-panel-top interactive">
           <CyberBrackets>
             <Card
               className="frosted-glass scanline-container hover:bg-orange-500/10 transition-colors cursor-pointer"
