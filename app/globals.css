@@ -696,16 +696,6 @@
 /* Frosted Glass Effect */
 .frosted-glass {
   background: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(249, 115, 22, 0.2);
-}
-
-/* HUD Perspective Effects */
-.hud-panel-left {
-  transform: perspective(1200px) rotateY(20deg) translateZ(0);
-  transform-origin: left center;
-  transition: transform 0.3s ease;
 }
 
 .hud-panel-right {
@@ -729,7 +719,6 @@
 /* Enhance hover effects to "straighten" or "pop" the panels */
 .hud-panel-left:hover,
 .hud-panel-right:hover,
-.hud-panel-top:hover,
 .hud-panel-bottom:hover {
   transform: perspective(1200px) rotateY(0) rotateX(0) translateZ(20px) scale(1.02);
   z-index: 50;

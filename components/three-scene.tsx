@@ -589,6 +589,12 @@ export function ThreeScene() {
         controls.enabled = true // Re-enable camera controls
       }
 
+      function onMouseOut(e: MouseEvent) {
+        if (!e.relatedTarget) {
+          onPointerLeave()
+        }
+      }
+
       // PRESS-TO-COMPRESS: enable only if clicking the sphere surface
       function onPointerDown(e: PointerEvent) {
         const rect = renderer.domElement.getBoundingClientRect()
@@ -627,6 +633,7 @@ export function ThreeScene() {
 
       window.addEventListener("pointermove", onGlobalPointerMove)
       document.addEventListener("pointerleave", onPointerLeave)
+      document.addEventListener("mouseout", onMouseOut)
       renderer.domElement.addEventListener("pointerdown", onPointerDown)
       window.addEventListener("pointerup", onPointerUp)
 
@@ -1054,6 +1061,7 @@ export function ThreeScene() {
         window.removeEventListener("resize", handleResize)
         window.removeEventListener("pointermove", onGlobalPointerMove)
         document.removeEventListener("pointerleave", onPointerLeave)
+        document.removeEventListener("mouseout", onMouseOut)
         renderer.domElement.removeEventListener("pointerdown", onPointerDown)
         window.removeEventListener("pointerup", onPointerUp)
         renderer.domElement.removeEventListener("wheel", onWheel)
