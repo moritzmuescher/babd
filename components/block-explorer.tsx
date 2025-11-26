@@ -134,6 +134,41 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
     }
   }, [blocks, projectedBlocks, leftPadPx]); // Recalculate if blocks or padding changes
 
+  const minScrollLeft = useRef(0)
+
+  // Calculate left padding and min scroll to center the current block at the limit
+  useEffect(() => {
+    const calculateLayout = () => {
+      if (scrollRef.current && projectedGroupRef.current && blocksGroupRef.current) {
+        const containerWidth = scrollRef.current.clientWidth
+        const projectedWidth = projectedGroupRef.current.offsetWidth
+
+        // Get current block width (first child of blocks group)
+        const currentBlockNode = blocksGroupRef.current.firstElementChild
+        const currentBlockWidth = currentBlockNode ? (currentBlockNode as HTMLElement).offsetWidth : 100
+
+        // Calculate distance from content start to center of current block
+        // Structure: [Padding 16px] [Spacer] --16px--> [ProjectedGroup] --16px--> [BlocksGroup(CurrentBlock...)]
+        // Note: space-x-4 adds 16px gap between flex items. pl-4 adds 16px padding.
+        const baseDist = 16 + 16 + projectedWidth + 16 + (currentBlockWidth / 2)
+
+        const targetPadding = (containerWidth / 2) - baseDist
+
+        if (targetPadding > 0) {
+          setLeftPadPx(targetPadding)
+          minScrollLeft.current = 0
+        } else {
+          setLeftPadPx(0)
+          minScrollLeft.current = -targetPadding // Positive value
+        }
+      }
+    }
+
+    calculateLayout()
+    window.addEventListener('resize', calculateLayout)
+    return () => window.removeEventListener('resize', calculateLayout)
+  }, [projectedBlocks, blocks])
+
   // Center the view on the current block
   useEffect(() => {
     if (scrollRef.current && !isInitialCenteringDone.current) {
@@ -147,9 +182,7 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
         isInitialCenteringDone.current = true
       }
     }
-  }, [blocks, projectedBlocks])
-  // Removed dedicated useEffect for scroll listener
-  // useEffect(() => { ... }, [...])
+  }, [blocks, projectedBlocks, leftPadPx]) // Added leftPadPx dependency
 
   const formatTimeAgo = (timestamp: number) => {
     const now = Date.now()
@@ -292,7 +325,8 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
                 setIsDragging(true)
                 let next = startScrollLeft.current - dx
                 const max = root.scrollWidth - root.clientWidth
-                if (next < 0) next = 0
+                // Clamp to minScrollLeft to prevent scrolling past current block center
+                if (next < minScrollLeft.current) next = minScrollLeft.current
                 if (next > max) next = max
                 root.scrollLeft = next
               }}
