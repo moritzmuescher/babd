@@ -6,7 +6,7 @@ import { ThreeScene } from "@/components/three-scene"
 import { StatsPanel } from "@/components/stats-panel"
 import { BlockExplorer } from "@/components/block-explorer"
 import { SearchModal } from "@/components/search-modal"
-import { DonationQR } from "@/components/donation-qr"
+import { CashuDonation } from "@/components/cashu-donation"
 
 import { SearchBar } from "@/components/search-bar"
 import { NetworkStats } from "@/components/network-stats"
@@ -59,8 +59,8 @@ export default function Home({ initialQuery }: { initialQuery?: string }) {
       {/* Search Bar */}
       <SearchBar />
 
-      {/* Donation QR */}
-      <DonationQR />
+      {/* Cashu Lightning Donation */}
+      <CashuDonation />
 
       {/* Search Modal */}
       <SearchModal isOpen={isSearchOpen} onClose={() => router.push("/")} query={searchQuery} />

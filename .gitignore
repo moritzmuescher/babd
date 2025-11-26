@@ -37,3 +37,6 @@ pids/
 *.seed
 *.pid.lock
 nul
+
+# cashu donation tokens (contains sensitive data)
+cashu-tokens.json
