@@ -377,7 +377,7 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
                         const futureHeight = currentHeight + (projectedBlocks.length - index);
                         return (
                           <motion.div
-                            key={proj.nTx + "-" + index}
+                            key={`projected-${index}`}
                             ref={(el) => { if (el) itemsRef.current.set(itemId, el); else itemsRef.current.delete(itemId); }}
                             layout
                             initial={{ opacity: 0, scale: 0.8, x: -20 }}
