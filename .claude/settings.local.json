@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:docs.cashu.space)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:mint.minibits.cash)",
+      "WebFetch(domain:cashu-ts.dev)",
+      "WebFetch(domain:cashubtc.github.io)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(cat:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -36,7 +36,7 @@ interface Proof {
 
 export function CashuDonation() {
   // Main payment method
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("lightning")
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cashu")
 
   // Cashu-specific state
   const [cashuMode, setCashuMode] = useState<CashuMode>("select")
@@ -727,6 +727,14 @@ export function CashuDonation() {
                     className="hover:opacity-80 transition-opacity"
                   >
                     <img src="/images/twitter.png" alt="X logo" className="h-7 w-7" />
+                  </a>
+                  <a
+                    href="https://njump.me/npub1d3h6cxpz9y9f20c5rg08hgadjtns4stmyqw75q8spssdp46r635q33wvj0"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:opacity-80 transition-opacity"
+                  >
+                    <img src="/images/nostr-icon-grey.png" alt="Nostr" className="h-7 w-7" />
                   </a>
                   <a
                     href="https://github.com/babdbtc"

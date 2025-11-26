@@ -60,11 +60,18 @@ export const BlockItem = React.memo(
           onClick={() => onClick(proj)}
           className="relative flex-shrink-0 p-3 rounded-lg text-center min-w-[100px] cursor-pointer overflow-hidden scanline-container scanline-container-block-future"
           title={`Click to view estimated details for future block ${displayHeight}`}
-          style={{ zIndex: zIndex }}
+          style={{ zIndex: zIndex, transformStyle: "preserve-3d", perspective: 1000 }}
           animate={{ scale: scale }}
-          whileHover={{ scale: scale * 1.05, zIndex: zIndex + 10, rotateX: -20 }}
+          whileHover={{
+            scale: scale * 1.05,
+            zIndex: zIndex + 10,
+            rotateX: -5,
+            rotateY: 3,
+            y: -4,
+            boxShadow: `0 12px 24px rgba(0, 0, 0, 0.5), 0 0 20px ${interpolatedFillColor}, inset 0 1px 0 rgba(255, 255, 255, 0.1)`,
+          }}
           whileTap={{ scale: scale * 0.95 }}
-          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+          transition={{ type: "spring", stiffness: 400, damping: 25 }}
         >
           {/* Dynamic fill layer for future blocks */}
           <motion.div
@@ -113,17 +120,19 @@ export const BlockItem = React.memo(
             : "border-blue-500/30 bg-black/50"
             }`}
           title={`Click to view details for block ${blockData.height}`}
-          style={{ zIndex: zIndex }}
+          style={{ zIndex: zIndex, transformStyle: "preserve-3d", perspective: 1000 }}
           animate={{ scale: scale }}
           whileHover={{
             scale: scale * 1.05,
             zIndex: zIndex + 10,
-            rotateX: -20,
-            borderColor: "rgba(96, 165, 250, 0.8)",
-            boxShadow: "0 0 15px rgba(59, 130, 246, 0.5)"
+            rotateX: -5,
+            rotateY: -3,
+            y: -4,
+            borderColor: "rgba(96, 165, 250, 1)",
+            boxShadow: "0 12px 24px rgba(0, 0, 0, 0.5), 0 0 25px rgba(59, 130, 246, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
           }}
           whileTap={{ scale: scale * 0.95 }}
-          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+          transition={{ type: "spring", stiffness: 400, damping: 25 }}
         >
           {/* Blue fill layer */}
           <motion.div

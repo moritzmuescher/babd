@@ -35,7 +35,7 @@ function TradingViewWidget({
   // Decide default interval per pair (USD => daily, EUR => 1h)
   const pair = mappedSymbol.split(":").pop() || "BTCUSD";
   const defaultInterval =
-    pair === "BTCUSD" ? "D" : pair === "BTCEUR" ? "60" : "60";
+    pair === "BTCUSD" ? "W" : pair === "BTCEUR" ? "60" : "60";
 
   useEffect(() => {
     if (!containerRef.current) return;
