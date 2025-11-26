@@ -39,6 +39,7 @@ export function ThreeScene() {
 
       // Camera
       camera.position.z = 15
+      camera.position.y = -3
 
       // --- Custom Smooth Zoom ---
       let targetZoomDistance = 15

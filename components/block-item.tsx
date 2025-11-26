@@ -62,7 +62,7 @@ export const BlockItem = React.memo(
           title={`Click to view estimated details for future block ${displayHeight}`}
           style={{ zIndex: zIndex }}
           animate={{ scale: scale }}
-          whileHover={{ scale: scale * 1.05, zIndex: zIndex + 10, rotateX: 20 }}
+          whileHover={{ scale: scale * 1.05, zIndex: zIndex + 10, rotateX: -20 }}
           whileTap={{ scale: scale * 0.95 }}
           transition={{ type: "spring", stiffness: 300, damping: 20 }}
         >
@@ -118,7 +118,7 @@ export const BlockItem = React.memo(
           whileHover={{
             scale: scale * 1.05,
             zIndex: zIndex + 10,
-            rotateX: 20,
+            rotateX: -20,
             borderColor: "rgba(96, 165, 250, 0.8)",
             boxShadow: "0 0 15px rgba(59, 130, 246, 0.5)"
           }}

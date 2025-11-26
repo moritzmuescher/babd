@@ -19,7 +19,6 @@ interface BlockExplorerProps {
 
 const MAX_BLOCK_WEIGHT_WU = 4000000
 const BYTES_TO_WU_RATIO = 4
-// const BLOCKS_TO_LOAD = 10 // No longer needed as "Load More" is removed
 
 export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
   // Use React Query for initial data
@@ -41,6 +40,7 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const olderSentinelRef = useRef<HTMLDivElement>(null)
+  const itemsRef = useRef<Map<string, HTMLElement | null>>(new Map())
   const isInitialCenteringDone = useRef(false)
 
   // Sync React Query data to local state
@@ -69,13 +69,10 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
   const blocksGroupRef = useRef<HTMLDivElement>(null)
   const projectedGroupOffsetLeft = useRef<number>(0);
   const blocksGroupOffsetLeft = useRef<number>(0);
-  // Removed handleScroll and loadMorePastBlocks as they are no longer needed
 
   const [mousePositionX, setMousePositionX] = useState<number | null>(null);
   const [containerLeft, setContainerLeft] = useState<number>(0);
   const mouseMoveAnimationFrameRef = useRef<number | null>(null);
-  const throttleTimeoutRef = useRef<number | null>(null); // New ref for throttling
-  const throttleInterval = 50; // Update every 50ms
 
   // Load older blocks (older = lower height)
   const loadOlderBlocks = useCallback(async (count: number = 10) => {
@@ -259,16 +256,19 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
     setSelectedProjectedBlock(null)
   }
 
-  const getBlockScaleAndZIndex = useCallback((blockCenterXRelativeToScrollRef: number) => {
-    if (mousePositionX === null || !scrollRef.current || isDragging) {
+  const getBlockScaleAndZIndex = useCallback((itemId: string) => {
+    if (mousePositionX === null || isDragging) {
       return { scale: 1, zIndex: 1 };
     }
 
-    const scrollLeft = scrollRef.current.scrollLeft;
-    const mouseXRelativeToContainer = mousePositionX - containerLeft + scrollLeft;
+    const el = itemsRef.current.get(itemId);
+    if (!el) return { scale: 1, zIndex: 1 };
 
-    const distance = Math.abs(blockCenterXRelativeToScrollRef - mouseXRelativeToContainer);
-    const magnificationRadius = 120; // Pixels around the cursor where magnification occurs
+    const rect = el.getBoundingClientRect();
+    const blockCenterX = rect.left + rect.width / 2;
+
+    const distance = Math.abs(blockCenterX - mousePositionX);
+    const magnificationRadius = 80; // Reduced to 80px for tighter focus (block width is ~100px)
     const maxScale = 1.10; // Maximum scale for the block directly under the cursor
 
     if (distance > magnificationRadius) {
@@ -281,12 +281,12 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
     const zIndex = Math.round(scale * 10); // Scale 1.0 -> zIndex 10, Scale 1.18 -> zIndex 11
 
     return { scale, zIndex };
-  }, [mousePositionX, containerLeft, isDragging]);
+  }, [mousePositionX, isDragging]);
 
   return (
     <>
-      <div className="absolute top-20 md:top-32 left-1/2 -translate-x-1/2 w-[120vw] z-10">
-        <div className="hud-panel-top">
+      <div className="absolute bottom-32 md:bottom-24 left-1/2 -translate-x-1/2 w-[120vw] z-10">
+        <div className="hud-panel-bottom">
           <Card className="bg-transparent border-transparent shadow-none relative">
             <div
               ref={scrollRef}
@@ -307,18 +307,14 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
                 const dx = e.clientX - startX.current
                 if (!hasDragged.current && Math.abs(dx) < dragThreshold) {
                   // If not dragging yet, just update mouse position for magnification
-                  if (!throttleTimeoutRef.current) { // Only update if not currently throttled
-                    if (mouseMoveAnimationFrameRef.current) {
-                      cancelAnimationFrame(mouseMoveAnimationFrameRef.current);
-                    }
-                    mouseMoveAnimationFrameRef.current = requestAnimationFrame(() => {
-                      setMousePositionX(e.clientX);
-                      setContainerLeft(root.getBoundingClientRect().left);
-                      throttleTimeoutRef.current = window.setTimeout(() => {
-                        throttleTimeoutRef.current = null;
-                      }, throttleInterval);
-                    });
+                  // No throttle for smoother immediate response
+                  if (mouseMoveAnimationFrameRef.current) {
+                    cancelAnimationFrame(mouseMoveAnimationFrameRef.current);
                   }
+                  mouseMoveAnimationFrameRef.current = requestAnimationFrame(() => {
+                    setMousePositionX(e.clientX);
+                    setContainerLeft(root.getBoundingClientRect().left);
+                  });
                   return;
                 }
                 hasDragged.current = true
@@ -338,10 +334,6 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
                   cancelAnimationFrame(mouseMoveAnimationFrameRef.current);
                   mouseMoveAnimationFrameRef.current = null;
                 }
-                if (throttleTimeoutRef.current) { // Clear throttle on pointer up
-                  clearTimeout(throttleTimeoutRef.current);
-                  throttleTimeoutRef.current = null;
-                }
               }}
               onPointerLeave={() => {
                 isPointerDown.current = false
@@ -351,25 +343,16 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
                   cancelAnimationFrame(mouseMoveAnimationFrameRef.current);
                   mouseMoveAnimationFrameRef.current = null;
                 }
-                if (throttleTimeoutRef.current) { // Clear throttle on pointer leave
-                  clearTimeout(throttleTimeoutRef.current);
-                  throttleTimeoutRef.current = null;
-                }
               }}
               onMouseMove={(e) => {
                 if (!isPointerDown.current) { // Only update mouse position if not dragging
-                  if (!throttleTimeoutRef.current) { // Only update if not currently throttled
-                    if (mouseMoveAnimationFrameRef.current) {
-                      cancelAnimationFrame(mouseMoveAnimationFrameRef.current);
-                    }
-                    mouseMoveAnimationFrameRef.current = requestAnimationFrame(() => {
-                      setMousePositionX(e.clientX);
-                      setContainerLeft(scrollRef.current?.getBoundingClientRect().left || 0);
-                      throttleTimeoutRef.current = window.setTimeout(() => {
-                        throttleTimeoutRef.current = null;
-                      }, throttleInterval);
-                    });
+                  if (mouseMoveAnimationFrameRef.current) {
+                    cancelAnimationFrame(mouseMoveAnimationFrameRef.current);
                   }
+                  mouseMoveAnimationFrameRef.current = requestAnimationFrame(() => {
+                    setMousePositionX(e.clientX);
+                    setContainerLeft(scrollRef.current?.getBoundingClientRect().left || 0);
+                  });
                 }
               }}
             >
@@ -388,17 +371,14 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
                       .slice()
                       .reverse()
                       .map((proj, index) => {
-                        const blockWidth = 100; // min-w-[100px]
-                        const blockMargin = 16; // space-x-4 (4 * 4px = 16px)
-                        const blockCenterXRelativeToProjectedGroup = (index * (blockWidth + blockMargin)) + (blockWidth / 2);
-                        const blockCenterXRelativeToScrollRef = projectedGroupOffsetLeft.current + blockCenterXRelativeToProjectedGroup;
-
-                        const { scale, zIndex } = getBlockScaleAndZIndex(blockCenterXRelativeToScrollRef);
+                        const itemId = `proj-${index}`;
+                        const { scale, zIndex } = getBlockScaleAndZIndex(itemId);
 
                         const futureHeight = currentHeight + (projectedBlocks.length - index);
                         return (
                           <motion.div
                             key={proj.nTx + "-" + index}
+                            ref={(el) => { if (el) itemsRef.current.set(itemId, el); else itemsRef.current.delete(itemId); }}
                             layout
                             initial={{ opacity: 0, scale: 0.8, x: -20 }}
                             animate={{ opacity: 1, scale: 1, x: 0 }}
@@ -429,16 +409,13 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
                   <AnimatePresence mode="popLayout" initial={false}>
                     {/* Past blocks - newest to oldest (right to left) */}
                     {blocks.map((block, index) => {
-                      const blockWidth = 100; // min-w-[100px]
-                      const blockMargin = 16; // space-x-4 (4 * 4px = 16px)
-                      const blockCenterXRelativeToBlocksGroup = (index * (blockWidth + blockMargin)) + (blockWidth / 2);
-                      const blockCenterXRelativeToScrollRef = blocksGroupOffsetLeft.current + blockCenterXRelativeToBlocksGroup;
-
-                      const { scale, zIndex } = getBlockScaleAndZIndex(blockCenterXRelativeToScrollRef);
+                      const itemId = `block-${block.height}`;
+                      const { scale, zIndex } = getBlockScaleAndZIndex(itemId);
 
                       return (
                         <motion.div
                           key={block.height}
+                          ref={(el) => { if (el) itemsRef.current.set(itemId, el); else itemsRef.current.delete(itemId); }}
                           layout
                           initial={{ opacity: 0, scale: 0.8, x: 20 }}
                           animate={{ opacity: 1, scale: 1, x: 0 }}
@@ -470,17 +447,17 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
             </div>
           </Card>
         </div>
-      </div >
+      </div>
 
       {/* Block Details Modal for existing blocks */}
-      < BlockDetailsModal
+      <BlockDetailsModal
         isOpen={isBlockDetailsModalOpen}
         onClose={handleCloseBlockDetailsModal}
         blockHash={selectedBlockHash}
       />
 
       {/* Projected Block Details Modal for future blocks */}
-      < ProjectedBlockDetailsModal
+      <ProjectedBlockDetailsModal
         isOpen={isProjectedBlockDetailsModalOpen}
         onClose={handleCloseProjectedBlockDetailsModal}
         projectedBlock={selectedProjectedBlock}

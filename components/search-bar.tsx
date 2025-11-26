@@ -27,20 +27,20 @@ export function SearchBar() {
   }
 
   return (
-    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-10 w-full max-w-2xl px-2">
+    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-10 w-full max-w-3xl px-2">
       <div className="hud-panel-bottom">
         <div className="search-bar-container">
           <div className="search-bar-glow">
             <div className="search-bar-inner">
               <form onSubmit={handleSubmit} className="flex items-center p-1">
-                <span className="text-orange-400 text-lg font-mono pl-3 pr-2 select-none">&gt;</span>
+                <span className="text-orange-400 text-2xl font-mono pl-5 pr-3 select-none">&gt;</span>
                 <Input
                   type="search"
                   enterKeyHint="search"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Input TxID or Address and press <Enter>"
-                  className="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 text-white placeholder-gray-400 transition-all duration-300 text-base font-mono px-2 py-2 caret-orange-400"
+                  className="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 text-white placeholder-gray-400 transition-all duration-300 text-xl font-mono px-2 py-6 caret-orange-400"
                   autoComplete="off"
                   data-1p-ignore
                 />
