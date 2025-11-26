@@ -561,10 +561,13 @@ export function ThreeScene() {
       const vHit = new THREE.Vector3()
       const vSurface = new THREE.Vector3()
 
+      let lastMouseMoveTime = 0
+
       function onGlobalPointerMove(e: PointerEvent) {
         globalCursorX = e.clientX
         globalCursorY = e.clientY
         hasCursorMoved = true
+        lastMouseMoveTime = performance.now()
 
         if (renderer && renderer.domElement) {
           const rect = renderer.domElement.getBoundingClientRect()
@@ -645,7 +648,9 @@ export function ThreeScene() {
       }
 
       function updateMagnetFromRay() {
-        if (!pointerActive) {
+        const isAfk = (performance.now() - lastMouseMoveTime) > 3000
+
+        if (!pointerActive || isAfk) {
           magnetActive = false
           outwardAlpha += (0 - outwardAlpha) * 0.15
           return
