@@ -1033,8 +1033,9 @@
 /* Enhance hover effects to "straighten" or "pop" the panels */
 .hud-panel-left:hover,
 .hud-panel-right:hover,
-.hud-panel-bottom:hover,
-.hud-panel-top.interactive:hover {
+.hud-panel-bottom:not(.no-hover):hover,
+.hud-panel-top.interactive:hover,
+.hud-panel-right-active {
   transform: perspective(1000px) rotateY(0) rotateX(0) translateZ(20px) scale(1.05);
   z-index: 50;
   filter: brightness(1.1);

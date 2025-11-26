@@ -11,6 +11,7 @@ export function DonationQR() {
   const [copied, setCopied] = useState(false)
   const [npubCopied, setNpubCopied] = useState(false)
   const [qrType, setQrType] = useState("bolt11")
+  const [isHovered, setIsHovered] = useState(false)
 
   const bolt11Url = "LNURL1DP68GURN8GHJ7AMPD3KX2AR0VEEKZAR0WD5XJTNRDAKJ7TNHV4KXCTTTDEHHWM30D3H82UNVWQHKYCTZVSCX0SZD"
   const bolt12Url = "lno1zrxq8pjw7qjlm68mtp7e3yvxee4y5xrgjhhyf2fxhlphpckrvevh50u0qwvek6f5a0csxksx84erhkpejk8cw54qsdw6ntqu3vltl2temgw4wqsz0vdmcgk7drw7easeyh2xn3szcf9ahatkewelcgve8t6c8d6w8cxsqvap7kmauqgph47ve2sgvk9wu77kuukur4t77td6k6edl8kmtqzpvu4hlqmscmenckuxq8xsfdqk5wqqst03qdgff4g7dd74s0lzy6337836e76zcpkzz2s2j8spgxscdnx9cnn42qqstr20s3znchwexwy2mlyxt6wvg5"
@@ -64,8 +65,12 @@ export function DonationQR() {
   }
 
   return (
-    <div className="absolute right-4 bottom-[18rem] md:bottom-[18rem] @[@media(min-height:1000px)]:top-1/2 @[@media(min-height:1000px)]:-translate-y-1/2 @[@media(min-height:1000px)]:bottom-auto min-[2000px]:top-1/2 min-[2000px]:-translate-y-1/2 min-[2000px]:bottom-auto z-5 hidden md:block scale-[0.8] origin-bottom-right @[@media(min-height:1000px)]:origin-right min-[2000px]:origin-right">
-      <div className="hud-panel-right height-responsive-scale-right">
+    <div
+      className="absolute right-4 bottom-[18rem] md:bottom-[18rem] @[@media(min-height:1000px)]:top-1/2 @[@media(min-height:1000px)]:-translate-y-1/2 @[@media(min-height:1000px)]:bottom-auto min-[2000px]:top-1/2 min-[2000px]:-translate-y-1/2 min-[2000px]:bottom-auto z-20 hidden md:block scale-[0.8] origin-bottom-right @[@media(min-height:1000px)]:origin-right min-[2000px]:origin-right"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <div className={`height-responsive-scale-right transition-all duration-300 ${isHovered ? 'hud-panel-right-active' : 'hud-panel-right'}`}>
         <CyberBrackets>
           <Card className="bg-black/30 border-orange-500/25 backdrop-blur-md p-2 md:p-4 text-center">
             <div className="flex items-center justify-center mb-2 hidden md:block">

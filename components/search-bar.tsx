@@ -28,7 +28,7 @@ export function SearchBar() {
 
   return (
     <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-10 w-full max-w-3xl px-2">
-      <div className="hud-panel-bottom">
+      <div>
         <div className="search-bar-container">
           <div className="search-bar-glow">
             <div className="search-bar-inner">
