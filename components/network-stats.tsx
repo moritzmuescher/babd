@@ -45,19 +45,32 @@ export function NetworkStats() {
 
   return (
     <>
-      <motion.div
-        className={`absolute left-4 ${isDesktop ? "top-80" : "top-64"} z-20 max-w-xs height-responsive-scale cursor-pointer`}
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-        onClick={() => setIsModalOpen(true)}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-      >
-        <div className="hud-panel-left">
-          {isDesktop ? (
-            <CyberBrackets>
-              <Card className="frosted-glass scanline-container p-4 hover:bg-orange-500/10 transition-colors">
+      <div className={`absolute left-4 ${isDesktop ? "bottom-[18rem]" : "bottom-[22rem]"} @[@media(min-height:1000px)]:top-1/2 @[@media(min-height:1000px)]:-translate-y-1/2 @[@media(min-height:1000px)]:bottom-auto min-[2000px]:top-1/2 min-[2000px]:-translate-y-1/2 min-[2000px]:bottom-auto z-5`}>
+        <motion.div
+          className="max-w-xs height-responsive-scale cursor-pointer"
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          onClick={() => setIsModalOpen(true)}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+        >
+          <div className="hud-panel-left">
+            {isDesktop ? (
+              <CyberBrackets>
+                <Card className="frosted-glass scanline-container p-4 hover:bg-orange-500/10 transition-colors">
+                  <StatsContent
+                    difficultyData={difficultyData}
+                    halvingData={halvingData}
+                    baseProgress={baseProgress}
+                    isAhead={isAhead}
+                    extensionPercent={extensionPercent}
+                    onOpenMiningModal={() => setIsMiningModalOpen(true)}
+                  />
+                </Card>
+              </CyberBrackets>
+            ) : (
+              <Card className="frosted-glass p-2 hover:bg-orange-500/10 transition-colors">
                 <StatsContent
                   difficultyData={difficultyData}
                   halvingData={halvingData}
@@ -67,21 +80,10 @@ export function NetworkStats() {
                   onOpenMiningModal={() => setIsMiningModalOpen(true)}
                 />
               </Card>
-            </CyberBrackets>
-          ) : (
-            <Card className="frosted-glass p-2 hover:bg-orange-500/10 transition-colors">
-              <StatsContent
-                difficultyData={difficultyData}
-                halvingData={halvingData}
-                baseProgress={baseProgress}
-                isAhead={isAhead}
-                extensionPercent={extensionPercent}
-                onOpenMiningModal={() => setIsMiningModalOpen(true)}
-              />
-            </Card>
-          )}
-        </div>
-      </motion.div>
+            )}
+          </div>
+        </motion.div>
+      </div>
 
       <NetworkStatsModal
         isOpen={isModalOpen}

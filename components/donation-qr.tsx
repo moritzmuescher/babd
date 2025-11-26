@@ -64,8 +64,8 @@ export function DonationQR() {
   }
 
   return (
-    <div className="absolute right-4 top-64 md:top-80 z-10 hidden md:block height-responsive-scale-right scale-90">
-      <div className="hud-panel-right">
+    <div className="absolute right-4 bottom-[18rem] md:bottom-[18rem] @[@media(min-height:1000px)]:top-1/2 @[@media(min-height:1000px)]:-translate-y-1/2 @[@media(min-height:1000px)]:bottom-auto min-[2000px]:top-1/2 min-[2000px]:-translate-y-1/2 min-[2000px]:bottom-auto z-5 hidden md:block scale-[0.8] origin-bottom-right @[@media(min-height:1000px)]:origin-right min-[2000px]:origin-right">
+      <div className="hud-panel-right height-responsive-scale-right">
         <CyberBrackets>
           <Card className="bg-black/30 border-orange-500/25 backdrop-blur-md p-2 md:p-4 text-center">
             <div className="flex items-center justify-center mb-2 hidden md:block">

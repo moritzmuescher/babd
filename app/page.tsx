@@ -7,7 +7,7 @@ import { StatsPanel } from "@/components/stats-panel"
 import { BlockExplorer } from "@/components/block-explorer"
 import { SearchModal } from "@/components/search-modal"
 import { DonationQR } from "@/components/donation-qr"
-import { SocialLink } from "@/components/social-link"
+
 import { SearchBar } from "@/components/search-bar"
 import { NetworkStats } from "@/components/network-stats"
 import { useCurrentHeight } from "@/hooks/use-bitcoin-data"
@@ -48,8 +48,7 @@ export default function Home({ initialQuery }: { initialQuery?: string }) {
 
       <NetworkStats />
 
-      {/* Social Link - Now positioned below donation QR on the right */}
-      <SocialLink />
+
 
       {/* Stats Panels - Pass currentBlockHeight */}
       <StatsPanel blockHeight={currentBlockHeight} />
