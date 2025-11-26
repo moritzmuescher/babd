@@ -453,21 +453,21 @@ export function CashuDonation() {
                         onClick={() => setCashuMode("invoice")}
                         size="sm"
                         variant="ghost"
-                        className="w-full border border-orange-500/25 px-2 py-2 h-auto text-[11px] bg-orange-500/10 text-orange-400 hover:text-orange-200 hover:bg-orange-500/20 flex flex-col items-center gap-1"
+                        className="w-full border border-orange-500/25 px-2 py-5 h-auto text-[11px] bg-orange-500/10 text-orange-400 hover:text-orange-200 hover:bg-orange-500/20 flex flex-col items-center justify-center gap-1"
                       >
-                        <Zap className="w-4 h-4" />
-                        <span>Pay Lightning Invoice</span>
-                        <span className="text-[9px] text-orange-400/50">Generate invoice for amount</span>
+                        <Zap className="w-5 h-5" />
+                        <span>Generate</span>
+                        <span>Lightning Invoice</span>
                       </Button>
                       <Button
                         onClick={() => setCashuMode("paste")}
                         size="sm"
                         variant="ghost"
-                        className="w-full border border-orange-500/25 px-2 py-2 h-auto text-[11px] bg-orange-500/10 text-orange-400 hover:text-orange-200 hover:bg-orange-500/20 flex flex-col items-center gap-1"
+                        className="w-full border border-orange-500/25 px-2 py-5 h-auto text-[11px] bg-orange-500/10 text-orange-400 hover:text-orange-200 hover:bg-orange-500/20 flex flex-col items-center justify-center gap-1"
                       >
-                        <Clipboard className="w-4 h-4" />
-                        <span>Paste Cashu Token</span>
-                        <span className="text-[9px] text-orange-400/50">Paste token from clipboard</span>
+                        <Clipboard className="w-5 h-5" />
+                        <span>Paste</span>
+                        <span>Cashu Token</span>
                       </Button>
                     </div>
                   </>
