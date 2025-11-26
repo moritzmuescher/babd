@@ -268,8 +268,8 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
     const mouseXRelativeToContainer = mousePositionX - containerLeft + scrollLeft;
 
     const distance = Math.abs(blockCenterXRelativeToScrollRef - mouseXRelativeToContainer);
-    const magnificationRadius = 180; // Pixels around the cursor where magnification occurs
-    const maxScale = 1.15; // Maximum scale for the block directly under the cursor
+    const magnificationRadius = 120; // Pixels around the cursor where magnification occurs
+    const maxScale = 1.10; // Maximum scale for the block directly under the cursor
 
     if (distance > magnificationRadius) {
       return { scale: 1, zIndex: 1 };
@@ -470,17 +470,17 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
             </div>
           </Card>
         </div>
-      </div>
+      </div >
 
       {/* Block Details Modal for existing blocks */}
-      <BlockDetailsModal
+      < BlockDetailsModal
         isOpen={isBlockDetailsModalOpen}
         onClose={handleCloseBlockDetailsModal}
         blockHash={selectedBlockHash}
       />
 
       {/* Projected Block Details Modal for future blocks */}
-      <ProjectedBlockDetailsModal
+      < ProjectedBlockDetailsModal
         isOpen={isProjectedBlockDetailsModalOpen}
         onClose={handleCloseProjectedBlockDetailsModal}
         projectedBlock={selectedProjectedBlock}

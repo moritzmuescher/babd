@@ -513,10 +513,10 @@ export function ThreeScene() {
       let hasCursorMoved = false
 
       // Tunables
-      const influenceRadius = 4.5
-      const strength = 0.6
+      const influenceRadius = 4.0
+      const strength = 0.5
       const hoverReach = 40.0       // how far outside still influences (world)
-      const maxOutward = 5.0        // max outward offset (world)
+      const maxOutward = 3.8        // max outward offset (world)
       const tentSharpness = 1.0     // triangular peak sharpness
 
       // Press-to-compress tunables
