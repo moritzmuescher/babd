@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Card } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { AnimatedNumber } from "@/components/ui/animated-number"
@@ -8,8 +8,7 @@ import { CyberBrackets } from "@/components/ui/cyber-brackets"
 import { ChartModal } from "@/components/chart-modal"
 import { FeesModal, MempoolModal } from "@/components/stats-modals"
 import { BlockDetailsModal } from "@/components/block-details-modal"
-import { useBitcoinStats } from "@/hooks/use-bitcoin-data"
-import { MempoolAPI } from "@/lib/mempool-api"
+import { useBitcoinStats, useRecentBlocks } from "@/hooks/use-bitcoin-data"
 
 interface StatsPanelProps {
   blockHeight: number
@@ -19,8 +18,23 @@ type ModalType = 'chart' | 'fees' | 'mempool' | 'unconfirmed' | 'block-height' |
 
 export function StatsPanel({ blockHeight }: StatsPanelProps) {
   const [activeModal, setActiveModal] = useState<ModalType>(null)
-  const [tipHash, setTipHash] = useState<string | null>(null)
+  const [isNewBlock, setIsNewBlock] = useState(false)
+  const prevBlockHeightRef = useRef(blockHeight)
   const { data: stats, isLoading, error } = useBitcoinStats()
+  const { data: recentBlocks } = useRecentBlocks()
+
+  // Get the current block hash from recent blocks (first block is the current one)
+  const currentBlockHash = recentBlocks?.[0]?.id ?? null
+
+  // Detect new block and trigger celebration animation
+  useEffect(() => {
+    if (prevBlockHeightRef.current !== 0 && blockHeight > prevBlockHeightRef.current) {
+      setIsNewBlock(true)
+      const timer = setTimeout(() => setIsNewBlock(false), 800)
+      return () => clearTimeout(timer)
+    }
+    prevBlockHeightRef.current = blockHeight
+  }, [blockHeight])
 
   // Default values while loading
   const displayStats = stats || {
@@ -34,13 +48,9 @@ export function StatsPanel({ blockHeight }: StatsPanelProps) {
     console.error("Error fetching stats:", error)
   }
 
-  const handleBlockHeightClick = async () => {
-    try {
-      const hash = await MempoolAPI.getTipHash()
-      setTipHash(hash)
+  const handleBlockHeightClick = () => {
+    if (currentBlockHash) {
       setActiveModal('block-height')
-    } catch (err) {
-      console.error("Failed to fetch tip hash:", err)
     }
   }
 
@@ -48,21 +58,21 @@ export function StatsPanel({ blockHeight }: StatsPanelProps) {
     <>
       {/* Block Height - Center Top */}
       <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-30 hidden md:block">
-        <div className="hud-panel-top interactive">
+        <div className={`hud-panel-top interactive ${isNewBlock ? 'block-height-new-block' : ''}`}>
           <CyberBrackets>
             <Card
-              className="frosted-glass scanline-container hover:bg-orange-500/10 transition-colors cursor-pointer"
+              className={`frosted-glass scanline-container hover:bg-orange-500/10 transition-colors cursor-pointer block-height-container ${isNewBlock ? 'block-height-particle-burst' : ''}`}
               onClick={handleBlockHeightClick}
             >
-              <div className="p-4 text-center">
-                <div className="text-5xl md:text-6xl font-bold text-orange-400 number-glow">
+              <div className="p-4 text-center relative">
+                <div className="text-5xl md:text-6xl font-bold block-height-number">
                   <AnimatedNumber
                     value={blockHeight}
                     formatFn={(val) => Math.floor(val).toLocaleString("en-US")}
                     duration={800}
                   />
                 </div>
-                <div className="text-orange-400 text-sm mt-1">Block Height</div>
+                <div className="text-orange-400 text-sm mt-1 tracking-widest uppercase">Block Height</div>
               </div>
             </Card>
           </CyberBrackets>
@@ -206,7 +216,7 @@ export function StatsPanel({ blockHeight }: StatsPanelProps) {
       <BlockDetailsModal
         isOpen={activeModal === 'block-height'}
         onClose={() => setActiveModal(null)}
-        blockHash={tipHash}
+        blockHash={currentBlockHash}
       />
     </>
   )
