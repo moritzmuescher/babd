@@ -285,9 +285,9 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
 
   return (
     <>
-      <div className="absolute bottom-32 md:bottom-24 left-1/2 -translate-x-1/2 w-[120vw] z-10">
+      <div className="absolute bottom-32 md:bottom-24 left-1/2 -translate-x-1/2 w-[120vw] z-10 pointer-events-none">
         <div className="hud-panel-bottom no-hover">
-          <Card className="bg-transparent border-transparent shadow-none relative">
+          <Card className="bg-transparent border-transparent shadow-none relative pointer-events-auto">
             <div
               ref={scrollRef}
               className="flex overflow-x-auto pl-4 py-4 pr-32 space-x-4 no-scrollbar select-none items-center"
