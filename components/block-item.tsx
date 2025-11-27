@@ -58,9 +58,14 @@ export const BlockItem = React.memo(
         <motion.div
           layoutId={`block-${displayHeight}`}
           onClick={() => onClick(proj)}
-          className="relative flex-shrink-0 p-3 rounded-lg text-center min-w-[100px] cursor-pointer overflow-hidden scanline-container scanline-container-block-future"
+          className="relative flex-shrink-0 p-3 rounded-lg border text-center min-w-[100px] cursor-pointer overflow-hidden scanline-container scanline-container-block-future bg-black/50"
           title={`Click to view estimated details for future block ${displayHeight}`}
-          style={{ zIndex: zIndex, transformStyle: "preserve-3d", perspective: 1000 }}
+          style={{
+            zIndex: zIndex,
+            transformStyle: "preserve-3d",
+            perspective: 1000,
+            borderColor: `${interpolatedFillColor.replace('0.4)', '0.5)')}`
+          }}
           animate={{ scale: scale }}
           whileHover={{
             scale: scale * 1.05,
@@ -115,12 +120,15 @@ export const BlockItem = React.memo(
         <motion.div
           layoutId={`block-${blockData.height}`}
           onClick={() => onClick(blockData)}
-          className={`relative flex-shrink-0 p-3 rounded-lg border text-center min-w-[100px] cursor-pointer overflow-hidden scanline-container scanline-container-block-past ${isCurrentBlock
-            ? "border-blue-400 bg-black/50 shadow-lg shadow-blue-500/30 current-block current-block-pulse"
-            : "border-blue-500/30 bg-black/50"
-            }`}
+          className={`relative flex-shrink-0 p-3 rounded-lg border text-center min-w-[100px] cursor-pointer overflow-hidden scanline-container scanline-container-block-past bg-black/50 ${isCurrentBlock ? "current-block current-block-pulse" : ""}`}
           title={`Click to view details for block ${blockData.height}`}
-          style={{ zIndex: zIndex, transformStyle: "preserve-3d", perspective: 1000 }}
+          style={{
+            zIndex: zIndex,
+            transformStyle: "preserve-3d",
+            perspective: 1000,
+            borderColor: isCurrentBlock ? "rgba(96, 165, 250, 0.8)" : "rgba(59, 130, 246, 0.3)",
+            boxShadow: isCurrentBlock ? "0 10px 15px -3px rgba(59, 130, 246, 0.3)" : "none"
+          }}
           animate={{ scale: scale }}
           whileHover={{
             scale: scale * 1.05,
