@@ -73,6 +73,7 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
   const [mousePositionX, setMousePositionX] = useState<number | null>(null);
   const [containerLeft, setContainerLeft] = useState<number>(0);
   const mouseMoveAnimationFrameRef = useRef<number | null>(null);
+  const [viewportCenterX, setViewportCenterX] = useState<number>(0);
 
   // Load older blocks (older = lower height)
   const loadOlderBlocks = useCallback(async (count: number = 10) => {
@@ -257,22 +258,22 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
   }
 
   const getBlockScaleAndZIndex = useCallback((itemId: string) => {
-    if (mousePositionX === null || isDragging) {
-      return { scale: 1, zIndex: 1 };
-    }
-
     const el = itemsRef.current.get(itemId);
-    if (!el) return { scale: 1, zIndex: 1 };
+    if (!el) return { scale: 1, zIndex: 1, blockCenterX: 0 };
 
     const rect = el.getBoundingClientRect();
     const blockCenterX = rect.left + rect.width / 2;
+
+    if (mousePositionX === null || isDragging) {
+      return { scale: 1, zIndex: 1, blockCenterX };
+    }
 
     const distance = Math.abs(blockCenterX - mousePositionX);
     const magnificationRadius = 80; // Reduced to 80px for tighter focus (block width is ~100px)
     const maxScale = 1.10; // Maximum scale for the block directly under the cursor
 
     if (distance > magnificationRadius) {
-      return { scale: 1, zIndex: 1 };
+      return { scale: 1, zIndex: 1, blockCenterX };
     }
 
     const normalizedDistance = distance / magnificationRadius; // 0 to 1
@@ -280,8 +281,18 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
     const scale = maxScale - (maxScale - 1) * Math.pow(normalizedDistance, 1.5);
     const zIndex = Math.round(scale * 10); // Scale 1.0 -> zIndex 10, Scale 1.18 -> zIndex 11
 
-    return { scale, zIndex };
+    return { scale, zIndex, blockCenterX };
   }, [mousePositionX, isDragging]);
+
+  // Update viewport center on mount and resize
+  useEffect(() => {
+    const updateViewportCenter = () => {
+      setViewportCenterX(window.innerWidth / 2);
+    };
+    updateViewportCenter();
+    window.addEventListener('resize', updateViewportCenter);
+    return () => window.removeEventListener('resize', updateViewportCenter);
+  }, []);
 
   return (
     <>
@@ -372,7 +383,7 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
                       .reverse()
                       .map((proj, index) => {
                         const itemId = `proj-${index}`;
-                        const { scale, zIndex } = getBlockScaleAndZIndex(itemId);
+                        const { scale, zIndex, blockCenterX } = getBlockScaleAndZIndex(itemId);
 
                         const futureHeight = currentHeight + (projectedBlocks.length - index);
                         return (
@@ -397,7 +408,9 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
                               getAverageFeeRate={getAverageFeeRate}
                               getInterpolatedFeeColor={getInterpolatedFeeColor}
                               index={index}
-                              futureHeight={futureHeight} // New prop
+                              futureHeight={futureHeight}
+                              blockCenterX={blockCenterX}
+                              viewportCenterX={viewportCenterX}
                             />
                           </motion.div>
                         )
@@ -410,7 +423,7 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
                     {/* Past blocks - newest to oldest (right to left) */}
                     {blocks.map((block, index) => {
                       const itemId = `block-${block.height}`;
-                      const { scale, zIndex } = getBlockScaleAndZIndex(itemId);
+                      const { scale, zIndex, blockCenterX } = getBlockScaleAndZIndex(itemId);
 
                       return (
                         <motion.div
@@ -434,6 +447,8 @@ export function BlockExplorer({ currentHeight }: BlockExplorerProps) {
                             getAverageFeeRate={getAverageFeeRate}
                             getInterpolatedFeeColor={getInterpolatedFeeColor}
                             index={index}
+                            blockCenterX={blockCenterX}
+                            viewportCenterX={viewportCenterX}
                           />
                         </motion.div>
                       )

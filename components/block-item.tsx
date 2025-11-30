@@ -16,6 +16,8 @@ interface BlockItemProps {
   getInterpolatedFeeColor?: (feeRate: number, alpha?: number) => string;
   index: number; // For projected blocks to calculate estimated time
   futureHeight?: number; // New optional prop for projected blocks
+  blockCenterX?: number; // Block's center X position
+  viewportCenterX?: number; // Viewport center X position
 }
 
 const MAX_BLOCK_WEIGHT_WU = 4000000;
@@ -35,10 +37,39 @@ export const BlockItem = React.memo(
     getInterpolatedFeeColor,
     index,
     futureHeight,
+    blockCenterX,
+    viewportCenterX,
   }: BlockItemProps) => {
     const weightPercentage = (block as Block)
       ? ((block as Block).weight ? Math.min(((block as Block).weight / MAX_BLOCK_WEIGHT_WU) * 100, 100) : 0)
       : 0;
+
+    // Calculate 3D depth direction based on position relative to center
+    const calculate3DDepth = () => {
+      if (blockCenterX === undefined || viewportCenterX === undefined) {
+        return { x: 6, y: 6 }; // Default depth
+      }
+
+      const distanceFromCenter = blockCenterX - viewportCenterX;
+      const maxOffsetX = 6; // Maximum horizontal shadow offset in pixels
+      const baseOffsetY = 6; // Base vertical shadow offset
+
+      // Normalize distance (assuming max relevant distance is ~500px from center)
+      const normalizedDistance = Math.max(-1, Math.min(1, distanceFromCenter / 500));
+
+      // Calculate shadow offsets to create perspective toward center
+      // Blocks on left (negative distance): shadow on right side (positive X)
+      // Blocks on right (positive distance): shadow on left side (negative X)
+      const shadowX = -normalizedDistance * maxOffsetX;
+      const shadowY = baseOffsetY; // Consistent downward depth
+
+      return {
+        x: Math.round(shadowX),
+        y: shadowY
+      };
+    };
+
+    const depth = calculate3DDepth();
 
     if (isProjected) {
       const proj = block as ProjectedBlock;
@@ -53,6 +84,7 @@ export const BlockItem = React.memo(
       );
       const interpolatedFillColor = getInterpolatedFeeColor?.(estimatedFeeRate, 0.4) || "rgba(0,0,0,0.4)";
       const interpolatedTextColor = getInterpolatedFeeColor?.(estimatedFeeRate) || "white";
+      const interpolatedShadowColor = getInterpolatedFeeColor?.(estimatedFeeRate, 0.5) || "rgba(0,0,0,0.5)";
 
       return (
         <motion.div
@@ -64,7 +96,8 @@ export const BlockItem = React.memo(
             zIndex: zIndex,
             transformStyle: "preserve-3d",
             perspective: 1000,
-            borderColor: `${interpolatedFillColor.replace('0.4)', '0.5)')}`
+            borderColor: `${interpolatedFillColor.replace('0.4)', '0.5)')}`,
+            boxShadow: `${depth.x}px ${depth.y}px 0px ${interpolatedShadowColor}, inset -1px -1px 0px rgba(255, 255, 255, 0.1), inset 1px 1px 0px rgba(0, 0, 0, 0.3)`
           }}
           animate={{ scale: scale }}
           whileHover={{
@@ -73,7 +106,7 @@ export const BlockItem = React.memo(
             rotateX: -2,
             rotateY: 1,
             y: -4,
-            boxShadow: `0 12px 24px rgba(0, 0, 0, 0.5), 0 0 20px ${interpolatedFillColor}, inset 0 1px 0 rgba(255, 255, 255, 0.1)`,
+            boxShadow: `${depth.x * 1.3}px ${depth.y * 1.3}px 0px ${interpolatedShadowColor.replace('0.5)', '0.6)')}, 0 12px 24px rgba(0, 0, 0, 0.5), 0 0 20px ${interpolatedFillColor}, inset -1px -1px 0px rgba(255, 255, 255, 0.1), inset 1px 1px 0px rgba(0, 0, 0, 0.3)`,
           }}
           whileTap={{ scale: scale * 0.95 }}
           transition={{ type: "spring", stiffness: 400, damping: 25 }}
@@ -127,7 +160,14 @@ export const BlockItem = React.memo(
             transformStyle: "preserve-3d",
             perspective: 1000,
             borderColor: isCurrentBlock ? "rgba(96, 165, 250, 0.8)" : "rgba(59, 130, 246, 0.3)",
-            boxShadow: isCurrentBlock ? "0 10px 15px -3px rgba(59, 130, 246, 0.3)" : "none"
+            boxShadow: isCurrentBlock
+              ? `${depth.x}px ${depth.y}px 0px rgba(29, 78, 216, 0.4), 0 0 20px rgba(59, 130, 246, 0.4), 0 0 40px rgba(59, 130, 246, 0.2), inset -1px -1px 0px rgba(96, 165, 250, 0.2), inset 1px 1px 0px rgba(0, 0, 0, 0.3)`
+              : `${depth.x}px ${depth.y}px 0px rgba(29, 78, 216, 0.4), inset -1px -1px 0px rgba(96, 165, 250, 0.2), inset 1px 1px 0px rgba(0, 0, 0, 0.3)`,
+            // @ts-ignore - CSS variables for animation
+            '--depth-x': `${depth.x}px`,
+            '--depth-y': `${depth.y}px`,
+            '--depth-x-hover': `${depth.x * 1.3}px`,
+            '--depth-y-hover': `${depth.y * 1.3}px`
           }}
           animate={{ scale: scale }}
           whileHover={{
@@ -137,7 +177,7 @@ export const BlockItem = React.memo(
             rotateY: -1,
             y: -4,
             borderColor: "rgba(96, 165, 250, 1)",
-            boxShadow: "0 12px 24px rgba(0, 0, 0, 0.5), 0 0 25px rgba(59, 130, 246, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
+            boxShadow: `${depth.x * 1.3}px ${depth.y * 1.3}px 0px rgba(29, 78, 216, 0.5), 0 12px 24px rgba(0, 0, 0, 0.5), 0 0 25px rgba(59, 130, 246, 0.6), inset -1px -1px 0px rgba(96, 165, 250, 0.2), inset 1px 1px 0px rgba(0, 0, 0, 0.3)`
           }}
           whileTap={{ scale: scale * 0.95 }}
           transition={{ type: "spring", stiffness: 400, damping: 25 }}
