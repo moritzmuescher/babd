@@ -70,8 +70,8 @@ export const BlockItem = React.memo(
           whileHover={{
             scale: scale * 1.05,
             zIndex: zIndex + 10,
-            rotateX: -5,
-            rotateY: 3,
+            rotateX: -2,
+            rotateY: 1,
             y: -4,
             boxShadow: `0 12px 24px rgba(0, 0, 0, 0.5), 0 0 20px ${interpolatedFillColor}, inset 0 1px 0 rgba(255, 255, 255, 0.1)`,
           }}
@@ -133,8 +133,8 @@ export const BlockItem = React.memo(
           whileHover={{
             scale: scale * 1.05,
             zIndex: zIndex + 10,
-            rotateX: -5,
-            rotateY: -3,
+            rotateX: -2,
+            rotateY: -1,
             y: -4,
             borderColor: "rgba(96, 165, 250, 1)",
             boxShadow: "0 12px 24px rgba(0, 0, 0, 0.5), 0 0 25px rgba(59, 130, 246, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1)"

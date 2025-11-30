@@ -1007,25 +1007,25 @@
 
 /* HUD Perspective Effects */
 .hud-panel-left {
-  transform: perspective(1000px) rotateY(25deg) translateZ(0);
+  transform: perspective(1000px) rotateY(12deg) translateZ(0);
   transform-origin: left center;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .hud-panel-right {
-  transform: perspective(1000px) rotateY(-25deg) translateZ(0);
+  transform: perspective(1000px) rotateY(-12deg) translateZ(0);
   transform-origin: right center;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .hud-panel-top {
-  transform: perspective(1000px) rotateX(-25deg) translateZ(0);
+  transform: perspective(1000px) rotateX(-12deg) translateZ(0);
   transform-origin: center top;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .hud-panel-bottom {
-  transform: perspective(1000px) rotateX(25deg) translateZ(0);
+  transform: perspective(1000px) rotateX(12deg) translateZ(0);
   transform-origin: center bottom;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
