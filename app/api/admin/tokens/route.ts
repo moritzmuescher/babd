@@ -11,6 +11,7 @@ interface StoredToken {
   amount: number
   timestamp: number
   redeemed: boolean
+  note?: string
 }
 
 // Ensure all tokens have IDs

@@ -12,6 +12,7 @@ interface StoredToken {
   amount: number
   timestamp: number
   redeemed: boolean
+  note?: string
 }
 
 interface Proof {
@@ -25,7 +26,7 @@ interface Proof {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { token } = body
+    const { token, note } = body
 
     if (!token) {
       return NextResponse.json(
@@ -127,6 +128,7 @@ export async function POST(request: NextRequest) {
       amount: totalAmount,
       timestamp: Date.now(),
       redeemed: false,
+      ...(note && { note }),
     }
     tokens.push(storedToken)
 

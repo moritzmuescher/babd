@@ -22,6 +22,7 @@ interface StoredToken {
   amount: number
   timestamp: number
   redeemed: boolean
+  note?: string
 }
 
 interface Stats {
@@ -457,6 +458,14 @@ export default function AdminDonationsPage() {
                     <div className="text-xs text-orange-400/50 mb-2">
                       {formatDate(token.timestamp)}
                     </div>
+
+                    {/* Note */}
+                    {token.note && (
+                      <div className="text-sm text-orange-300 bg-orange-500/10 border border-orange-500/20 rounded px-2 py-1 mb-2">
+                        <span className="text-orange-400/70 text-xs mr-1">Note:</span>
+                        {token.note}
+                      </div>
+                    )}
 
                     {/* Token string */}
                     <div className="flex items-center gap-2">

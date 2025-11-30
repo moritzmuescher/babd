@@ -48,6 +48,7 @@ export function CashuDonation() {
   const [pasteToken, setPasteToken] = useState("")
   const [pasteError, setPasteError] = useState("")
   const [pasteSuccess, setPasteSuccess] = useState(false)
+  const [donationNote, setDonationNote] = useState("")
 
   // General state
   const [copied, setCopied] = useState(false)
@@ -120,19 +121,23 @@ export function CashuDonation() {
   }
 
   // Send token to backend API
-  const sendTokenToBackend = async (token: string, amount: number) => {
+  const sendTokenToBackend = useCallback(async (token: string, amount: number) => {
     try {
       const response = await fetch("/api/cashu-donation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, amount }),
+        body: JSON.stringify({
+          token,
+          amount,
+          ...(donationNote.trim() && { note: donationNote.trim() })
+        }),
       })
       return response.ok
     } catch (err) {
       console.error("Error sending token to backend:", err)
       return false
     }
-  }
+  }, [donationNote])
 
   // Generate Cashu invoice
   const generateInvoice = useCallback(async (amount: number) => {
@@ -208,7 +213,7 @@ export function CashuDonation() {
       setError("Failed to generate invoice")
       setCashuState("error")
     }
-  }, [])
+  }, [donationNote, sendTokenToBackend])
 
   // Handle Cashu amount selection
   const handleAmountSelect = (amount: number) => {
@@ -254,7 +259,10 @@ export function CashuDonation() {
       const response = await fetch("/api/cashu-redeem", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: tokenToSubmit.trim() }),
+        body: JSON.stringify({
+          token: tokenToSubmit.trim(),
+          ...(donationNote.trim() && { note: donationNote.trim() })
+        }),
       })
 
       const data = await response.json()
@@ -327,6 +335,7 @@ export function CashuDonation() {
     setPasteSuccess(false)
     setPasteLoading(false)
     setPasteAmount(null)
+    setDonationNote("")
   }
 
   // Get current copy text based on payment method
@@ -505,12 +514,12 @@ export function CashuDonation() {
                         onClick={() => setShowCustomInput(true)}
                         size="sm"
                         variant="ghost"
-                        className="w-full border border-orange-500/25 px-1.5 py-0.5 h-7 text-[11px] bg-orange-500/10 text-orange-400 hover:text-orange-200 hover:bg-orange-500/20"
+                        className="w-full border border-orange-500/25 px-1.5 py-0.5 h-7 text-[11px] bg-orange-500/10 text-orange-400 hover:text-orange-200 hover:bg-orange-500/20 mb-2"
                       >
                         Custom
                       </Button>
                     ) : (
-                      <div className="flex gap-1.5">
+                      <div className="flex gap-1.5 mb-2">
                         <Input
                           type="number"
                           value={customAmount}
@@ -531,6 +540,15 @@ export function CashuDonation() {
                         </Button>
                       </div>
                     )}
+
+                    <Input
+                      type="text"
+                      value={donationNote}
+                      onChange={(e) => setDonationNote(e.target.value)}
+                      placeholder="Add a note (optional)"
+                      className="h-7 text-[10px] bg-black/50 border-orange-500/25 text-orange-200 placeholder:text-orange-400/50"
+                      maxLength={100}
+                    />
 
                     {error && (
                       <div className="text-red-400 text-[10px] mt-1.5">{error}</div>
@@ -656,7 +674,16 @@ export function CashuDonation() {
                       value={pasteToken}
                       onChange={(e) => setPasteToken(e.target.value)}
                       placeholder="cashuA..."
-                      className="w-full h-20 text-[10px] bg-black/50 border border-orange-500/25 text-orange-200 placeholder:text-orange-400/50 rounded-md p-2 resize-none mb-2"
+                      className="w-full h-16 text-[10px] bg-black/50 border border-orange-500/25 text-orange-200 placeholder:text-orange-400/50 rounded-md p-2 resize-none mb-2"
+                    />
+
+                    <Input
+                      type="text"
+                      value={donationNote}
+                      onChange={(e) => setDonationNote(e.target.value)}
+                      placeholder="Add a note (optional)"
+                      className="h-7 text-[10px] bg-black/50 border-orange-500/25 text-orange-200 placeholder:text-orange-400/50 mb-2"
+                      maxLength={100}
                     />
 
                     <div className="flex gap-1.5 mb-2">

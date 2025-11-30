@@ -9,6 +9,7 @@ interface StoredToken {
   amount: number
   timestamp: number
   redeemed: boolean
+  note?: string
 }
 
 // GET - Retrieve all stored tokens (for you to redeem)
@@ -35,7 +36,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { token, amount } = body
+    const { token, amount, note } = body
 
     if (!token || !amount) {
       return NextResponse.json(
@@ -59,6 +60,7 @@ export async function POST(request: NextRequest) {
       amount,
       timestamp: Date.now(),
       redeemed: false,
+      ...(note && { note }),
     }
     tokens.push(newToken)
 
